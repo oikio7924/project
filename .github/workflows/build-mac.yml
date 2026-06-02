@@ -21,7 +21,7 @@ jobs:
           pip install PyQt5 pyserial pyinstaller Pillow
 
       - name: PNG → ICNS 변환
-        working-directory: inverter-emulator
+        working-directory: daeyang/485_emulator
         run: |
           mkdir -p icon.iconset
           sips -z 16   16   icon.png --out icon.iconset/icon_16x16.png
@@ -33,7 +33,7 @@ jobs:
           iconutil -c icns icon.iconset -o icon.icns
 
       - name: PyInstaller 빌드
-        working-directory: inverter-emulator
+        working-directory: daeyang/485_emulator
         run: |
           pyinstaller --onefile --windowed \
             --name "InverterEmulator" \
@@ -43,7 +43,7 @@ jobs:
             emulator.py
 
       - name: 빌드 결과 압축
-        working-directory: inverter-emulator
+        working-directory: daeyang/485_emulator
         run: |
           cd dist
           zip -r InverterEmulator-mac.zip InverterEmulator.app
@@ -52,5 +52,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: InverterEmulator-mac
-          path: inverter-emulator/dist/InverterEmulator-mac.zip
+          path: daeyang/485_emulator/dist/InverterEmulator-mac.zip
           retention-days: 30
