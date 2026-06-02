@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <base href="/bdweb/" />
+  <title>발전소 등록 — DAEYANG</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="images/blue-a-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="images/blue-a-16.png" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <a href="index.html"><img class="brand-logo" src="images/logo-color.png" alt="로고" /></a>
+    </div>
+    <nav class="main-nav">
+      <a href="index.html" class="nav-item">캘린더</a>
+      <a href="register.html" class="nav-item active">발전소 등록</a>
+      <a href="list.html" class="nav-item">인허가 현황</a>
+    </nav>
+  </div>
+</header>
+
+<main class="page-main">
+  <div class="page-card">
+
+    <!-- 헤더: 발전소 선택 + 엑셀 가져오기 -->
+    <div class="page-card-header">
+      <div class="register-top-controls">
+        <div class="plant-select-wrap">
+          <span class="label-sm">발전소 선택</span>
+          <div class="custom-select" id="plant-select-wrap">
+            <div class="custom-select-trigger" id="plant-select-trigger" tabindex="0">
+              <span class="custom-select-value" id="plant-select-value">신규 등록</span>
+              <span class="custom-select-arrow">▾</span>
+            </div>
+            <div class="custom-select-dropdown" id="plant-select-dropdown">
+              <div class="custom-select-search-wrap">
+                <input type="text" class="custom-select-search" id="plant-select-search" placeholder="발전소 검색..." autocomplete="off" />
+              </div>
+              <div class="custom-select-list" id="plant-select-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="import-controls">
+        <input type="text" class="file-name-display" id="file-name-display" readonly placeholder="첨부파일" />
+        <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none" />
+        <button class="btn btn-secondary btn-sm" id="btn-file-pick">파일찾기</button>
+        <button class="btn btn-success btn-sm" id="btn-excel-import">엑셀 등록</button>
+      </div>
+    </div>
+
+    <div class="page-card-body">
+      <form id="register-form">
+        <div class="register-layout">
+
+          <!-- 좌측: 기본 정보 -->
+          <div class="form-left">
+            <div class="section-title">기본 정보</div>
+
+            <div class="form-group">
+              <label class="form-label" for="plant_name">발전소 명 <span style="color:#dc2626">*</span></label>
+              <input type="text" class="form-input" id="plant_name" name="plant_name" placeholder="발전소 명을 입력하세요" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="owner_name">사업자 명</label>
+              <input type="text" class="form-input" id="owner_name" name="owner_name" placeholder="사업자(법인) 명칭" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="contact">연락처</label>
+              <input type="text" class="form-input" id="contact" name="contact" placeholder="010-0000-0000" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="address">주소</label>
+              <input type="text" class="form-input" id="address" name="address" placeholder="발전소 주소" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="capacity">용량</label>
+              <input type="text" class="form-input" id="capacity" name="capacity" placeholder="예) 999kW" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="install_type">설치형태</label>
+              <input type="text" class="form-input" id="install_type" name="install_type" placeholder="예) 지상형, 건물형, 수상형" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="memo">메모</label>
+              <textarea class="form-textarea" id="memo" name="memo" placeholder="발전소 관련 메모를 입력하세요."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">사업자등록증</label>
+              <div class="biz-cert-area" id="biz-cert-area"></div>
+              <input type="file" id="biz-cert-input" accept=".pdf,.jpg,.jpeg,.png,.gif,.webp" style="display:none" />
+            </div>
+          </div>
+
+          <!-- 우측: 날짜 정보 -->
+          <div class="form-right">
+            <div class="section-title">인허가 날짜</div>
+            <div class="date-sections">
+
+              <!-- 발전사업 -->
+              <div class="date-section date-section--power">
+                <div class="date-section-head">발전사업</div>
+                <div class="date-section-body">
+                  <div class="date-row">
+                    <label class="form-label" for="power_biz_permit_scheduled">발전사업허가예정일</label>
+                    <input type="date" class="form-input" id="power_biz_permit_scheduled" name="power_biz_permit_scheduled" />
+                  </div>
+                  <div class="date-row">
+                    <label class="form-label" for="power_biz_permit_date">발전사업허가일</label>
+                    <input type="date" class="form-input" id="power_biz_permit_date" name="power_biz_permit_date" />
+                  </div>
+                  <div class="date-row">
+                    <label class="form-label" for="power_biz_permit_expire">발전사업만료일</label>
+                    <input type="date" class="form-input" id="power_biz_permit_expire" name="power_biz_permit_expire" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- 개발행위 -->
+              <div class="date-section date-section--dev">
+                <div class="date-section-head">개발행위</div>
+                <div class="date-section-body">
+                  <div class="date-row">
+                    <label class="form-label">구분</label>
+                    <div class="dev-status-group">
+                      <label class="dev-status-opt">
+                        <input type="radio" name="dev_permit_status" value="" checked /> 해당
+                      </label>
+                      <label class="dev-status-opt">
+                        <input type="radio" name="dev_permit_status" value="미대상" /> 미대상
+                      </label>
+                      <label class="dev-status-opt">
+                        <input type="radio" name="dev_permit_status" value="면제대상" /> 면제대상
+                      </label>
+                    </div>
+                  </div>
+                  <div id="dev-date-fields">
+                    <div class="date-row">
+                      <label class="form-label" for="dev_permit_date">개발행위허가일</label>
+                      <input type="date" class="form-input" id="dev_permit_date" name="dev_permit_date" />
+                    </div>
+                    <div class="date-row">
+                      <label class="form-label" for="dev_permit_expire">개발행위만료일</label>
+                      <input type="date" class="form-input" id="dev_permit_expire" name="dev_permit_expire" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- PPA -->
+              <div class="date-section date-section--ppa">
+                <div class="date-section-head">PPA</div>
+                <div class="date-section-body">
+                  <div class="date-row">
+                    <label class="form-label" for="ppa_receive_date">PPA접수일</label>
+                    <input type="date" class="form-input" id="ppa_receive_date" name="ppa_receive_date" />
+                  </div>
+                  <div class="date-row">
+                    <label class="form-label" for="ppa_receive_capacity">PPA접수용량</label>
+                    <input type="text" class="form-input" id="ppa_receive_capacity" name="ppa_receive_capacity" placeholder="예) 500kW" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- 준공/운전 -->
+              <div class="date-section date-section--build">
+                <div class="date-section-head">준공 및 운전</div>
+                <div class="date-section-body">
+                  <div class="date-row">
+                    <label class="form-label" for="dev_completion_date">개발행위준공일</label>
+                    <input type="date" class="form-input" id="dev_completion_date" name="dev_completion_date" />
+                  </div>
+                  <div class="date-row">
+                    <label class="form-label" for="commercial_operation_date">상업운전개시일</label>
+                    <input type="date" class="form-input" id="commercial_operation_date" name="commercial_operation_date" />
+                  </div>
+                </div>
+              </div>
+
+            </div><!-- /.date-sections -->
+          </div><!-- /.form-right -->
+
+        </div><!-- /.register-layout -->
+
+        <div class="register-footer">
+          <button type="button" class="btn btn-danger" id="btn-delete" style="display:none">삭제</button>
+          <button type="button" class="btn btn-outline" id="btn-reset">초기화</button>
+          <button type="submit" class="btn btn-primary" id="btn-save">저장</button>
+        </div>
+      </form>
+    </div><!-- /.page-card-body -->
+  </div><!-- /.page-card -->
+</main>
+
+<script src="js/common.js"></script>
+<script src="js/register.js"></script>
+</body>
+</html>

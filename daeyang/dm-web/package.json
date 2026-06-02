@@ -1,0 +1,21 @@
+{
+  "name": "daeyang-monitoring",
+  "version": "2.0.0",
+  "description": "대양기업 태양광 발전 모니터링 — Express API + React",
+  "main": "server.js",
+  "scripts": {
+    "dev": "concurrently \"node server.js\" \"npm run dev --prefix client\"",
+    "start": "node server.js",
+    "build": "npm run build --prefix client"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "express": "^4.21.0",
+    "express-session": "^1.18.0",
+    "mysql2": "^3.22.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

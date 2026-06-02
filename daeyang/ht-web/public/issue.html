@@ -1,0 +1,189 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>발행·미리보기 — DAEYANG 전자세금계산서</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/htweb/images/blue-a-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/htweb/images/blue-a-16.png" />
+    <link rel="apple-touch-icon" href="/htweb/images/blue-a-192.png" />
+    <link rel="stylesheet" href="/htweb/css/style.css" />
+  </head>
+  <body>
+    <aside class="sidebar no-print" id="sidebar">
+      <div class="sidebar-header">
+        <button class="sidebar-toggle" id="sidebar-toggle" aria-label="메뉴 접기/펴기">
+          <span></span><span></span><span></span>
+        </button>
+        <a href="/htweb/index.html" class="sidebar-logo-link">
+          <img src="/htweb/images/logo-color.png" alt="대양기업 로고" class="sidebar-logo" />
+          
+        </a>
+      </div>
+      <nav class="sidebar-nav" id="main-nav">
+        <a href="/htweb/index.html" class="sidebar-link" title="메인">
+          <span class="sidebar-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+          <span class="sidebar-label">메인</span>
+        </a>
+        <a href="/htweb/supplier.html" class="sidebar-link" title="공급자">
+          <span class="sidebar-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V7l9-5 9 5v14"/><rect x="9" y="10" width="6" height="11"/></svg></span>
+          <span class="sidebar-label">공급자</span>
+        </a>
+        <a href="/htweb/recipients.html" class="sidebar-link" title="공급받는자">
+          <span class="sidebar-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          <span class="sidebar-label">공급받는자</span>
+        </a>
+        <a href="/htweb/issue.html" class="sidebar-link active" title="발행">
+          <span class="sidebar-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+          <span class="sidebar-label">발행</span>
+        </a>
+        <a href="/htweb/issue-history.html" class="sidebar-link" title="발행내역">
+          <span class="sidebar-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
+          <span class="sidebar-label">발행내역</span>
+        </a>
+        <a href="/htweb/profile.html" class="sidebar-link" title="내정보수정">
+          <span class="sidebar-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+          <span class="sidebar-label">내정보수정</span>
+        </a>
+        <a href="#" id="logout-btn" class="sidebar-link" title="로그아웃">
+          <span class="sidebar-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
+          <span class="sidebar-label">로그아웃</span>
+        </a>
+        <hr class="sidebar-divider" />
+        <div class="sidebar-menu-group">
+          <button type="button" id="btn-quicklinks-toggle" class="sidebar-link sidebar-menu-toggle" title="바로가기">
+            <span class="sidebar-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></span>
+            <span class="sidebar-label">바로가기</span>
+            <span class="sidebar-menu-arrow">›</span>
+          </button>
+          <div class="sidebar-submenu">
+            <a href="https://www.hometax.go.kr/" target="_blank" rel="noopener noreferrer" class="sidebar-sublink">국세청 홈택스</a>
+            <a href="https://www.hometaxbill.net:450/login.php" target="_blank" rel="noopener noreferrer" class="sidebar-sublink">홈택스빌</a>
+            <a href="https://partner.popbill.com/" target="_blank" rel="noopener noreferrer" class="sidebar-sublink">팝빌 파트너</a>
+          </div>
+        </div>
+      </nav>
+    </aside>
+
+    <div class="wrap issue-layout">
+      <div class="issue-top-bar no-print">
+        <div class="issue-top-bar-dates">
+          <div class="field issue-top-field">
+            <label for="issue-date">작성일자</label>
+            <input id="issue-date" type="date" />
+          </div>
+          <div class="field issue-top-field">
+            <label for="issue-year-month">귀속 날짜</label>
+            <input id="issue-year-month" type="month" />
+          </div>
+          <span class="issue-top-main-btns">
+            <button type="button" class="btn btn-primary" id="btn-hometax" disabled>전송</button>
+            <button type="button" class="btn btn-secondary" id="btn-print">인쇄</button>
+          </span>
+        </div>
+        <div class="issue-top-bar-meta">
+          <p id="issue-status-msg" class="hint issue-top-msg"></p>
+          <p id="preview-error" class="error-msg issue-top-error" style="display: none"></p>
+        </div>
+      </div>
+
+      <div class="issue-split">
+        <div class="card issue-session-col no-print">
+          <div class="issue-session-header-row">
+            <h2>발행 목록</h2>
+          </div>
+          <div class="issue-session-toolbar">
+            <div class="row issue-options-list-controls issue-session-list-controls">
+              <div class="field" style="flex: 2 1 200px">
+                <label for="issue-session-search">목록 검색</label>
+                <input type="search" id="issue-session-search" autocomplete="off" placeholder="이름·사업자번호 등" />
+              </div>
+              <div class="field issue-session-filter-field">
+                <label for="issue-kind-filter">구분</label>
+                <select id="issue-kind-filter">
+                  <option value="">전체</option>
+                  <option value="individual">개인</option>
+                  <option value="sole">개인사업자</option>
+                  <option value="corp">법인사업자</option>
+                  <option value="nonprofit">비영리법인</option>
+                  <option value="foreign">외국인</option>
+                </select>
+              </div>
+              <div class="field issue-session-filter-field">
+                <label for="issue-transmit-filter">전송상태</label>
+                <select id="issue-transmit-filter">
+                  <option value="">전체</option>
+                  <option value="not_sent">미전송</option>
+                  <option value="pending">발행대기</option>
+                  <option value="transmitted">전송완료</option>
+                  <option value="failed">전송실패</option>
+                </select>
+              </div>
+            </div>
+            <div class="issue-chips-btns-row">
+              <div class="search-col-chips" id="issue-search-col-chips">
+                <button type="button" class="search-col-chip active" data-col="all">전체</button>
+                <button type="button" class="search-col-chip" data-col="name">상호</button>
+                <button type="button" class="search-col-chip" data-col="owner">사업주</button>
+                <button type="button" class="search-col-chip" data-col="bizno">등록번호</button>
+                <button type="button" class="search-col-chip" data-col="phone">연락처</button>
+                <button type="button" class="search-col-chip" data-col="plant">발전소</button>
+              </div>
+              <div class="issue-options-action-row">
+                <span class="issue-options-select-btns-inner">
+                  <button type="button" class="btn btn-primary" id="btn-save-pending">저장</button>
+                  <button type="button" class="btn btn-secondary" id="btn-select-all">전체 선택</button>
+                  <button type="button" class="btn btn-secondary" id="btn-select-pending">미전송 선택</button>
+                  <button type="button" class="btn btn-secondary" id="btn-select-none">선택해제</button>
+                </span>
+              </div>
+            </div>
+            <div class="hint issue-session-filter-line">
+              <span id="issue-session-filter-count"></span>
+              <span class="issue-totals-group">
+                <span id="issue-list-total"></span>
+                <span id="issue-selected-total"></span>
+              </span>
+            </div>
+          </div>
+          <div class="session-list-wrap">
+            <table class="data-table issue-session-table">
+              <thead>
+                <tr>
+                  <th class="issue-session-th-select">선택</th>
+                  <th>공급받는자</th>
+                  <th>발전소</th>
+                  <th>사업주</th>
+                  <th>합계</th>
+                  <th>전송상태</th>
+                </tr>
+              </thead>
+              <tbody id="issue-session-body">
+                <tr>
+                  <td colspan="6" style="color: var(--text-muted)">목록이 없습니다.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card issue-invoice-pane">
+          <div class="issue-invoice-header-row no-print">
+            <h2 class="issue-invoice-heading">전자세금계산서</h2>
+            <div id="invoice-toolbar" class="issue-invoice-toolbar no-print">
+              <div class="invoice-pager">
+                <button type="button" class="btn btn-secondary" id="btn-inv-prev">이전</button>
+                <span id="invoice-page-label" class="hint" style="margin: 0"></span>
+                <button type="button" class="btn btn-secondary" id="btn-inv-next">다음</button>
+              </div>
+            </div>
+          </div>
+          <div id="preview-single" class="issue-preview-single"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/htweb/js/common.js"></script>
+    <script src="/htweb/js/issue.js"></script>
+  </body>
+</html>

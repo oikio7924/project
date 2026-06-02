@@ -1,0 +1,209 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>공급자 설정 — DAEYANG 전자세금계산서</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/htweb/images/blue-a-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/htweb/images/blue-a-16.png" />
+    <link rel="apple-touch-icon" href="/htweb/images/blue-a-192.png" />
+    <link rel="stylesheet" href="/htweb/css/style.css" />
+  </head>
+  <body>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <button class="sidebar-toggle" id="sidebar-toggle" aria-label="메뉴 접기/펴기">
+          <span></span><span></span><span></span>
+        </button>
+        <a href="/htweb/index.html" class="sidebar-logo-link">
+          <img src="/htweb/images/logo-color.png" alt="대양기업 로고" class="sidebar-logo" />
+          
+        </a>
+      </div>
+      <nav class="sidebar-nav" id="main-nav">
+        <a href="/htweb/index.html" class="sidebar-link" title="메인">
+          <span class="sidebar-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+          <span class="sidebar-label">메인</span>
+        </a>
+        <a href="/htweb/supplier.html" class="sidebar-link active" title="공급자">
+          <span class="sidebar-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V7l9-5 9 5v14"/><rect x="9" y="10" width="6" height="11"/></svg></span>
+          <span class="sidebar-label">공급자</span>
+        </a>
+        <a href="/htweb/recipients.html" class="sidebar-link" title="공급받는자">
+          <span class="sidebar-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          <span class="sidebar-label">공급받는자</span>
+        </a>
+        <a href="/htweb/issue.html" class="sidebar-link" title="발행">
+          <span class="sidebar-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+          <span class="sidebar-label">발행</span>
+        </a>
+        <a href="/htweb/issue-history.html" class="sidebar-link" title="발행내역">
+          <span class="sidebar-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
+          <span class="sidebar-label">발행내역</span>
+        </a>
+        <a href="/htweb/profile.html" class="sidebar-link" title="내정보수정">
+          <span class="sidebar-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+          <span class="sidebar-label">내정보수정</span>
+        </a>
+        <a href="#" id="logout-btn" class="sidebar-link" title="로그아웃">
+          <span class="sidebar-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
+          <span class="sidebar-label">로그아웃</span>
+        </a>
+        <hr class="sidebar-divider" />
+        <div class="sidebar-menu-group">
+          <button type="button" id="btn-quicklinks-toggle" class="sidebar-link sidebar-menu-toggle" title="바로가기">
+            <span class="sidebar-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></span>
+            <span class="sidebar-label">바로가기</span>
+            <span class="sidebar-menu-arrow">›</span>
+          </button>
+          <div class="sidebar-submenu">
+            <a href="https://www.hometax.go.kr/" target="_blank" rel="noopener noreferrer" class="sidebar-sublink">국세청 홈택스</a>
+            <a href="https://www.hometaxbill.net:450/login.php" target="_blank" rel="noopener noreferrer" class="sidebar-sublink">홈택스빌</a>
+            <a href="https://partner.popbill.com/" target="_blank" rel="noopener noreferrer" class="sidebar-sublink">팝빌 파트너</a>
+          </div>
+        </div>
+      </nav>
+    </aside>
+
+    <div class="wrap">
+      <div class="card">
+        <h2>공급자 목록</h2>
+        <p class="hint" id="supplier-active-label"></p>
+        <div class="table-scroll">
+          <table class="data-table" id="supplier-list-table">
+            <thead>
+              <tr>
+                <th>발행 사용</th>
+                <th style="width: 56px">번호</th>
+                <th>상호(법인명)</th>
+                <th>등록번호</th>
+                <th>작업</th>
+              </tr>
+            </thead>
+            <tbody id="supplier-list-body"></tbody>
+          </table>
+        </div>
+        <div class="supplier-list-pagination" id="supplier-list-pagination" style="display: none">
+          <button type="button" class="btn btn-secondary" id="supplier-page-prev">이전</button>
+          <span class="hint" id="supplier-page-info"></span>
+          <button type="button" class="btn btn-secondary" id="supplier-page-next">다음</button>
+        </div>
+        <p style="margin-top: 12px">
+          <button type="button" class="btn btn-secondary" id="btn-add-supplier">공급자 추가</button>
+        </p>
+      </div>
+
+      <form id="supplier-form" class="supplier-form-page">
+        <div class="supplier-form-split">
+          <div class="card supplier-form-col">
+            <div class="panel-title-row">
+              <h2 id="supplier-form-heading" style="margin:0">공급자 편집</h2>
+              <div class="panel-title-actions">
+                <button type="submit" class="btn btn-primary">저장</button>
+                <span id="save-msg" class="hint"></span>
+              </div>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label for="bizNo">등록번호</label>
+                <input id="bizNo" placeholder="숫자만 입력" />
+              </div>
+              <div class="field">
+                <label for="corpName">상호(법인명)</label>
+                <input id="corpName" />
+              </div>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label for="ceoName">성명</label>
+                <input id="ceoName" />
+              </div>
+              <div class="field">
+                <label for="phone">연락처</label>
+                <input id="phone" type="tel" inputmode="numeric" placeholder="숫자만 입력" autocomplete="tel" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="email">이메일</label>
+              <input id="email" type="email" />
+            </div>
+            <div class="field">
+              <label for="address">사업장 주소</label>
+              <input id="address" />
+            </div>
+            <div class="row">
+              <div class="field">
+                <label for="bizType">업태</label>
+                <input id="bizType" placeholder="예: 전기업" />
+              </div>
+              <div class="field">
+                <label for="bizItem">종목</label>
+                <input id="bizItem" placeholder="예: 태양광발전" />
+              </div>
+            </div>
+            <div class="field">
+              <label>사업자등록증</label>
+              <div class="biz-cert-area" id="supplier-cert-area"></div>
+              <input id="supplier-cert-file" type="file" accept="application/pdf,.pdf,.jpg,.jpeg,.png" style="display:none" />
+            </div>
+          </div>
+          <div class="card supplier-form-col supplier-contact-card">
+            <h2>담당자</h2>
+            <div class="field">
+              <label for="contactDept">부서</label>
+              <select id="contactDept">
+                <option value="">부서 선택</option>
+                <option value="경영지원부">경영지원부</option>
+                <option value="사업개발부">사업개발부</option>
+                <option value="기술부">기술부</option>
+                <option value="기업부설연구소">기업부설연구소</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="contactName">이름</label>
+              <input id="contactName" placeholder="담당자 성명" autocomplete="name" />
+            </div>
+            <div class="row supplier-contact-phone-row">
+              <div class="field">
+                <label for="contactPhone">연락처</label>
+                <input id="contactPhone" type="tel" inputmode="numeric" placeholder="담당자 연락처" autocomplete="tel" />
+              </div>
+              <div class="field">
+                <label for="contactExtension">내선</label>
+                <select id="contactExtension">
+                  <option value="">내선 선택</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label for="contactEmailLocal">이메일</label>
+              <div class="contact-email-split">
+                <input id="contactEmailLocal" type="text" placeholder="아이디" autocomplete="email" />
+                <span class="contact-email-at" aria-hidden="true">@</span>
+                <select id="contactEmailDomainSelect">
+                  <option value="">도메인 선택</option>
+                  <option value="dycompany.co.kr">dycompany.co.kr</option>
+                  <option value="naver.com">naver.com</option>
+                  <option value="hanmail.net">hanmail.net</option>
+                  <option value="gmail.com">gmail.com</option>
+                  <option value="custom">직접 입력</option>
+                </select>
+              </div>
+              <input
+                id="contactEmailDomainCustom"
+                class="contact-email-domain-custom"
+                type="text"
+                placeholder="도메인 직접 입력"
+                autocomplete="off"
+                style="display: none"
+              />
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <script src="/htweb/js/common.js"></script>
+    <script src="/htweb/js/supplier.js"></script>
+  </body>
+</html>

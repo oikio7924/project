@@ -1,0 +1,46 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>로그인 — DAEYANG 전자세금계산서</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/htweb/images/blue-a-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/htweb/images/blue-a-16.png" />
+    <link rel="apple-touch-icon" href="/htweb/images/blue-a-192.png" />
+    <link rel="stylesheet" href="/htweb/css/style.css" />
+  </head>
+  <body class="no-sidebar">
+    <div class="wrap">
+      <div class="card login-box">
+        <div class="login-logo-area">
+          <img src="/htweb/images/logo-color.png" alt="대양기업 로고" class="login-logo" />
+          <p class="login-logo-sub">전자세금계산서 시스템</p>
+        </div>
+        <h2>로그인</h2>
+        <form id="login-form">
+          <div class="field">
+            <label for="username">아이디</label>
+            <input id="username" name="username" autocomplete="username" required />
+          </div>
+          <div class="field">
+            <label for="password">비밀번호</label>
+            <input id="password" type="password" name="password" autocomplete="current-password" required />
+          </div>
+          <label class="rec-check-row login-remember-row" style="margin-top: 8px">
+            <input id="remember-username" type="checkbox" />
+            <span>아이디 저장</span>
+          </label>
+          <button type="submit" class="btn btn-primary" style="margin-top: 12px; width: 100%">로그인</button>
+          <p id="login-error" class="error-msg" style="display: none"></p>
+        </form>
+        <div class="login-footer-links">
+          <span>계정이 없으신가요?</span>
+          <a href="/htweb/register.html">회원가입</a>
+        </div>
+      </div>
+    </div>
+
+    <script src="/htweb/js/common.js"></script>
+    <script src="/htweb/js/login.js"></script>
+  </body>
+</html>

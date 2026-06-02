@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <base href="/bdweb/" />
+  <title>DAEYANG 일정관리
+  </title>
+  <link rel="icon" type="image/png" sizes="32x32" href="images/blue-a-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="images/blue-a-16.png" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <a href="index.html"><img class="brand-logo" src="images/logo-color.png" alt="로고" /></a>
+    </div>
+    <nav class="main-nav">
+      <a href="index.html" class="nav-item active">캘린더</a>
+      <a href="register.html" class="nav-item">발전소 등록</a>
+      <a href="list.html" class="nav-item">인허가 현황</a>
+    </nav>
+  </div>
+</header>
+
+<main class="page-main">
+  <div class="calendar-layout">
+
+    <!-- 캘린더 패널 -->
+    <div class="calendar-panel">
+      <div class="cal-controls">
+        <div class="cal-nav">
+          <button class="cal-nav-btn" id="btn-first" title="1년 전">«</button>
+          <button class="cal-nav-btn" id="btn-prev" title="이전 달">‹</button>
+          <button class="cal-nav-btn cal-today-btn" id="btn-today">오늘로 이동</button>
+          <button class="cal-nav-btn" id="btn-next" title="다음 달">›</button>
+          <button class="cal-nav-btn" id="btn-last" title="1년 후">»</button>
+        </div>
+        <h2 class="cal-title" id="cal-title"></h2>
+        <div class="cal-view-toggle">
+          <button class="view-btn active" id="btn-monthly">월간</button>
+          <button class="view-btn" id="btn-yearly">연간</button>
+        </div>
+      </div>
+
+      <div class="cal-legend">
+        <span class="legend-item"><span class="legend-dot legend-dot--power-expire"></span>발전사업 만료일</span>
+        <span class="legend-divider"></span>
+        <span class="legend-item"><span class="legend-dot legend-dot--dev-expire"></span>개발행위 만료일</span>
+      </div>
+
+      <!-- 월간 뷰 -->
+      <div id="view-monthly">
+        <div class="cal-weekdays">
+          <div class="cal-weekday cal-weekday--sun">일</div>
+          <div class="cal-weekday">월</div>
+          <div class="cal-weekday">화</div>
+          <div class="cal-weekday">수</div>
+          <div class="cal-weekday">목</div>
+          <div class="cal-weekday">금</div>
+          <div class="cal-weekday cal-weekday--sat">토</div>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
+
+      <!-- 연간 뷰 -->
+      <div id="view-yearly" style="display:none">
+        <div class="yearly-grid" id="yearly-grid"></div>
+      </div>
+    </div>
+
+    <!-- 알림 패널 -->
+    <div class="alerts-panel">
+      <div class="alerts-header">
+        <div class="alerts-title-row">
+          <span class="alerts-icon">🔔</span>
+          <h3 class="alerts-title">인허가 알림</h3>
+        </div>
+      </div>
+      <div class="alerts-tabs" id="alerts-tabs">
+        <button type="button" class="alerts-tab active" data-tab="overdue" id="tab-overdue">
+          만료 초과 <span class="tab-count" id="tab-count-overdue">0</span>
+        </button>
+        <button type="button" class="alerts-tab" data-tab="upcoming" id="tab-upcoming">
+          만료예정 <span class="tab-count upcoming" id="tab-count-upcoming">0</span>
+        </button>
+      </div>
+      <div class="alerts-list" id="alerts-list">
+        <div class="alerts-loading">로딩 중...</div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- 일 상세 모달 -->
+<div class="modal-overlay" id="day-modal" style="display:none">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 class="modal-title" id="day-modal-title"></h3>
+      <button class="modal-close" id="day-modal-close">×</button>
+    </div>
+    <div class="modal-body" id="day-modal-body"></div>
+  </div>
+</div>
+
+<script src="js/common.js"></script>
+<script src="js/calendar.js"></script>
+</body>
+</html>

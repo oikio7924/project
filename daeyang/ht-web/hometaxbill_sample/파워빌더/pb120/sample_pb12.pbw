@@ -1,0 +1,8 @@
+Save Format v3.0(19990112)
+@begin Unchecked
+@end;
+@begin Targets
+ 0 "sample_pb12.pbt";
+@end;
+DefaultTarget "sample_pb12.pbt";
+DefaultRemoteTarget "sample_pb12.pbt";

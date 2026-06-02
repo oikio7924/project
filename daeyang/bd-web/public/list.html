@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <base href="/bdweb/" />
+  <title>인허가 현황 — DAEYANG</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="images/blue-a-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="images/blue-a-16.png" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <a href="index.html"><img class="brand-logo" src="images/logo-color.png" alt="로고" /></a>
+    </div>
+    <nav class="main-nav">
+      <a href="index.html" class="nav-item">캘린더</a>
+      <a href="register.html" class="nav-item">발전소 등록</a>
+      <a href="list.html" class="nav-item active">인허가 현황</a>
+    </nav>
+  </div>
+</header>
+
+<main class="page-main">
+
+  <!-- 페이지 타이틀 -->
+  <div class="page-card" style="margin-bottom:14px">
+    <div class="page-card-header">
+      <span class="page-card-title">인허가 진행 현황</span>
+    </div>
+  </div>
+
+  <!-- 필터 바 -->
+  <div class="list-filter-bar">
+    <div class="filter-group">
+      <span class="filter-label">검색기간</span>
+      <button class="quick-btn active" data-range="all">전체</button>
+      <button class="quick-btn" data-range="3m">3개월</button>
+      <button class="quick-btn" data-range="6m">6개월</button>
+      <button class="quick-btn" data-range="1y">1년</button>
+    </div>
+    <div class="filter-divider"></div>
+    <div class="filter-group">
+      <input type="date" class="date-input-sm" id="filter-from" />
+      <span class="filter-sep">~</span>
+      <input type="date" class="date-input-sm" id="filter-to" />
+    </div>
+    <div class="filter-divider"></div>
+    <div class="filter-group">
+      <span class="filter-label">개발행위</span>
+      <select class="filter-select" id="filter-dev-status">
+        <option value="">전체</option>
+        <option value="해당">해당</option>
+        <option value="미대상">미대상</option>
+        <option value="면제대상">면제대상</option>
+      </select>
+    </div>
+    <div class="filter-divider"></div>
+    <button class="btn btn-primary btn-sm" id="btn-search-filter">조회</button>
+  </div>
+
+  <!-- 툴바 -->
+  <div class="list-toolbar">
+    <div class="search-wrap">
+      <input type="text" class="search-input" id="search-input" placeholder="발전소명 / 사업자명 / 주소 검색" />
+      <button class="btn btn-primary btn-sm" id="btn-search">검색</button>
+    </div>
+    <div class="toolbar-right">
+      <button class="btn btn-success btn-sm" id="btn-export">엑셀 다운로드</button>
+    </div>
+  </div>
+
+  <!-- 테이블 -->
+  <div class="table-wrap">
+    <div class="table-scroll">
+      <table class="data-table" id="main-table">
+        <thead>
+          <tr>
+            <th style="width:36px;text-align:center">
+              <input type="checkbox" id="check-all" />
+            </th>
+            <th data-sort="plant_name">발전소명</th>
+            <th>주소</th>
+            <th data-sort="power_biz_permit_expire">발전사업허가만료일</th>
+            <th data-sort="dev_permit_expire">개발행위만료일</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <tr><td colspan="5" style="text-align:center;padding:40px;color:#94a3b8">로딩 중...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-footer">
+      <div class="table-info" id="table-info"></div>
+    </div>
+  </div>
+
+  <!-- 하단 액션 -->
+  <div style="display:flex;justify-content:center;margin-top:14px;gap:10px">
+    <button class="btn btn-danger" id="btn-bulk-delete">선택 삭제</button>
+  </div>
+
+</main>
+
+<script src="js/common.js"></script>
+<script src="js/list.js"></script>
+</body>
+</html>
