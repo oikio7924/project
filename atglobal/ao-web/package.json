@@ -1,0 +1,27 @@
+{
+  "name": "atglobal-ao-web",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "nodemon server/server.js",
+    "dev:client": "npm --prefix client run dev",
+    "start": "node server/server.js",
+    "build": "npm --prefix client run build",
+    "docx": "node docs/generate-docx.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "connect-pg-simple": "^10.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "docx": "^9.7.1",
+    "nodemon": "^3.1.9"
+  }
+}
