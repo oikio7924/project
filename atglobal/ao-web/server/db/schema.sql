@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS product_batches CASCADE;
 DROP TABLE IF EXISTS shipments CASCADE;
 DROP TABLE IF EXISTS sales CASCADE;
 DROP TABLE IF EXISTS order_items CASCADE;
@@ -17,6 +18,7 @@ CREATE TABLE users (
   role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'distributor', 'dealer')),
   status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'inactive', 'rejected')),
   distributor_id INTEGER REFERENCES users(id),
+  address VARCHAR(300),
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -27,6 +29,7 @@ CREATE TABLE products (
   model_name VARCHAR(100) NOT NULL,
   spec VARCHAR(200),
   base_price NUMERIC(15, 2) DEFAULT 0,
+  barcode_prefix VARCHAR(50),
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT NOW()
 );
@@ -101,6 +104,18 @@ CREATE TABLE shipments (
   tracking_number VARCHAR(100),
   shipped_at TIMESTAMP DEFAULT NOW(),
   note TEXT
+);
+
+CREATE TABLE product_batches (
+  id SERIAL PRIMARY KEY,
+  product_id INTEGER REFERENCES products(id) NOT NULL,
+  barcode_raw VARCHAR(300),
+  lot_number VARCHAR(100),
+  manufacture_date DATE,
+  quantity INTEGER NOT NULL DEFAULT 0,
+  note TEXT,
+  scanned_by INTEGER REFERENCES users(id),
+  scanned_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE INDEX idx_users_role_status ON users(role, status);

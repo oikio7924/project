@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react'
+import { useEffect, useRef, useState, useMemo, forwardRef, useImperativeHandle } from 'react'
 
 const INIT_LAT   = 36.2
 const INIT_LNG   = 127.8
@@ -7,8 +7,8 @@ const INIT_LEVEL = 13
 // 대한민국 시도 전체 목록 (주소 첫 토큰 인식에 사용)
 const SIDO_SET = new Set([
   '서울특별시', '부산광역시', '대구광역시', '인천광역시', '광주광역시',
-  '대전광역시', '울산광역시', '세종특별자치시', '경기도', '강원도',
-  '충청북도', '충청남도', '전라북도', '전라남도', '경상북도', '경상남도',
+  '대전광역시', '울산광역시', '세종특별자치시', '경기도', '강원도', '강원특별자치도',
+  '충청북도', '충청남도', '전라북도', '전북특별자치도', '전라남도', '경상북도', '경상남도',
   '제주특별자치도',
 ])
 
@@ -23,10 +23,10 @@ const SIDO_SHORT = {
 }
 function shortSido(sido) { return SIDO_SHORT[sido] || sido }
 
-// SDK 한 번만 로드
+// SDK 한 번만 로드 (export해서 다른 컴포넌트와 공유)
 let sdkLoading = false
 const sdkCbs = []
-function loadSdk(key, cb) {
+export function loadSdk(key, cb) {
   if (window.kakao?.maps) { cb(); return }
   sdkCbs.push(cb)
   if (sdkLoading) return
@@ -42,7 +42,7 @@ const SIDO_ABBR = {
   '서울': '서울특별시', '부산': '부산광역시', '대구': '대구광역시',
   '인천': '인천광역시', '광주': '광주광역시', '대전': '대전광역시',
   '울산': '울산광역시', '세종': '세종특별자치시',
-  '경기': '경기도', '강원': '강원도',
+  '경기': '경기도', '강원': '강원도', '강원특별자치도': '강원도',
   '충북': '충청북도', '충남': '충청남도',
   '전북': '전라북도', '전북특별자치도': '전라북도', '전남': '전라남도',
   '경북': '경상북도', '경남': '경상남도',
@@ -114,6 +114,13 @@ const KakaoMap = forwardRef(function KakaoMap({ appKey, sites, onSelectSite, onF
   // 계층 탐색 상태: depth 0=시도, 1=시군구, 2=읍면동, 3=개별
   const [nav, setNav] = useState({ depth: 0, sido: '', sigungu: '', eupmyeondong: '' })
 
+  // sites 변경 시에만 주소 파싱 — drawLevel 내 중복 parseAddr 호출 방지
+  const parsedAddrMap = useMemo(() => {
+    const m = new Map()
+    sites.forEach((s) => { m.set(s.id, parseAddr(s.address)) })
+    return m
+  }, [sites])
+
   // 부모에서 ref.current.reset() 호출 가능
   useImperativeHandle(ref, () => ({
     reset() {
@@ -142,8 +149,8 @@ const KakaoMap = forwardRef(function KakaoMap({ appKey, sites, onSelectSite, onF
     const map = new kakao.maps.Map(containerRef.current, {
       center: new kakao.maps.LatLng(INIT_LAT, INIT_LNG),
       level: INIT_LEVEL,
+      mapTypeId: kakao.maps.MapTypeId.HYBRID,
     })
-    map.setMapTypeId(kakao.maps.MapTypeId.HYBRID)
     mapRef.current = map
     drawLevel({ depth: 0, sido: '', sigungu: '', eupmyeondong: '' })
   }
@@ -201,17 +208,19 @@ const KakaoMap = forwardRef(function KakaoMap({ appKey, sites, onSelectSite, onF
     let baseSites = valid
     let keyFn
 
+    const pa = (s) => parsedAddrMap.get(s.id) || parseAddr(s.address)
+
     if (depth === 0) {
-      keyFn = s => parseAddr(s.address).sido
+      keyFn = s => pa(s).sido
     } else if (depth === 1) {
-      baseSites = valid.filter(s => (parseAddr(s.address).sido || '기타') === sido)
-      keyFn = s => parseAddr(s.address).sigungu
+      baseSites = valid.filter(s => (pa(s).sido || '기타') === sido)
+      keyFn = s => pa(s).sigungu
     } else {
       baseSites = valid.filter(s => {
-        const p = parseAddr(s.address)
+        const p = pa(s)
         return (p.sido || '기타') === sido && p.sigungu === sigungu
       })
-      keyFn = s => parseAddr(s.address).eupmyeondong
+      keyFn = s => pa(s).eupmyeondong
     }
 
     const groups = groupBy(baseSites, keyFn)

@@ -2,21 +2,27 @@ import { useEffect, useState } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { apiGet, apiSend } from '../../api'
 
-const ADMIN_NAV = [
-  { path: '/admin/members',  label: '회원관리',   breadcrumb: '회원 관리 > 회원리스트' },
-  { path: '/admin/plants',   label: '발전소관리',  breadcrumb: '발전소 관리' },
-  { path: '/admin/map-keys', label: '지도키 관리', breadcrumb: '지도키 관리' },
+const ALL_NAV = [
+  { path: '/admin/members',  label: '회원관리',   breadcrumb: '회원 관리 > 회원리스트', minRole: 'admin' },
+  { path: '/admin/plants',   label: '발전소관리', breadcrumb: '발전소 관리',            minRole: 'admin' },
+  { path: '/admin/map-keys', label: 'API 관리',breadcrumb: 'API 관리',            minRole: 'developer' },
 ]
 
 export default function AdminLayout() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  const [role, setRole] = useState('')
 
-  const current = ADMIN_NAV.find((n) => pathname.startsWith(n.path))
+  const navItems = ALL_NAV.filter((n) =>
+    n.minRole === 'admin' || role === 'developer'
+  )
+  const current = ALL_NAV.find((n) => pathname.startsWith(n.path))
   const breadcrumb = current?.breadcrumb || ''
 
   useEffect(() => {
-    apiGet('/api/me').catch(() => navigate('/login'))
+    apiGet('/api/me')
+      .then((d) => setRole(d.user?.role || 'user'))
+      .catch(() => navigate('/login'))
   }, [])
 
   // body.admin-body 클래스 관리
@@ -41,7 +47,8 @@ export default function AdminLayout() {
 
         {/* 네비게이션 */}
         <nav className="admin-nav">
-          {ADMIN_NAV.map((item) => (
+          <NavLink to="/" end className={() => ''}>← 모니터링으로</NavLink>
+          {navItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}

@@ -105,13 +105,13 @@ async function ensureSupplierCertDir() {
 function recipientCertUrl(fileName) {
   const name = String(fileName || "").trim();
   if (!name) return "";
-  return "/" + RECIPIENT_CERT_REL_DIR.replace(/\\/g, "/") + "/" + name;
+  return BASE_PATH + "/" + RECIPIENT_CERT_REL_DIR.replace(/\\/g, "/") + "/" + name;
 }
 
 function supplierCertUrl(fileName) {
   const name = String(fileName || "").trim();
   if (!name) return "";
-  return "/" + SUPPLIER_CERT_REL_DIR.replace(/\\/g, "/") + "/" + name;
+  return BASE_PATH + "/" + SUPPLIER_CERT_REL_DIR.replace(/\\/g, "/") + "/" + name;
 }
 
 function cleanUploadName(fileName) {
@@ -1045,7 +1045,7 @@ router.post(
     await ensureSupplierCertDir();
     const newFile = "supplier-" + sid + "-" + Date.now() + "-" + crypto.randomBytes(6).toString("hex") + ".pdf";
     await fs.promises.writeFile(path.join(SUPPLIER_CERT_ABS_DIR, newFile), req.file.buffer);
-    const originalName = cleanUploadName(req.file.originalname || "사업자등록증.pdf");
+    const originalName = cleanUploadName(Buffer.from(req.file.originalname || "", "latin1").toString("utf8") || "사업자등록증.pdf");
     const oldFile = String(found[0].biz_cert_file || "").trim();
     await q("UPDATE suppliers SET biz_cert_file=?, biz_cert_name=? WHERE id = ? AND user_id = ?", [newFile, originalName, sid, req.session.userId]);
     if (oldFile && oldFile !== newFile) await removeSupplierCertFile(oldFile);
@@ -1306,7 +1306,7 @@ router.put("/api/recipients/:id", needLogin, async function (req, res) {
       b.svcTax        !== undefined ? (b.svcTax        ? 1 : 0) : (rec.svcTax        ? 1 : 0),
       b.svcBilling    !== undefined ? (b.svcBilling    ? 1 : 0) : (rec.svcBilling    ? 1 : 0),
       b.svcMonitoring !== undefined ? (b.svcMonitoring ? 1 : 0) : (rec.svcMonitoring ? 1 : 0),
-      b.monitoringType !== undefined ? String(b.monitoringType || "") : String(rec.monitoringType || ""),
+      (b.svcMonitoring !== undefined ? b.svcMonitoring : rec.svcMonitoring) ? (b.monitoringType !== undefined ? String(b.monitoringType || "") : String(rec.monitoringType || "")) : "",
       b.paymentMethod  !== undefined ? String(b.paymentMethod  || "") : String(rec.paymentMethod  || ""),
       id,
       req.session.userId,
@@ -1350,7 +1350,7 @@ router.post(
       crypto.randomBytes(6).toString("hex") +
       ".pdf";
     await fs.promises.writeFile(path.join(RECIPIENT_CERT_ABS_DIR, newFile), req.file.buffer);
-    const originalName = cleanUploadName(req.file.originalname || "사업자등록증.pdf");
+    const originalName = cleanUploadName(Buffer.from(req.file.originalname || "", "latin1").toString("utf8") || "사업자등록증.pdf");
     await q(
       "UPDATE recipients SET biz_cert_file=?, biz_cert_name=? WHERE id = ? AND user_id = ?",
       [newFile, originalName, id, req.session.userId]

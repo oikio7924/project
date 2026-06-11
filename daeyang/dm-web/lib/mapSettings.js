@@ -2,9 +2,10 @@
  * 맵 API 키 — DB(dm_settings) 우선, 없으면 .env
  */
 const MAP_KEYS = {
-  google: "map_google_key",
-  naver: "map_naver_key",
-  kakao: "map_kakao_key",
+  google:    "map_google_key",
+  naver:     "map_naver_key",
+  kakao:     "map_kakao_key",
+  kakaoRest: "kakao_rest_key",
 };
 
 async function ensureSettingsTable(db) {
@@ -31,29 +32,33 @@ async function setSetting(db, key, value) {
 
 function fromEnv() {
   return {
-    google: process.env.GOOGLE_MAP_KEY || process.env.MAP_GOOGLE_KEY || "",
-    naver: process.env.NAVER_MAP_KEY || process.env.MAP_NAVER_KEY || "",
-    kakao: process.env.KAKAO_MAP_KEY || process.env.DAUM_MAP_KEY || process.env.MAP_KAKAO_KEY || "",
+    google:    process.env.GOOGLE_MAP_KEY || process.env.MAP_GOOGLE_KEY || "",
+    naver:     process.env.NAVER_MAP_KEY  || process.env.MAP_NAVER_KEY  || "",
+    kakao:     process.env.KAKAO_MAP_KEY  || process.env.DAUM_MAP_KEY   || process.env.MAP_KAKAO_KEY || "",
+    kakaoRest: process.env.KAKAO_REST_KEY || "",
   };
 }
 
 async function getMapKeys(db) {
   const env = fromEnv();
   if (!db) return env;
-  const google = await getSetting(db, MAP_KEYS.google);
-  const naver = await getSetting(db, MAP_KEYS.naver);
-  const kakao = await getSetting(db, MAP_KEYS.kakao);
+  const google    = await getSetting(db, MAP_KEYS.google);
+  const naver     = await getSetting(db, MAP_KEYS.naver);
+  const kakao     = await getSetting(db, MAP_KEYS.kakao);
+  const kakaoRest = await getSetting(db, MAP_KEYS.kakaoRest);
   return {
-    google: google || env.google,
-    naver: naver || env.naver,
-    kakao: kakao || env.kakao,
+    google:    google    || env.google,
+    naver:     naver     || env.naver,
+    kakao:     kakao     || env.kakao,
+    kakaoRest: kakaoRest || env.kakaoRest,
   };
 }
 
 async function saveMapKeys(db, keys) {
-  await setSetting(db, MAP_KEYS.google, keys.google || "");
-  await setSetting(db, MAP_KEYS.naver, keys.naver || "");
-  await setSetting(db, MAP_KEYS.kakao, keys.kakao || "");
+  await setSetting(db, MAP_KEYS.google,    keys.google    || "");
+  await setSetting(db, MAP_KEYS.naver,     keys.naver     || "");
+  await setSetting(db, MAP_KEYS.kakao,     keys.kakao     || "");
+  await setSetting(db, MAP_KEYS.kakaoRest, keys.kakaoRest || "");
 }
 
 async function seedMapKeysFromEnv(db) {

@@ -3,12 +3,24 @@ import { useNavigate } from 'react-router-dom'
 import { apiGet, formatNum, statusDotClass } from '../api'
 import { UserContext } from '../App'
 import KakaoMap from '../components/KakaoMap'
+import { SiteMarkerMap } from '../components/PlantCard'
 
 function fmtEnergy(kwh) {
   const v = Number(kwh) || 0
-  if (v >= 1000000) return formatNum(v / 1000000, 2) + ' GWh'
-  if (v >= 1000)    return formatNum(v / 1000, 2) + ' MWh'
-  return formatNum(v, 2) + ' kWh'
+  if (v >= 1000000) return { value: formatNum(v / 1000000, 2), unit: 'GWh' }
+  if (v >= 1000)    return { value: formatNum(v / 1000, 2),    unit: 'MWh' }
+  return { value: formatNum(v, 2), unit: 'kWh' }
+}
+
+function fmtPower(kw) {
+  const v = Number(kw) || 0
+  if (v >= 1000) return { value: formatNum(v / 1000, 2), unit: 'MW' }
+  return { value: formatNum(v, 2), unit: 'kW' }
+}
+
+function fmtEnergyStr(kwh) {
+  const r = fmtEnergy(kwh)
+  return `${r.value} ${r.unit}`
 }
 
 const STATUS_LABEL    = { normal: '정상', no_comm: '통신없음', fault: '장애', offline: '오프' }
@@ -32,7 +44,6 @@ export default function Overview() {
   const [mapFiltered, setMapFiltered]     = useState(null) // null = 전체, 배열 = 지도 필터
   const [selectedSite, setSelectedSite]   = useState(null)
   const [detail, setDetail]               = useState(null)
-  const [alarms, setAlarms]               = useState([])
 
   useEffect(() => {
     apiGet('/api/config').then((c) => setKakaoKey(c.mapKeys?.kakao || '')).catch(console.error)
@@ -41,9 +52,8 @@ export default function Overview() {
   }, [])
 
   useEffect(() => {
-    if (!selectedSite) { setDetail(null); setAlarms([]); return }
+    if (!selectedSite) { setDetail(null); return }
     apiGet(`/api/sites/${selectedSite.id}`).then(setDetail).catch(console.error)
-    apiGet(`/api/alarms?siteId=${selectedSite.id}`).then((d) => setAlarms(d.alarms || [])).catch(console.error)
   }, [selectedSite])
 
   // 지도 필터 → 지역/상태/검색 필터 순으로 적용
@@ -83,11 +93,11 @@ export default function Overview() {
         <article className="card kpi-card">
           <h3>전체 발전량</h3>
           <div className="kpi-grid">
-            <KpiItem label="총 현재출력"   value={formatNum(summary?.totalOutputKw, 2)}  unit="kW" />
-            <KpiItem label="총 금일발전량" value={formatNum(summary?.todayMwh, 2)}        unit="MWh" />
-            <KpiItem label="총 전일발전량" value={formatNum(summary?.yesterdayMwh, 2)}    unit="MWh" />
-            <KpiItem label="총 누적발전량" value={formatNum(summary?.cumulativeGwh, 2)}   unit="GWh" />
-            <KpiItem label="총 설비용량"   value={formatNum(summary?.totalCapacityKw, 1)} unit="kW" />
+            <KpiItem label="총 현재출력"   {...fmtPower(summary?.totalOutputKw)} />
+            <KpiItem label="총 금일발전량" {...fmtEnergy(summary?.todayKwh)} />
+            <KpiItem label="총 전일발전량" {...fmtEnergy(summary?.yesterdayKwh)} />
+            <KpiItem label="총 누적발전량" {...fmtEnergy(summary?.cumulativeKwh)} />
+            <KpiItem label="총 설비용량"   {...fmtPower(summary?.totalCapacityKw)} />
           </div>
         </article>
       </div>
@@ -133,7 +143,7 @@ export default function Overview() {
             </div>
           </div>
 
-          <div className="site-card-grid" style={{ flex: 1, overflowY: 'auto', gridTemplateColumns: '1fr 1fr' }}>
+          <div className="site-card-grid" style={{ flex: 1, overflowY: 'auto' }}>
             {displaySites.length === 0 && (
               <p className="hint" style={{ padding: 20, gridColumn: '1/-1' }}>현장이 없습니다.</p>
             )}
@@ -148,8 +158,11 @@ export default function Overview() {
           </div>
         </div>
 
-        {/* 열 2: 상세 패널 (클릭 시 등장) */}
-        <div className="card overview-detail-panel" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        {/* 열 2: 오른쪽 패널 (지도 ↔ 상세 전환) */}
+        <div className="overview-right-panel">
+
+        {/* 상세 패널 (클릭 시 등장) */}
+        <div className="card overview-detail-panel" style={{ minHeight: 0 }}>
           <div className="overview-detail-hd" style={{ flexShrink: 0 }}>
             <h2 className="card-title" style={{ margin: 0 }}>
               <span className="card-title-dot" />{site?.name?.replace(/\[.*?\]\s*/, '') || ''}
@@ -158,7 +171,65 @@ export default function Overview() {
           </div>
 
           <div className="overview-detail-grid" style={{ flex: 1, minHeight: 0 }}>
-            {/* 현장정보 */}
+            {/* 좌상: 발전실적 */}
+            <section className="card">
+              <h2 className="card-title"><span className="card-title-dot" />발전실적</h2>
+              <div className="info-grid">
+                <InfoRow label="현재출력" value={gen ? `${formatNum(gen.currentKw, 2)} kW` : '—'} />
+                <InfoRow label="금일"     value={gen ? fmtEnergyStr(gen.todayKwh)     : '—'} />
+                <InfoRow label="전일"     value={gen ? fmtEnergyStr(gen.yesterdayKwh) : '—'} />
+                <InfoRow label="누적"     value={gen ? fmtEnergyStr(gen.cumulativeKwh): '—'} />
+              </div>
+            </section>
+
+            {/* 우상: 현장 위치 */}
+            <section className="card">
+              <h2 className="card-title"><span className="card-title-dot" />현장 위치</h2>
+              <div className="map-box" style={{ flex: 1, overflow: 'hidden' }}>
+                <SiteMarkerMap appKey={kakaoKey} site={site} />
+              </div>
+            </section>
+
+            {/* 좌하: 인버터 상태 */}
+            <section className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+              <h2 className="card-title" style={{ display: 'flex', alignItems: 'center' }}>
+                <span className="card-title-dot" />인버터 상태
+                <span style={{ marginLeft: 'auto', fontSize: '0.72rem', fontWeight: 400, color: 'var(--text-muted)' }}>
+                  최종수신&nbsp;
+                  {detail?.inverters?.length
+                    ? String(detail.inverters.reduce((latest, inv) =>
+                        inv.lastConn > latest ? inv.lastConn : latest, ''
+                      )).slice(5, 16)
+                    : '—'}
+                </span>
+              </h2>
+              <div className="table-scroll" style={{ flex: 1 }}>
+                <table className="data-table">
+                  <thead>
+                    <tr><th>인버터</th><th>모델</th><th>상태</th><th className="num">출력(kW)</th></tr>
+                  </thead>
+                  <tbody>
+                    {!detail?.inverters?.length ? (
+                      <tr><td colSpan={4} className="hint">—</td></tr>
+                    ) : (
+                      detail.inverters.map((inv) => (
+                        <tr key={inv.name}>
+                          <td>{inv.name}</td>
+                          <td style={{ color: inv.model ? 'inherit' : 'var(--text-muted)' }}>{inv.model || '—'}</td>
+                          <td>
+                            <span className={`status-dot ${statusDotClass(inv.status)}`} />
+                            {' '}{inv.status === 'normal' ? '정상' : inv.status === 'error' ? '에러' : '통신없음'}
+                          </td>
+                          <td className="num">{formatNum(inv.acKw, 2)}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            {/* 우하: 현장정보 */}
             <section className="card">
               <h2 className="card-title"><span className="card-title-dot" />현장정보</h2>
               <div className="info-grid">
@@ -171,57 +242,11 @@ export default function Overview() {
                 <InfoRow label="최종수신" value={site?.lastReceivedAt || '—'} />
               </div>
             </section>
-
-            {/* 현장 위치 */}
-            <section className="card">
-              <h2 className="card-title"><span className="card-title-dot" />{site?.name?.replace(/\[.*?\]\s*/, '') || '현장 위치'}</h2>
-              <div className="map-box" style={{ flex: 1 }}>
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', textAlign: 'center', padding: 12 }}>
-                  {site?.address || '위치 정보 없음'}
-                </div>
-              </div>
-            </section>
-
-            {/* 발전실적 */}
-            <section className="card">
-              <h2 className="card-title"><span className="card-title-dot" />발전실적</h2>
-              <div className="info-grid">
-                <InfoRow label="현재출력" value={gen ? `${formatNum(gen.currentKw, 2)} kW` : '—'} />
-                <InfoRow label="금일"     value={gen ? `${formatNum(gen.todayKwh, 2)} kWh` : '—'} />
-                <InfoRow label="전일"     value={gen ? `${formatNum(gen.yesterdayKwh, 2)} kWh` : '—'} />
-                <InfoRow label="누적"     value={gen ? `${formatNum(gen.cumulativeKwh, 2)} kWh` : '—'} />
-              </div>
-            </section>
-
-            {/* 알람 */}
-            <section className="card">
-              <h2 className="card-title"><span className="card-title-dot" />알람</h2>
-              <div className="table-scroll" style={{ flex: 1 }}>
-                <table className="data-table">
-                  <thead>
-                    <tr><th>인버터</th><th>시간</th><th>상태</th></tr>
-                  </thead>
-                  <tbody>
-                    {alarms.length === 0 ? (
-                      <tr><td colSpan={3} className="hint">알람 없음</td></tr>
-                    ) : (
-                      alarms.map((a, i) => (
-                        <tr key={i}>
-                          <td>{a.inverterName}</td>
-                          <td>{a.time}</td>
-                          <td>{a.inverterStatus}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </section>
           </div>
         </div>
 
-        {/* 열 3: 지도 (기본 표시, 클릭 시 밀려남) */}
-        <div className="card overview-map-panel" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        {/* 지도 패널 (기본 표시) */}
+        <div className="card overview-map-panel" style={{ minHeight: 0 }}>
           <h2 className="card-title" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
             <span className="card-title-dot" />현장 위치
             <button
@@ -249,6 +274,8 @@ export default function Overview() {
           </div>
         </div>
 
+        </div>{/* overview-right-panel 닫기 */}
+
       </div>
     </div>
   )
@@ -261,8 +288,8 @@ function SiteCard({ site, selected, onClick }) {
   return (
     <div className={`site-card${cardCls}${selected ? ' selected' : ''}`} onClick={onClick} style={{ cursor: 'pointer' }}>
       <span className="site-card-name">{site.name}</span>
-      <span className="site-card-item">오늘<span className="val">{fmtEnergy(site.todayKwh)}</span></span>
-      <span className="site-card-item">어제<span className="val">{fmtEnergy(site.yesterdayKwh)}</span></span>
+      <span className="site-card-item">오늘<span className="val">{fmtEnergyStr(site.todayKwh)}</span></span>
+      <span className="site-card-item">어제<span className="val">{fmtEnergyStr(site.yesterdayKwh)}</span></span>
       <span className="site-card-status"><span className={`status-dot ${dotCls}`} />{label}</span>
     </div>
   )

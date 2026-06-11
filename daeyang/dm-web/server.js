@@ -1,7 +1,7 @@
 /**
  * DAEYANG 태양광 모니터링 — Express + MariaDB
  * 인증: u_userinfo (Spring SHA-256^1024)  /  발전소: dy_power_plant  /  게시판: b_board_notice
- * 공사현황: dm_construction + dm_construction_contacts  /  설정: dm_settings
+ * 설정: dm_settings
  */
 require("dotenv").config();
 const express = require("express");
@@ -9,6 +9,8 @@ const session = require("express-session");
 const path = require("path");
 const mysql = require("mysql2/promise");
 const crypto = require("crypto");
+const https = require("https");
+const multer = require("multer");
 const { initDb } = require("./lib/initDb");
 const { registerAdminRoutes } = require("./lib/adminRoutes");
 const { getMapKeys } = require("./lib/mapSettings");
@@ -20,7 +22,10 @@ const SPRING_SECRET = Buffer.from("TRONIX$(%&@!CTCMS", "utf8");
 const SPRING_ITERATIONS = 1024;
 
 function verifySpringPassword(rawPassword, encodedPassword) {
-  if (!encodedPassword || encodedPassword.length !== 80) return false;
+  if (!encodedPassword) return false;
+  // 평문 저장인 경우 직접 비교
+  if (encodedPassword.length < 80) return encodedPassword === rawPassword;
+  // Spring SHA-256^1024 해시 검증
   try {
     const saltBytes = Buffer.from(encodedPassword.slice(0, 16), "hex");
     const storedDigest = encodedPassword.slice(16);
@@ -122,7 +127,7 @@ function computeStatus(lastReceivedAt, currentKw) {
 }
 
 // ── 미들웨어 ───────────────────────────────────────────────────────────────
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "dm-web-dev-secret",
@@ -137,6 +142,23 @@ const fs = require("fs");
 if (fs.existsSync(clientDist)) {
   app.use(express.static(clientDist));
 }
+
+// 첨부파일 정적 서빙
+const uploadDir = path.join(__dirname, "uploads", "notices");
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+app.use("/uploads/notices", express.static(uploadDir));
+
+// 파일 업로드 설정
+const noticeUpload = multer({
+  storage: multer.diskStorage({
+    destination: uploadDir,
+    filename: function (req, file, cb) {
+      const unique = Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+      cb(null, unique + path.extname(file.originalname));
+    },
+  }),
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+});
 
 // ── Config ──────────────────────────────────────────────────────────────────
 app.get(
@@ -165,15 +187,15 @@ app.post(
       return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다." });
     }
     const user = rows[0];
-    if (!verifySpringPassword(password, user.UI_PASSWORD)) {
+    if (!verifySpringPassword(password, user.password)) {
       return res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다." });
     }
-    await q(SQL.loginUpdateMeta, [user.UI_KEYNO]);
+    await q(SQL.loginUpdateMeta, [user.id]);
     req.session.user = {
-      id: user.UI_KEYNO,
-      username: user.UI_ID,
-      displayName: user.UI_NAME || user.UI_ID,
-      role: "admin",
+      id: user.id,
+      username: user.username,
+      displayName: user.display_name || user.username,
+      role: user.role || "user",
     };
     res.json({ ok: true, user: req.session.user });
   })
@@ -206,9 +228,9 @@ app.get(
       unregistered: 0,
       noCommunication: 0,
       totalOutputKw: Number(agg.total_output_kw),
-      todayMwh: Number(agg.today_mwh),
-      yesterdayMwh: Number(agg.yesterday_mwh),
-      cumulativeGwh: Number(agg.cumulative_gwh),
+      todayKwh: Number(agg.today_kwh),
+      yesterdayKwh: Number(agg.yesterday_kwh),
+      cumulativeKwh: Number(agg.cumulative_kwh),
       totalCapacityKw: Number(agg.total_capacity_kw),
     });
   })
@@ -221,12 +243,21 @@ app.get(
   errHandler(async function (req, res) {
     const region = String(req.query.region || "").trim();
     const search = String(req.query.q || "").trim();
-    const wheres = ["p.DPP_DEL_YN = 'N'", "p.DPP_STATUS = 'Y'"];
+    const wheres = ["p.del_yn = 'N'", "p.grid_status = 'Y'"];
     const params = [];
-    if (region) { wheres.push("p.DPP_AREA LIKE ?"); params.push("%" + region + "%"); }
-    if (search) { wheres.push("p.DPP_NAME LIKE ?"); params.push("%" + search + "%"); }
+    if (region) { wheres.push("p.region LIKE ?"); params.push("%" + region + "%"); }
+    if (search) { wheres.push("p.name LIKE ?"); params.push("%" + search + "%"); }
+    // partner_admin은 배정된 발전소만
+    const sessionUser = req.session.user;
+    if (sessionUser && sessionUser.role === "partner_admin") {
+      const [pRows] = await q("SELECT plant_id FROM dm_user_plants WHERE user_id = ?", [sessionUser.id]);
+      const ids = pRows.map(function(r) { return r.plant_id; });
+      if (ids.length === 0) return res.json({ sites: [] });
+      wheres.push("p.id IN (" + ids.map(function() { return "?"; }).join(",") + ")");
+      params.push(...ids);
+    }
     const [rows] = await q(
-      getPlantSelect() + "WHERE " + wheres.join(" AND ") + " ORDER BY p.DPP_KEYNO",
+      getPlantSelect() + "WHERE " + wheres.join(" AND ") + " ORDER BY p.id",
       params
     );
     res.json({
@@ -244,28 +275,29 @@ app.get(
   errHandler(async function (req, res) {
     const id = Number(req.params.id);
     const [plants] = await q(
-      getPlantSelect() + "WHERE p.DPP_KEYNO = ? AND p.DPP_DEL_YN = 'N' LIMIT 1",
+      getPlantSelect() + "WHERE p.id = ? AND p.del_yn = 'N' LIMIT 1",
       [id]
     );
     if (!plants.length) return res.status(404).json({ error: "현장을 찾을 수 없습니다." });
     const row = plants[0];
 
     const keynoStr = String(id);
-    const [invRows] = await q(SQL.inverterLatest, [keynoStr, keynoStr]);
+    const [invRows] = await q(SQL.inverterLatest, [id, id, id]);
     const inverters = invRows.map(function (inv, idx) {
-      const isError = inv.DSP_Error_Code && String(inv.DSP_Error_Code).replace(/0/g, "").length > 0;
+      const isError = inv.dsp_error && String(inv.dsp_error).replace(/0/g, "").length > 0;
       return {
         id: idx + 1,
-        name: inv.DI_NAME || "",
-        acKw: Number(inv.Active_Power) || 0,
-        status: isError ? "error" : inv.Work_Mode ? "normal" : "no_comm",
-        workMode: inv.Work_Mode || "",
-        dspError: inv.DSP_Error_Code || "",
-        lastConn: inv.Conn_date || "",
+        name: inv.inverter_name || "",
+        acKw: Number(inv.active_power) || 0,
+        model: inv.inv_model || "",
+        status: isError ? "error" : inv.work_mode ? "normal" : "no_comm",
+        workMode: inv.work_mode || "",
+        dspError: inv.dsp_error || "",
+        lastConn: inv.collected_at || "",
       };
     });
 
-    const [[ghRow]] = await q(SQL.todayGenHours, [keynoStr]);
+    const [[ghRow]] = await q(SQL.todayGenHours, [id]);
     const todayGenHours = Math.round((Number(ghRow.slot_cnt) || 0) * 10 / 60 * 10) / 10;
 
     res.json({
@@ -289,27 +321,27 @@ app.get(
   "/api/sites/:id/inverter-data",
   needLogin,
   errHandler(async function (req, res) {
-    const keynoStr = String(req.params.id);
-    const [rows] = await q(SQL.inverterDetail, [keynoStr]);
+    const id = Number(req.params.id);
+    const [rows] = await q(SQL.inverterDetail, [id]);
     res.json({
       inverters: rows.map(function (r) {
         return {
-          name: r.DI_NAME,
-          activePower: Number(r.Active_Power) || 0,
-          dailyGen: r.Daily_Generation,
-          cumulativeGen: r.Cumulative_Generation,
-          workMode: r.Work_Mode,
-          dspError: r.DSP_Error_Code,
-          dspAlarm: r.DSP_Alarm_Code,
-          connDate: r.Conn_date,
-          voltA: r.Phase_voltage_of_phase_A,
-          voltB: r.Phase_voltage_of_phase_B,
-          voltC: r.Phase_voltage_of_phase_C,
-          currA: r.Current_of_phase_A,
-          currB: r.Current_of_phase_B,
-          currC: r.Current_of_phase_C,
-          temp: r.Internal_temperature,
-          freq: r.Grid_Frequency,
+          name: r.inverter_name,
+          activePower: Number(r.active_power) || 0,
+          dailyGen: r.daily_gen,
+          cumulativeGen: r.cumulative_gen,
+          workMode: r.work_mode,
+          dspError: r.dsp_error,
+          dspAlarm: r.dsp_alarm,
+          connDate: r.collected_at,
+          voltA: r.volt_a,
+          voltB: r.volt_b,
+          voltC: r.volt_c,
+          currA: r.curr_a,
+          currB: r.curr_b,
+          currC: r.curr_c,
+          temp: r.temperature,
+          freq: r.grid_frequency,
         };
       }),
     });
@@ -327,12 +359,12 @@ app.get(
     res.json({
       alarms: rows.map(function (a) {
         return {
-          siteName: a.DIE_DPP_NAME || "",
-          inverterName: a.DIE_INVERTER_NAME || "",
-          time: a.DIE_DATE ? new Date(a.DIE_DATE).toLocaleString("ko-KR") : "",
-          inverterStatus: a.DIE_ARM_ALARM || a.DIE_ARM_ERROR || a.DIE_DSP_ERROR || "",
-          dspError: a.DIE_DSP_ERROR || "",
-          dspSlave: a.DIE_DSP_S_ERROR || "",
+          siteName: a.site_name || "",
+          inverterName: a.inverter_name || "",
+          time: a.occurred_at ? new Date(a.occurred_at).toLocaleString("ko-KR") : "",
+          inverterStatus: a.arm_alarm || a.arm_error || a.dsp_error || "",
+          dspError: a.dsp_error || "",
+          dspSlave: a.dsp_slave_error || "",
         };
       }),
     });
@@ -356,7 +388,7 @@ app.get(
     }
 
     const invName = req.query.inverter ? String(req.query.inverter) : "";
-    const invFilter = invName ? " AND DI_NAME = ?" : "";
+    const invFilter = invName ? " AND inverter_name = ?" : "";
     const baseParams = invName ? [keynoStr, statDate, invName] : [keynoStr, statDate];
     const params = [...baseParams, ...baseParams];
 
@@ -373,16 +405,150 @@ app.get(
   })
 );
 
-// ── 게시판 (b_board_notice) ──────────────────────────────────────────────────
+// ── 인버터별 시간대 발전 데이터 ──────────────────────────────────────────────
 app.get(
-  "/api/board",
+  "/api/sites/:id/hourly-by-inverter",
+  needLogin,
+  errHandler(async function (req, res) {
+    const keynoStr = String(req.params.id);
+    let statDate = req.query.date || new Date().toISOString().slice(0, 10);
+
+    const [[latest]] = await q(SQL.hourlyLatestDate, [keynoStr]);
+    if (latest && latest.d) {
+      const latestDate = latest.d instanceof Date
+        ? latest.d.toISOString().slice(0, 10)
+        : String(latest.d).slice(0, 10);
+      if (latestDate < statDate) statDate = latestDate;
+    }
+
+    const [rows] = await q(SQL.hourlyPerInverter(""), [keynoStr, statDate]);
+    res.json({
+      series: rows.map(function (r) {
+        return {
+          time: r.slot_time,
+          inverter: r.inverter_name,
+          kw: Math.round((Number(r.kw) || 0) * 100) / 100,
+          kwh: Math.round((Number(r.kwh) || 0) * 100) / 100,
+        };
+      }),
+      date: statDate,
+    });
+  })
+);
+
+// ── 인버터 raw 데이터 (통계분석 상세보기) ────────────────────────────────────
+app.get(
+  "/api/sites/:id/inverter-raw",
+  needLogin,
+  errHandler(async function (req, res) {
+    const keynoStr = String(req.params.id);
+    const date = String(req.query.date || new Date().toISOString().slice(0, 10));
+    const slot = String(req.query.slot || "");
+    const invName = req.query.inverter ? String(req.query.inverter) : "";
+    const invFilter = invName ? " AND inverter_name = ?" : "";
+    const params = invName ? [keynoStr, date, slot, invName] : [keynoStr, date, slot];
+    const [rows] = await q(SQL.inverterRaw(invFilter), params);
+    res.json({ rows });
+  })
+);
+
+// ── 인버터 raw 전체 (날짜 전체 테이블 뷰) ────────────────────────────────────
+app.get(
+  "/api/sites/:id/inverter-raw-all",
+  needLogin,
+  errHandler(async function (req, res) {
+    const keynoStr = String(req.params.id);
+    let date = String(req.query.date || new Date().toISOString().slice(0, 10));
+
+    // hourly와 동일하게 실제 데이터가 있는 최신 날짜로 보정
+    const [[latest]] = await q(SQL.hourlyLatestDate, [keynoStr]);
+    if (latest && latest.d) {
+      const latestDate = latest.d instanceof Date
+        ? latest.d.toISOString().slice(0, 10)
+        : String(latest.d).slice(0, 10);
+      if (latestDate < date) date = latestDate;
+    }
+
+    const invName = req.query.inverter ? String(req.query.inverter) : "";
+    const invFilter = invName ? " AND inverter_name = ?" : "";
+    const params = invName ? [keynoStr, date, date, invName] : [keynoStr, date, date];
+    const [rows] = await q(SQL.inverterRawAll(invFilter), params);
+    res.json({ rows, date });
+  })
+);
+
+// ── 통계 (주/월/년) ──────────────────────────────────────────────────────────
+app.get(
+  "/api/sites/:id/stats",
+  needLogin,
+  errHandler(async function (req, res) {
+    const keynoStr = String(req.params.id);
+    const period = req.query.period || "week";
+    const date = String(req.query.date || "");
+
+    if (period === "week") {
+      const endDate = date || new Date().toISOString().slice(0, 10);
+      const start = new Date(endDate);
+      start.setDate(start.getDate() - 6);
+      const startDate = start.toISOString().slice(0, 10);
+      const [rows] = await q(SQL.statsDaily, [keynoStr, startDate, endDate]);
+      const series = rows.map(function (r) {
+        return { label: String(r.stat_date).slice(0, 10), kwh: Math.round(Number(r.kwh) * 100) / 100 };
+      });
+      const total = Math.round(series.reduce(function (s, r) { return s + r.kwh; }, 0) * 100) / 100;
+      return res.json({ series: series, total: total, period: period });
+
+    } else if (period === "month") {
+      const yearMonth = (date.slice(0, 7) || new Date().toISOString().slice(0, 7));
+      const parts = yearMonth.split("-").map(Number);
+      const y = parts[0], m = parts[1];
+      const startDate = yearMonth + "-01";
+      const lastDay = new Date(y, m, 0).getDate();
+      const endDate = yearMonth + "-" + String(lastDay).padStart(2, "0");
+      const [rows] = await q(SQL.statsDaily, [keynoStr, startDate, endDate]);
+      const series = rows.map(function (r) {
+        return { label: String(r.stat_date).slice(0, 10), kwh: Math.round(Number(r.kwh) * 100) / 100 };
+      });
+      const total = Math.round(series.reduce(function (s, r) { return s + r.kwh; }, 0) * 100) / 100;
+      return res.json({ series: series, total: total, period: period });
+
+    } else if (period === "year") {
+      const year = (date.slice(0, 4) || String(new Date().getFullYear()));
+      const [rows] = await q(SQL.statsMonthly, [keynoStr, Number(year)]);
+      const series = rows.map(function (r) {
+        return { label: String(r.stat_month), kwh: Math.round(Number(r.kwh) * 100) / 100 };
+      });
+      const total = Math.round(series.reduce(function (s, r) { return s + r.kwh; }, 0) * 100) / 100;
+      return res.json({ series: series, total: total, period: period });
+
+    } else {
+      return res.status(400).json({ error: "지원하지 않는 기간입니다." });
+    }
+  })
+);
+
+// ── 공지사항 ─────────────────────────────────────────────────────────────────
+function needAdmin(req, res, next) {
+  const role = req.session && req.session.user && req.session.user.role;
+  if (role === "admin" || role === "developer") return next();
+  return res.status(403).json({ error: "관리자 권한이 필요합니다." });
+}
+
+function needDeveloper(req, res, next) {
+  const role = req.session && req.session.user && req.session.user.role;
+  if (role === "developer") return next();
+  return res.status(403).json({ error: "개발자 권한이 필요합니다." });
+}
+
+app.get(
+  "/api/notice",
   needLogin,
   errHandler(async function (req, res) {
     const category = String(req.query.category || "").trim();
-    const wheres = ["BN_DEL_YN = 'N'"];
+    const wheres = ["del_yn = 'N'"];
     const params = [];
     if (category && category !== "all") {
-      wheres.push("BN_CATEGORY_NAME = ?");
+      wheres.push("category = ?");
       params.push(category);
     }
     const where = "WHERE " + wheres.join(" AND ");
@@ -394,10 +560,13 @@ app.get(
         return {
           id: p.id,
           category: p.category || "",
+          tags: p.tags || "",
           siteName: p.site_name || "",
           title: p.title || "",
           author: p.author || "",
           views: Number(p.views) || 0,
+          contents: p.contents || "",
+          fileCount: Number(p.file_count) || 0,
           createdAt: p.created_at || "",
         };
       }),
@@ -406,26 +575,30 @@ app.get(
 );
 
 app.post(
-  "/api/board",
+  "/api/notice",
   needLogin,
+  needAdmin,
   errHandler(async function (req, res) {
     const b = req.body || {};
     const title = String(b.title || "").trim();
     if (!title) return res.status(400).json({ error: "제목을 입력하세요." });
     const author = req.session.user.displayName || req.session.user.username;
-    await q(SQL.boardInsert, [
+    const [r] = await q(SQL.boardInsert, [
       String(b.category || "").trim(),
+      String(b.tags || "").trim(),
       String(b.siteName || "").trim(),
       title,
       author,
+      String(b.contents || ""),
     ]);
-    res.json({ ok: true });
+    res.json({ ok: true, id: r.insertId });
   })
 );
 
 app.put(
-  "/api/board/:id",
+  "/api/notice/:id",
   needLogin,
+  needAdmin,
   errHandler(async function (req, res) {
     const id = Number(req.params.id);
     const b = req.body || {};
@@ -433,8 +606,10 @@ app.put(
     if (!title) return res.status(400).json({ error: "제목을 입력하세요." });
     await q(SQL.boardUpdate, [
       String(b.category || "").trim(),
+      String(b.tags || "").trim(),
       String(b.siteName || "").trim(),
       title,
+      String(b.contents || ""),
       id,
     ]);
     res.json({ ok: true });
@@ -442,94 +617,91 @@ app.put(
 );
 
 app.delete(
-  "/api/board/:id",
+  "/api/notice/:id",
   needLogin,
+  needAdmin,
   errHandler(async function (req, res) {
-    await q(SQL.boardDelete, [Number(req.params.id)]);
+    const id = Number(req.params.id);
+    // 첨부파일도 함께 삭제
+    const [files] = await q(SQL.noticeFiles, [id]);
+    for (const f of files) {
+      const fp = path.join(uploadDir, f.filename);
+      if (fs.existsSync(fp)) fs.unlinkSync(fp);
+    }
+    await q("DELETE FROM dm_notice_files WHERE notice_id = ?", [id]);
+    await q(SQL.boardDelete, [id]);
     res.json({ ok: true });
   })
 );
 
-// ── 공사현황 (dm_construction / dm_construction_contacts) ────────────────────
+// ── 공지사항 조회수 ───────────────────────────────────────────────────────────
+app.post(
+  "/api/notice/:id/view",
+  needLogin,
+  errHandler(async function (req, res) {
+    await q(SQL.noticeViewInc, [Number(req.params.id)]);
+    res.json({ ok: true });
+  })
+);
+
+// ── 공지사항 첨부파일 ─────────────────────────────────────────────────────────
 app.get(
-  "/api/construction/:siteId",
+  "/api/notice/:id/files",
   needLogin,
   errHandler(async function (req, res) {
-    const siteId = Number(req.params.siteId);
-    const [plants] = await q(SQL.constructionSite, [siteId]);
-    if (!plants.length) return res.status(404).json({ error: "발전소를 찾을 수 없습니다." });
-
-    const [contacts] = await q(SQL.constructionContacts);
-    const contactList = contacts.map(function (c) {
-      return { id: c.code, dbId: c.id, name: c.name, dept: c.dept, position: c.position, phone: c.phone };
-    });
-
-    const [rows] = await q(SQL.constructionGet, [siteId]);
-    if (!rows.length) {
-      return res.json({
-        siteId: siteId,
-        currentStep: 1,
-        operator: { businessName: "", address: "", phone: "", email: "" },
-        permit: { plantName: "", capacity: "", location: "", installType: "", receivedAt: "", expectedAt: "" },
-        contacts: contactList,
-        selectedContactId: contactList[0] ? contactList[0].id : "",
-      });
-    }
-    const row = rows[0];
-    const sel = contacts.find(function (c) { return c.id === row.selected_contact_id; });
-    res.json({
-      siteId: siteId,
-      currentStep: Number(row.current_step) || 1,
-      operator: {
-        businessName: row.operator_business,
-        address: row.operator_address,
-        phone: row.operator_phone,
-        email: row.operator_email,
-      },
-      permit: {
-        plantName: row.permit_plant_name,
-        capacity: row.permit_capacity,
-        location: row.permit_location,
-        installType: row.permit_install_type,
-        receivedAt: row.permit_received_at || "",
-        expectedAt: row.permit_expected_at || "",
-      },
-      contacts: contactList,
-      selectedContactId: sel ? sel.code : (contactList[0] ? contactList[0].id : ""),
-    });
+    const [files] = await q(SQL.noticeFiles, [Number(req.params.id)]);
+    res.json({ files: files.map(function (f) {
+      return { id: f.id, name: f.original_name, size: f.size, mimetype: f.mimetype, url: "/uploads/notices/" + f.filename };
+    })});
   })
 );
 
-app.put(
-  "/api/construction/:siteId",
+app.post(
+  "/api/notice/:id/files",
+  needLogin,
+  needAdmin,
+  noticeUpload.single("file"),
+  errHandler(async function (req, res) {
+    if (!req.file) return res.status(400).json({ error: "파일이 없습니다." });
+    const noticeId = Number(req.params.id);
+    const originalName = Buffer.from(req.file.originalname, "latin1").toString("utf8");
+    await q(SQL.noticeFileInsert, [
+      noticeId,
+      req.file.filename,
+      originalName,
+      req.file.size,
+      req.file.mimetype,
+    ]);
+    res.json({ ok: true, file: { name: originalName, size: req.file.size, url: "/uploads/notices/" + req.file.filename } });
+  })
+);
+
+app.get(
+  "/api/notice/files/:fileId/download",
   needLogin,
   errHandler(async function (req, res) {
-    const siteId = Number(req.params.siteId);
-    const b = req.body || {};
-    const op = b.operator || {};
-    const p = b.permit || {};
-    const step = Number(b.currentStep) || 1;
-    const contactCode = String(b.selectedContactId || "");
-    const [crows] = contactCode
-      ? await q(SQL.constructionContactByCode, [contactCode])
-      : [[]];
-    const contactDbId = crows[0] ? crows[0].id : null;
+    const [[file]] = await q(SQL.noticeFileGet, [Number(req.params.fileId)]);
+    if (!file) return res.status(404).json({ error: "파일을 찾을 수 없습니다." });
+    const fp = path.join(uploadDir, file.filename);
+    if (!fs.existsSync(fp)) return res.status(404).json({ error: "파일이 존재하지 않습니다." });
+    res.download(fp, file.original_name);
+  })
+);
 
-    const [existing] = await q(SQL.constructionCheck, [siteId]);
-    const vals = [
-      step,
-      op.businessName || "", op.address || "", op.phone || "", op.email || "",
-      p.plantName || "", p.capacity || "", p.location || "", p.installType || "",
-      p.receivedAt || null, p.expectedAt || null, contactDbId,
-    ];
-    if (existing.length) {
-      await q(SQL.constructionUpdate, [...vals, siteId]);
-    } else {
-      await q(SQL.constructionInsert, [siteId, ...vals]);
-    }
+app.delete(
+  "/api/notice/:id/files/:fileId",
+  needLogin,
+  needAdmin,
+  errHandler(async function (req, res) {
+    const [[file]] = await q(SQL.noticeFileGet, [Number(req.params.fileId)]);
+    if (!file) return res.status(404).json({ error: "파일을 찾을 수 없습니다." });
+    const fp = path.join(uploadDir, file.filename);
+    if (fs.existsSync(fp)) fs.unlinkSync(fp);
+    await q(SQL.noticeFileDelete, [Number(req.params.fileId), Number(req.params.id)]);
     res.json({ ok: true });
   })
 );
+
 
 // ── 개인설정 (u_userinfo) ────────────────────────────────────────────────────
 app.get(
@@ -540,9 +712,9 @@ app.get(
     if (!rows.length) return res.status(404).json({ error: "사용자를 찾을 수 없습니다." });
     const u = rows[0];
     res.json({
-      username: u.UI_ID || "",
-      mobile: u.UI_PHONE || "",
-      email: u.UI_EMAIL || "",
+      username: u.username || "",
+      mobile: u.phone || "",
+      email: u.email || "",
       manager: "",
       managerPhone: "",
     });
@@ -565,6 +737,249 @@ app.put(
     res.json({ ok: true });
   })
 );
+
+// ── 주소 검색 (Kakao Local API 프록시) ──────────────────────────────────────
+app.get(
+  "/api/address-search",
+  needLogin,
+  errHandler(async function (req, res) {
+    const searchQuery = String(req.query.q || "").trim();
+    if (!searchQuery || searchQuery.length < 2) return res.json({ items: [] });
+    const _keys = await getMapKeys(getDb());
+    const kakaoKey = _keys.kakaoRest || _keys.kakao || process.env.KAKAO_REST_KEY || process.env.KAKAO_MAP_KEY;
+    if (!kakaoKey) return res.json({ items: [] });
+    const parsed = new URL(
+      "https://dapi.kakao.com/v2/local/search/address.json?query=" +
+      encodeURIComponent(searchQuery) + "&size=10"
+    );
+    const data = await new Promise(function (resolve, reject) {
+      https.get(
+        { hostname: parsed.hostname, path: parsed.pathname + parsed.search,
+          headers: { Authorization: "KakaoAK " + kakaoKey } },
+        function (r) {
+          let raw = "";
+          r.on("data", function (c) { raw += c; });
+          r.on("end", function () {
+            try { resolve(JSON.parse(raw)); } catch (e) { reject(e); }
+          });
+        }
+      ).on("error", reject);
+    });
+    res.json({
+      items: (data.documents || []).map(function (doc) {
+        return { address: doc.address_name, lat: Number(doc.y), lng: Number(doc.x) };
+      }),
+    });
+  })
+);
+
+// ── 주소 → 좌표 변환 (Kakao 주소 검색 API 프록시) ───────────────────────────
+app.get(
+  "/api/geocode",
+  needLogin,
+  errHandler(async function (req, res) {
+    const address = String(req.query.address || "").trim();
+    if (!address) return res.json({ lat: null, lng: null });
+
+    const _keys = await getMapKeys(getDb());
+    const kakaoKey = _keys.kakaoRest || _keys.kakao || process.env.KAKAO_REST_KEY || process.env.KAKAO_MAP_KEY;
+    if (!kakaoKey) return res.status(400).json({ error: "Kakao API 키가 없습니다." });
+
+    const parsed = new URL(
+      "https://dapi.kakao.com/v2/local/search/address.json?query=" +
+      encodeURIComponent(address)
+    );
+
+    const data = await new Promise(function (resolve, reject) {
+      https.get(
+        { hostname: parsed.hostname, path: parsed.pathname + parsed.search,
+          headers: {
+            Authorization: "KakaoAK " + kakaoKey,
+            KA: "sdk/1.0.0 os/nodejs origin/localhost",
+          } },
+        function (r) {
+          let raw = "";
+          r.on("data", function (c) { raw += c; });
+          r.on("end", function () {
+            try { resolve(JSON.parse(raw)); } catch (e) { reject(e); }
+          });
+        }
+      ).on("error", reject);
+    });
+
+    const doc = data.documents && data.documents[0];
+    if (doc) {
+      res.json({ lat: Number(doc.y), lng: Number(doc.x) });
+    } else {
+      res.json({ lat: null, lng: null, message: "주소를 찾을 수 없습니다." });
+    }
+  })
+);
+
+// ── 안전관리 ─────────────────────────────────────────────────────────────────
+// 달력용: 월별 점검 기록
+app.get("/api/safety", needLogin, errHandler(async function(req, res) {
+  const year  = Number(req.query.year  || new Date().getFullYear());
+  const month = Number(req.query.month || new Date().getMonth() + 1);
+  const from = `${year}-${String(month).padStart(2,"0")}-01`;
+  const to   = `${year}-${String(month).padStart(2,"0")}-${new Date(year,month,0).getDate()}`;
+  const [rows] = await q(
+    "SELECT s.id, s.plant_id, p.name AS plant_name, s.type, s.inspect_date, s.content, s.created_by" +
+    " FROM dm_safety s LEFT JOIN dm_plant p ON p.id = s.plant_id" +
+    " WHERE s.inspect_date BETWEEN ? AND ? ORDER BY s.inspect_date, p.name",
+    [from, to]
+  );
+  res.json({ records: rows });
+}));
+
+// 발전소 전체 점검 기록 (관리 페이지용)
+app.get("/api/safety/plant/:plantId", needLogin, errHandler(async function(req, res) {
+  const plantId = Number(req.params.plantId);
+  const year  = Number(req.query.year  || 0);
+  const month = Number(req.query.month || 0);
+  let sql = "SELECT id, plant_id, type, inspect_date, content, created_by, created_at FROM dm_safety WHERE plant_id=?";
+  const params = [plantId];
+  if (year && month) {
+    const from = `${year}-${String(month).padStart(2,"0")}-01`;
+    const to   = `${year}-${String(month).padStart(2,"0")}-${new Date(year,month,0).getDate()}`;
+    sql += " AND inspect_date BETWEEN ? AND ?";
+    params.push(from, to);
+  }
+  sql += " ORDER BY inspect_date ASC, id ASC";
+  const [rows] = await q(sql, params);
+  res.json({ records: rows });
+}));
+
+// 점검 추가
+app.post("/api/safety/records", needLogin, errHandler(async function(req, res) {
+  const b = req.body || {};
+  if (!b.plantId || !b.inspectDate) return res.status(400).json({ error: "발전소와 점검일을 입력하세요." });
+  const [r] = await q(
+    "INSERT INTO dm_safety (plant_id, type, inspect_date, content, created_by) VALUES (?,?,?,?,?)",
+    [Number(b.plantId), b.type||"안전관리", b.inspectDate, b.content||"",
+     req.session.user.displayName || req.session.user.username]
+  );
+  res.json({ ok: true, id: r.insertId });
+}));
+
+// 점검 삭제 (날짜+발전소로 삭제 또는 ID로 삭제)
+app.delete("/api/safety/records/:id", needLogin, errHandler(async function(req, res) {
+  await q("DELETE FROM dm_safety WHERE id=?", [Number(req.params.id)]);
+  res.json({ ok: true });
+}));
+
+// 점검 내용 수정
+app.put("/api/safety/records/:id", needLogin, errHandler(async function(req, res) {
+  const b = req.body || {};
+  await q("UPDATE dm_safety SET type=?, content=? WHERE id=?",
+    [b.type||"안전관리", b.content||"", Number(req.params.id)]);
+  res.json({ ok: true });
+}));
+
+// ── RTU 장비관리 ─────────────────────────────────────────────────────────────
+
+// 발전소별 RTU 현황 목록 (/api/sites 와 동일한 계정 필터 적용)
+app.get("/api/equipment/rtu", needLogin, errHandler(async function(req, res) {
+  const sessionUser = req.session.user;
+  const wheres = ["p.del_yn = 'N'", "p.grid_status = 'Y'"];
+  const params  = [];
+  // partner_admin / safety_admin 은 배정된 발전소만
+  if (sessionUser && (sessionUser.role === "partner_admin" || sessionUser.role === "safety_admin")) {
+    const [pRows] = await q("SELECT plant_id FROM dm_user_plants WHERE user_id = ?", [sessionUser.id]);
+    const ids = pRows.map(function(r) { return r.plant_id; });
+    if (ids.length === 0) return res.json({ rtu: [] });
+    wheres.push("p.id IN (" + ids.map(function() { return "?"; }).join(",") + ")");
+    params.push(...ids);
+  }
+  const [rows] = await q(
+    "SELECT p.id AS plant_id, p.name AS plant_name, p.region," +
+    " r.id AS rtu_id, r.serial, r.hw_ver, r.sw_ver, r.line_type, r.ctn, r.note, r.updated_at, r.updated_by" +
+    " FROM dm_plant p LEFT JOIN dm_rtu r ON r.plant_id = p.id" +
+    " WHERE " + wheres.join(" AND ") +
+    " ORDER BY p.region, p.name",
+    params
+  );
+  res.json({ rtu: rows });
+}));
+
+// RTU 등록/수정 (upsert)
+app.put("/api/equipment/rtu/:plantId", needLogin, errHandler(async function(req, res) {
+  const plantId = Number(req.params.plantId);
+  const b = req.body || {};
+  const user = req.session.user.displayName || req.session.user.username;
+  await q(
+    "INSERT INTO dm_rtu (plant_id, serial, hw_ver, sw_ver, line_type, ctn, note, updated_by)" +
+    " VALUES (?,?,?,?,?,?,?,?)" +
+    " ON DUPLICATE KEY UPDATE serial=VALUES(serial), hw_ver=VALUES(hw_ver)," +
+    " sw_ver=VALUES(sw_ver), line_type=VALUES(line_type), ctn=VALUES(ctn)," +
+    " note=VALUES(note), updated_by=VALUES(updated_by), updated_at=NOW()",
+    [plantId, b.serial||null, b.hwVer||null, b.swVer||null,
+     b.lineType||'유선', b.ctn||null, b.note||null, user]
+  );
+  res.json({ ok: true });
+}));
+
+// HW 버전 목록
+app.get("/api/equipment/hw-versions", needLogin, errHandler(async function(req, res) {
+  const [rows] = await q("SELECT * FROM dm_hw_version ORDER BY release_date DESC, id DESC");
+  res.json({ versions: rows });
+}));
+
+// HW 버전 추가
+app.post("/api/equipment/hw-versions", needLogin, errHandler(async function(req, res) {
+  const b = req.body || {};
+  if (!b.version) return res.status(400).json({ error: "버전을 입력하세요." });
+  const [r] = await q(
+    "INSERT INTO dm_hw_version (version, release_date, description) VALUES (?,?,?)",
+    [b.version, b.releaseDate || new Date().toISOString().slice(0,10), b.description||null]
+  );
+  res.json({ ok: true, id: r.insertId });
+}));
+
+// HW 버전 수정
+app.put("/api/equipment/hw-versions/:id", needLogin, errHandler(async function(req, res) {
+  const b = req.body || {};
+  await q("UPDATE dm_hw_version SET version=?, release_date=?, description=? WHERE id=?",
+    [b.version, b.releaseDate, b.description||null, Number(req.params.id)]);
+  res.json({ ok: true });
+}));
+
+// HW 버전 삭제
+app.delete("/api/equipment/hw-versions/:id", needLogin, errHandler(async function(req, res) {
+  await q("DELETE FROM dm_hw_version WHERE id=?", [Number(req.params.id)]);
+  res.json({ ok: true });
+}));
+
+// SW 버전 목록
+app.get("/api/equipment/sw-versions", needLogin, errHandler(async function(req, res) {
+  const [rows] = await q("SELECT * FROM dm_sw_version ORDER BY release_date DESC, id DESC");
+  res.json({ versions: rows });
+}));
+
+// SW 버전 추가
+app.post("/api/equipment/sw-versions", needLogin, errHandler(async function(req, res) {
+  const b = req.body || {};
+  if (!b.version) return res.status(400).json({ error: "버전을 입력하세요." });
+  const [r] = await q(
+    "INSERT INTO dm_sw_version (version, release_date, description) VALUES (?,?,?)",
+    [b.version, b.releaseDate || new Date().toISOString().slice(0,10), b.description||null]
+  );
+  res.json({ ok: true, id: r.insertId });
+}));
+
+// SW 버전 수정
+app.put("/api/equipment/sw-versions/:id", needLogin, errHandler(async function(req, res) {
+  const b = req.body || {};
+  await q("UPDATE dm_sw_version SET version=?, release_date=?, description=? WHERE id=?",
+    [b.version, b.releaseDate, b.description||null, Number(req.params.id)]);
+  res.json({ ok: true });
+}));
+
+// SW 버전 삭제
+app.delete("/api/equipment/sw-versions/:id", needLogin, errHandler(async function(req, res) {
+  await q("DELETE FROM dm_sw_version WHERE id=?", [Number(req.params.id)]);
+  res.json({ ok: true });
+}));
 
 // ── 관리자 라우트 ────────────────────────────────────────────────────────────
 registerAdminRoutes(app, {
@@ -597,7 +1012,7 @@ async function start() {
   }
   getDb();
   await initDb(dbPool);
-  await buildPlantSelect(q);
+  buildPlantSelect();
   app.listen(PORT, function () {
     console.log("DAEYANG monitoring: http://localhost:" + PORT);
     console.log("DB:", DB_CONFIG.database, "@", DB_CONFIG.host);

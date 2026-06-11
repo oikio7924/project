@@ -1,20 +1,21 @@
-import { createContext, useContext } from 'react'
+import { createContext } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-
-// 로그인한 사용자 정보를 앱 전체에서 공유하는 Context
-export const UserContext = createContext(null)
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Overview from './pages/Overview'
 import Generation from './pages/Generation'
 import Statistics from './pages/Statistics'
 import Board from './pages/Board'
-import Construction from './pages/Construction'
 import Settings from './pages/Settings'
+import SafetyMain      from './pages/SafetyMain'
+import SafetyManage    from './pages/SafetyManage'
+import SafetyEquipment from './pages/SafetyEquipment'
 import AdminLayout from './pages/admin/AdminLayout'
 import AdminMembers from './pages/admin/AdminMembers'
 import AdminPlants from './pages/admin/AdminPlants'
 import AdminMapKeys from './pages/admin/AdminMapKeys'
+
+export const UserContext = createContext(null)
 
 export default function App() {
   return (
@@ -28,9 +29,11 @@ export default function App() {
           <Route path="/" element={<Overview />} />
           <Route path="/generation" element={<Generation />} />
           <Route path="/statistics" element={<Statistics />} />
-          <Route path="/board" element={<Board />} />
-          <Route path="/construction" element={<Construction />} />
+          <Route path="/notice" element={<Board />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/safety/main"      element={<SafetyMain />} />
+          <Route path="/safety/manage"    element={<SafetyManage />} />
+          <Route path="/safety/equipment" element={<SafetyEquipment />} />
         </Route>
 
         {/* 관리자 페이지 */}

@@ -1,7 +1,6 @@
 'use strict';
 
 const express = require('express');
-const bcrypt = require('bcryptjs');
 const pool = require('../db');
 const { publicUser, requireFields } = require('../utils');
 
@@ -21,7 +20,7 @@ router.post('/login', async (req, res) => {
 
   const { rows } = await pool.query('SELECT * FROM users WHERE username = $1', [req.body.username]);
   const user = rows[0];
-  if (!user || !(await bcrypt.compare(req.body.password, user.password))) {
+  if (!user || user.password !== req.body.password) {
     return res.status(401).json({ message: '아이디 또는 비밀번호가 올바르지 않습니다.' });
   }
   if (user.status !== 'active') {
@@ -43,13 +42,12 @@ router.post('/register', async (req, res) => {
     return res.status(400).json({ message: '총판 또는 대리점으로만 가입 신청할 수 있습니다.' });
   }
 
-  const hash = await bcrypt.hash(req.body.password, 10);
   try {
     const { rows } = await pool.query(
-      `INSERT INTO users (username, password, name, phone, company_name, role, status)
-       VALUES ($1, $2, $3, $4, $5, $6, 'pending')
-       RETURNING id, username, name, phone, company_name, role, status, created_at`,
-      [req.body.username, hash, req.body.name, req.body.phone, req.body.company_name, req.body.role]
+      `INSERT INTO users (username, password, name, phone, company_name, address, role, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
+       RETURNING id, username, name, phone, company_name, address, role, status, created_at`,
+      [req.body.username, req.body.password, req.body.name, req.body.phone, req.body.company_name, req.body.address || null, req.body.role]
     );
     res.status(201).json({ user: rows[0] });
   } catch (error) {

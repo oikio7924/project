@@ -46,6 +46,7 @@ app.use('/api/orders', require('./routes/orders'));
 app.use('/api/shipments', require('./routes/shipments'));
 app.use('/api/sales', require('./routes/sales'));
 app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/barcode', require('./routes/barcode'));
 
 if (isProduction) {
   const dist = path.join(__dirname, '../client/dist');
@@ -54,8 +55,13 @@ if (isProduction) {
 }
 
 app.use((err, _req, res, _next) => {
-  console.error(err);
-  res.status(500).json({ message: '서버 오류가 발생했습니다.' });
+  console.error('[Server Error]', err.message);
+  res.status(500).json({ message: err.message || '서버 오류가 발생했습니다.' });
+});
+
+// unhandled rejection이 서버를 죽이지 않도록
+process.on('unhandledRejection', (reason) => {
+  console.error('[Unhandled Rejection]', reason);
 });
 
 initDb()

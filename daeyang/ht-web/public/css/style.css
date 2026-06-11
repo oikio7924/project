@@ -3616,11 +3616,9 @@ tr.locked-row td {
   padding: 6px 10px;
 }
 .biz-cert-icon {
-  width: 15px;
-  height: 15px;
+  width: 22px;
+  height: 22px;
   flex-shrink: 0;
-  color: #1a3d66;
-  opacity: .7;
 }
 .biz-cert-name {
   flex: 1;

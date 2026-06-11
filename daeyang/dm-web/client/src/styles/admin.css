@@ -263,6 +263,51 @@
   border-top: 1px solid #e2e8f0;
 }
 
+/* 폼 테이블 (flex 행 방식 — 선 정확히 맞음) */
+.pf-table {
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.pf-row {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+}
+.pf-row:last-child { border-bottom: none; }
+.pf-label {
+  width: 80px;
+  flex-shrink: 0;
+  padding: 9px 10px;
+  background: #f8fafc;
+  border-right: 1px solid #e2e8f0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+}
+.pf-field {
+  flex: 1;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.pf-field + .pf-label { border-left: 1px solid #e2e8f0; }
+.pf-table input,
+.pf-table select {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  color: #1e293b;
+  background: #fff;
+}
+.pf-table input:focus,
+.pf-table select:focus { outline: none; border-color: #3d5a80; }
+
 .admin-form-grid .label {
   padding: 10px 12px;
   background: #f8fafc;
@@ -420,6 +465,21 @@
 .admin-modal-body {
   overflow-y: auto;
   flex: 1;
+  padding: 16px 20px;
+}
+
+.admin-modal-body .admin-form-grid {
+  margin: -16px -20px 0;
+}
+
+.modal-section-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #3d5a80;
+  margin: 0 0 8px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #e2e8f0;
+  letter-spacing: 0.03em;
 }
 
 .admin-modal-footer {
@@ -497,6 +557,48 @@
   /* 툴바 줄바꿈 */
   .admin-toolbar { flex-wrap: wrap; gap: 8px; }
   .admin-toolbar input, .admin-toolbar select { max-width: 100%; }
+}
+
+/* ── 인버터 탭 ── */
+.inv-tab-wrap {
+  padding: 0 16px 20px;
+}
+.inv-tab-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+.inv-tab {
+  padding: 6px 16px;
+  border: 1px solid #e2e8f0;
+  border-bottom: none;
+  background: #f8fafc;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  font-size: 0.82rem;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+  position: relative;
+  bottom: -1px;
+}
+.inv-tab:hover { background: #e9f0fb; color: #1e3a5f; }
+.inv-tab.active {
+  background: #fff;
+  color: #1e3a5f;
+  font-weight: 600;
+  border-color: #e2e8f0;
+  border-bottom-color: #fff;
+}
+.inv-tab-body {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-top: none;
+  padding: 20px;
+  border-radius: 0 0 6px 6px;
 }
 
 /* ── 관리자 소형 모바일 (480px) ── */

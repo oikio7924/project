@@ -2,7 +2,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const bcrypt = require('bcryptjs');
 const pool = require('../db');
 
 async function initDb() {
@@ -14,13 +13,12 @@ async function initDb() {
 
   const adminUsername = process.env.ADMIN_USERNAME || 'admin';
   const adminPassword = process.env.ADMIN_PASSWORD || 'Admin1234!';
-  const hash = await bcrypt.hash(adminPassword, 10);
 
   await pool.query(
     `INSERT INTO users (username, password, name, company_name, role, status)
      VALUES ($1, $2, $3, $4, 'admin', 'active')
      ON CONFLICT (username) DO NOTHING`,
-    [adminUsername, hash, '관리자', 'AT Global']
+    [adminUsername, adminPassword, '관리자', 'AT Global']
   );
   await pool.query(seed);
 }

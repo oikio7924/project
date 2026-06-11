@@ -1,6 +1,5 @@
 node_modules/
+data/store.json
 .env
-uploads/
-logs/
-*.log
 .claude/
+logs/
