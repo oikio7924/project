@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+
+<body>
+	<div style="border: 1px solid #eee;width:585px; height:100%; margin:50px auto; position:relative; text-align:center;">
+    	<div style="position:absolute; top:2.5%; left:2%; width:96%; height:1px; background-color:#444;"></div>
+    	<div style="position:absolute; bottom:2.5%; left:2%; width:96%; height:1px; background-color:#cfcfd0;"></div>
+    	<div style="position:absolute; top:2.5%; right:2%; width:1px; height:95%; background-color:#444;">
+    		<div style="position:absolute; bottom:0; left:0; width:1px; height:66px; background-color:#cfcfd0;"></div>
+    	</div>
+    	<div style="position:absolute; top:2.5%; left:2%; width:1px; height:95%; background-color:#444;">
+    		<div style="position:absolute; bottom:0; left:0; width:1px; height:66px; background-color:#cfcfd0;}"></div>
+    	</div>
+        <div>
+        	<div style="background-color:#efeeed; padding:30px 0 20px;">
+            	<img src="${domain}/resources/img/logo/logo_white_01.png" alt="로고">
+            </div>
+            <div style="background-color:#fff; padding:30px 0;">
+            	<h1 style="font-size: 27px;font-weight: bodl;letter-spacing: -2px;font-family: 맑은고딕;">${user.UI_NAME}님의 계정 정보
+                </h1>
+                <p style="margin: 15px 0 0;font-size: 13px;color: #444;line-height: 1.5;letter-spacing: -0.7px;font-family: 돋움;">
+                	아이디 :: <font style="font-weight:bold;">${user.UI_ID}</font><br>
+                                             임시 비밀번호 :: <font style="font-weight:bold;">${pwd}</font>
+                </p>
+            </div>
+            <div style="background-color:#4c4c4e; padding:20px 0 30px;">
+            	<a href="${url}" alt="Tx CMS" style="background: none;color: #fff;font-size: 16px;letter-spacing: -1px;cursor: pointer;border: none;font-weight: bold;font-family: 맑은고딕;">로그인</a>
+            </div>
+        </div>
+    </div>	    
+</body>
+</html>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Weather"> 
+
+
+	<insert id="WeatherData_Day" parameterType="HashMap">
+		INSERT INTO dy_wether_All_table
+		(
+			NOWDATE,RAINRATEAM,TEMPERATUREAM,SKYAM,RAINRATEPM,TEMPERATUREPM,SKYPM,TEMPERATUREMIN,TEMPERATUREMAX,CLOUDRATE,Region
+		)
+		VALUES
+		(
+			#{NowDate},#{rainRateAm},#{temperatureAm},#{skyAm},#{rainRatePm},#{temperaturePm},#{skyPm},#{temperatureMin},#{temperatureMax},#{CLOUDRATE},#{region}
+		) 
+	</insert>
+	
+	<insert id="Daily_WeatherData" parameterType="hashmap">
+		INSERT INTO dy_wether_data
+		(
+			DWD_DATE, DWD_PTV, DWD_RN1, DWD_SKY, DWD_T1H, DWD_REH, DWD_WSD, DWD_REGION, DWD_SUNRISE, DWD_SUNSET
+		)
+		VALUES(
+			#{date}, #{weather}, #{rn1}, #{sky}, #{t1h}, #{reh}, #{wsd}, #{region}, #{sunrise}, #{sunset}
+		)
+	</insert>
+	
+	<delete id="Daily_WeatherDelete">
+		DELETE FROM dy_wether_data 
+	</delete>
+	
+	
+	<select id="select_Weather" parameterType="String" resultType="hashmap">
+		SELECT * 
+		FROM dy_wether_data
+		WHERE DWD_REGION = #{area}
+		ORDER BY DWD_DATE ASC
+	</select>
+	
+</mapper>

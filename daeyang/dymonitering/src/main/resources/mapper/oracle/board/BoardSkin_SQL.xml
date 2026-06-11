@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BoardSkin">
+	
+	 <sql id="BST_getListBody">
+	 FROM (
+	  SELECT AA.*, ROW_NUMBER() OVER(
+	  			<choose>
+	 		<when test="orderBy == 1">
+	 		ORDER BY	COUNT ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 2">
+	 		ORDER BY	BST_TYPE_NAME ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 3">
+	 		ORDER BY	BST_TITLE ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 4">
+	 		ORDER BY	BST_UI_NAME ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 5">
+	 		ORDER BY	BST_REGDT ${sortDirect}
+	 		</when>
+	 		<otherwise>
+	 		ORDER BY BST_KEYNO DESC
+	 		</otherwise>
+	 	</choose>
+	  ) RNUM
+		FROM(
+			SELECT 	  BST_KEYNO
+					, ROWNUM as COUNT
+		    		, TO_CHAR(BST_REGDT,'YYYY-MM-dd HH24:mi:ss') BST_REGDT
+		    		, NVL(U.UI_REP_NAME,BST_REGNM) BST_UI_NAME
+		    		, BST_TITLE
+		    		, CASE 
+		    			WHEN B.BST_TYPE  = 'list' THEN '리스트'
+		    			WHEN B.BST_TYPE = 'detail' THEN '상세'
+		    			WHEN B.BST_TYPE = 'insert' THEN '등록'
+		    			END BST_TYPE_NAME
+		    FROM b_board_skin_template B  
+		    LEFT JOIN u_userinfo U
+		    ON		B.BST_REGNM	=	U.UI_KEYNO
+			WHERE BST_DElETE = 'N'
+		)AA
+		WHERE 1=1
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT 			LIKE '%' || #{item.searchKeyword} || '%'			
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		BST_TYPE_NAME					LIKE '%' || #{item.searchKeyword} || '%'						
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		BST_TITLE					LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		BST_UI_NAME 	LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		BST_REGDT 		LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT 			LIKE '%' || #{item.searchKeyword} || '%'   OR
+ 				BST_TYPE_NAME 			LIKE '%' || #{item.searchKeyword} || '%' 				OR
+ 				BST_TITLE 			LIKE '%' || #{item.searchKeyword} || '%'				OR
+ 				BST_UI_NAME 	LIKE '%' || #{item.searchKeyword} || '%' 				OR
+ 				BST_REGDT 		LIKE '%' || #{item.searchKeyword} || '%'						
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+	 	) B
+	</sql>
+
+	<select id="BST_getListCnt" resultType="int">
+			SELECT	COUNT(*)
+		<include  refid="BST_getListBody"/>
+    </select>
+    
+    
+    <select id="BST_getList" resultMap="ResultMap.rownumHashMap">
+		SELECT	*
+		<include  refid="BST_getListBody"/>
+		<if test="recordCountPerPage != 0">
+			WHERE RNUM BETWEEN  #{firstIndex}+1 AND #{lastIndex}
+		</if>
+    </select>
+
+	<select id="BST_getData" resultType="BoardSkin">
+		SELECT *
+		FROM b_board_skin_template 
+		WHERE 1=1
+		AND BST_DELETE = 'N'				
+		<if test="BST_KEYNO != null and BST_KEYNO !=''">
+			AND BST_KEYNO = #{BST_KEYNO}
+		</if>
+	</select>
+	
+	<select id="BST_FormList" resultType="BoardSkin">
+		SELECT BST_TITLE, BST_KEYNO, BST_FORM ,BST_TYPE
+		FROM b_board_skin_template
+		WHERE BST_DELETE = 'N'
+		<if test="BST_TYPE != null and BST_TYPE != ''">
+			AND BST_TYPE = #{BST_TYPE}
+		</if>
+	</select>
+	
+	<insert id="BST_insert"> 
+		INSERT INTO b_board_skin_template
+		(	
+			BST_KEYNO,
+			BST_TITLE,
+			BST_FORM,
+			BST_REGDT,
+			BST_REGNM,
+			BST_TYPE
+		)VALUES(
+			BoardSkin.NEXTVAL,
+			#{BST_TITLE},
+			#{BST_FORM},
+			SYSDATE,
+			#{BST_REGNM},
+			#{BST_TYPE}
+		)
+	</insert>
+	
+	<update id="BST_update">
+	UPDATE b_board_skin_template
+	SET 
+		BST_TITLE = #{BST_TITLE},
+		BST_FORM = #{BST_FORM},
+		BST_TYPE = #{BST_TYPE}
+	WHERE BST_KEYNO  = #{BST_KEYNO}
+	</update>
+
+	<update id="BST_delete">
+	UPDATE b_board_skin_template
+	SET 
+		BST_DELETE = 'Y'
+	WHERE BST_KEYNO  = #{BST_KEYNO}
+	</update>
+	
+	
+	<!-- 패키지 관리 sql -->
+	
+	 <sql id="BSP_getListBody">
+	 FROM (
+	 	SELECT AA.*, ROW_NUMBER() OVER(
+	 	<choose>
+	 		<when test="orderBy == 1">
+	 		ORDER BY	COUNT ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 2">
+	 		ORDER BY	BSP_TITLE ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 3">
+	 		ORDER BY	LIST_TITLE ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 4">
+	 		ORDER BY	DETAIL_TITLE ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 4">
+	 		ORDER BY	INSERT_TITLE ${sortDirect}
+	 		</when>
+	 		<otherwise>
+	 		ORDER BY BSP_KEYNO DESC
+	 		</otherwise>
+	 	</choose>
+	 		) RNUM
+		FROM(
+			SELECT 	  BSP_KEYNO
+					, ROWNUM as COUNT
+		    		, TO_CHAR(BSP_REGDT,'YYYY-MM-dd HH24:mi:ss') BSP_REGDT
+		    		, NVL(U.UI_REP_NAME,BSP_REGNM) BSP_UI_NAME
+		    		, BSP_TITLE
+		    		, CASE 
+                        WHEN B.BSP_LIST_KEYNO = 'list' then '기본 리스트 폼'  
+                        WHEN B.BSP_LIST_KEYNO = 'no_detail' then '상세페이지 없는 리스트 폼'  
+                        WHEN B.BSP_LIST_KEYNO = 'gallery' then '갤러리 폼'  
+                        WHEN B.BSP_LIST_KEYNO = 'calendar' then '캘린더 폼' 
+                        ELSE  (SELECT BST_TITLE FROM b_board_skin_template WHERE BST_KEYNO = B.BSP_LIST_KEYNO ) 
+                        END LIST_TITLE
+		    		, CASE 
+                        WHEN B.BSP_DETAIL_KEYNO = 'no' then '사용안함'  
+                        WHEN B.BSP_DETAIL_KEYNO = 'normal' then '기본 상세페이지 폼'  
+                        ELSE  (SELECT BST_TITLE FROM b_board_skin_template WHERE BST_KEYNO = B.BSP_DETAIL_KEYNO )
+                        END DETAIL_TITLE
+                    , CASE 
+                        WHEN B.BSP_INSERT_KEYNO = 'normal' then '기본 등록 폼'  
+                        ELSE  (SELECT BST_TITLE FROM b_board_skin_template WHERE BST_KEYNO = B.BSP_INSERT_KEYNO )
+                        END INSERT_TITLE
+		    FROM b_board_skin_package B  
+		    LEFT JOIN u_userinfo U
+		    ON		B.BSP_REGNM	=	U.UI_KEYNO
+			WHERE BSP_DElETE = 'N'
+		)AA
+		WHERE 1=1
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT 			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		BSP_TITLE		LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		LIST_TITLE 	LIKE '%' || #{item.searchKeyword} || '%'						
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		DETAIL_TITLE 		LIKE '%' || #{item.searchKeyword} || '%'						
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		INSERT_TITLE 		LIKE '%' || #{item.searchKeyword} || '%'						
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT 			LIKE '%' || #{item.searchKeyword} || '%' 		OR
+ 				BSP_TITLE 			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				LIST_TITLE 	LIKE '%' || #{item.searchKeyword} || '%' 		OR
+ 				DETAIL_TITLE 		LIKE '%' || #{item.searchKeyword} || '%'	 OR					
+ 				INSERT_TITLE 		LIKE '%' || #{item.searchKeyword} || '%'						
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+	 	)A
+	</sql>
+	
+	
+	<select id="BSP_getListCnt" resultType="int">
+			SELECT	COUNT(*)
+		<include  refid="BSP_getListBody"/>
+    </select>
+    
+    
+    <select id="BSP_getList" resultMap="ResultMap.rownumHashMap">
+		SELECT	*
+		<include  refid="BSP_getListBody"/>
+		<if test="recordCountPerPage != 0">
+		 	WHERE RNUM BETWEEN  #{firstIndex}+1 AND #{lastIndex}
+		</if>
+    </select>
+	
+	<select id="BSP_getData" resultType="BoardSkin">
+		SELECT *
+		FROM b_board_skin_package
+		WHERE BSP_KEYNO = #{BSP_KEYNO}
+	</select>
+	
+	<select id="BSP_getData_WithForm" resultType="BoardSkin">
+		SELECT B.*
+		, (SELECT BST_FORM FROM b_board_skin_template WHERE TO_CHAR(BST_KEYNO) = B.BSP_LIST_KEYNO) as BSP_LIST_FORM
+		, (SELECT BST_FORM FROM b_board_skin_template WHERE TO_CHAR(BST_KEYNO) = B.BSP_DETAIL_KEYNO) as BSP_DETAIL_FORM
+		, (SELECT BST_FORM FROM b_board_skin_template WHERE TO_CHAR(BST_KEYNO) = B.BSP_INSERT_KEYNO) as BSP_INSERT_FORM
+		FROM b_board_skin_package B
+		WHERE BSP_KEYNO = #{BSP_KEYNO}
+	</select>
+	
+	
+	<insert id="BSP_insert"> 
+		INSERT INTO b_board_skin_package
+		(
+			BSP_KEYNO,
+			BSP_TITLE,
+			BSP_LIST_KEYNO,
+			BSP_DETAIL_KEYNO,
+			BSP_INSERT_KEYNO,
+			BSP_REGNM,
+			BSP_REGDT
+		)VALUES(
+			BoardSkinPa.NEXTVAL,
+			#{BSP_TITLE},
+			#{BSP_LIST_KEYNO},
+			#{BSP_DETAIL_KEYNO},
+			#{BSP_INSERT_KEYNO},
+			#{BSP_REGNM},
+			SYSDATE
+		)
+	</insert>
+	
+	
+	<update id="BSP_update">
+	UPDATE b_board_skin_package
+	SET 
+		BSP_TITLE = #{BSP_TITLE},
+		BSP_LIST_KEYNO = #{BSP_LIST_KEYNO},
+		BSP_DETAIL_KEYNO = #{BSP_DETAIL_KEYNO},
+		BSP_INSERT_KEYNO = #{BSP_INSERT_KEYNO}
+	WHERE BSP_KEYNO  = #{BSP_KEYNO}
+	</update>
+
+	<update id="BSP_delete">
+	UPDATE b_board_skin_package
+	SET 
+		BSP_DELETE = 'Y'
+	WHERE BSP_KEYNO  = #{BSP_KEYNO}
+	</update>
+	
+	<select id="BSP_list" resultType="BoardSkin">
+ 		SELECT *
+ 		FROM b_board_skin_package
+ 		WHERE BSP_DELETE = 'N'
+	</select>
+	
+    <select id="boardSkinForm" resultType="String">
+         SELECT BST_FORM 
+        FROM b_board_skin_template 
+        WHERE BST_KEYNO = #{BST_KEYNO}
+    </select>
+</mapper>     

@@ -1,0 +1,462 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="PopupZone"> 
+
+	<resultMap id="PopZoneMap" type="HashMap">
+		<result property="TCGM_FORM" column="TCGM_FORM" jdbcType="CLOB" javaType="java.lang.String"/>
+	</resultMap>
+  	
+  	<sql id="TLM_getListBody">
+  		FROM(
+  			SELECT AA.*
+		  			, ROW_NUMBER() OVER (
+		    		<choose>
+				 		<when test='orderBy.equals("1")'>
+				 		ORDER BY	COUNT ${sortDirect}
+				 		</when>
+				 		<when test='orderBy.equals("2")'>
+				 		ORDER BY	TLM_COMMENT ${sortDirect}
+				 		</when>
+				 		<when test='orderBy.equals("3")'>
+				 		ORDER BY	TLM_URL ${sortDirect}
+				 		</when>
+				 		<when test='orderBy.equals("4")'>
+				 		ORDER BY	TLM_REGDT ${sortDirect}
+				 		</when>
+				 		<otherwise>
+				 		ORDER BY TLM_TCGM_KEYNO DESC, TLM_ORDER ASC, TLM_KEYNO DESC
+				 		</otherwise>
+				 	</choose>
+			 		) RNUM
+			FROM(
+				SELECT 	  TLM_KEYNO
+						, ROWNUM COUNT
+			    		, TO_CHAR(TLM_REGDT,'YYYY-MM-dd') TLM_REGDT
+			    		, NVL(U.UI_REP_NAME, TLM_REGNM) TCGM_UI_NAME
+			    		, M.TCGM_KEYNO
+			    		, TLM_COMMENT
+			    		, TLM_URL
+			    		, TLM_USE_YN
+			    		, TLM_TCGM_KEYNO
+	    				, TLM_ORDER
+	    				, (SELECT  COUNT(*) FROM t_popupzone_list P WHERE  TLM_DEL_YN =	'N' AND	TLM_TCGM_KEYNO = B.TLM_TCGM_KEYNO) LENGTH
+			    FROM t_popupzone_list B 
+			    LEFT JOIN u_userinfo U
+			    ON		B.TLM_REGNM	=	U.UI_KEYNO
+			    LEFT JOIN t_popupzone_category M
+			    ON		B.TLM_TCGM_KEYNO	=	M.TCGM_KEYNO
+				WHERE TLM_DEL_YN = 'N'
+				<if test="SHOW_USING_YN != null and SHOW_USING_YN != ''">
+					AND	TLM_USE_YN = #{SHOW_USING_YN}
+				</if>
+			)AA
+			WHERE 1=1
+			<if test='category != null and category != ""'>
+	 		AND TCGM_KEYNO = #{category}				
+		 	</if>
+			<if test="searchList != null">
+		 	<foreach collection="searchList" item="item">
+		 		<choose>
+		 			<when test='item.searchIndex.equals("1")'>
+	 		AND		COUNT 			LIKE '%' || #{item.searchKeyword} || '%'			
+		 			</when>
+		 			<when test='item.searchIndex.equals("2")'>
+	 		AND		TLM_COMMENT 	LIKE '%' || #{item.searchKeyword} || '%'				
+		 			</when>
+		 			<when test='item.searchIndex.equals("3")'>
+	 		AND		TLM_URL			=	#{item.searchKeyword}					
+		 			</when>
+		 			<when test='item.searchIndex.equals("4")'>
+	 		AND		TLM_REGDT 		LIKE '%' || #{item.searchKeyword} || '%'				
+		 			</when>
+		 			<when test='item.searchIndex.equals("all")'>
+	 		AND (
+	 				COUNT 			LIKE '%' || #{item.searchKeyword} || '%'	OR
+	 				TLM_COMMENT 	LIKE '%' || #{item.searchKeyword} || '%' 	OR
+	 				TLM_URL			=	#{item.searchKeyword}  					OR
+	 				TLM_REGDT 		LIKE '%' || #{item.searchKeyword} || '%'				
+	 		)							
+		 			</when>
+		 		</choose>
+		 	</foreach>
+		 	</if>
+	 	) AAA
+		
+	</sql>
+	
+    <select id="TLM_getListCnt" resultType="int">
+			SELECT	COUNT(*)
+		<include  refid="TLM_getListBody"/>
+    </select>
+    
+    <select id="TLM_getList" resultType="hashmap">
+		SELECT	*
+		<include  refid="TLM_getListBody"/>
+		<if test="recordCountPerPage != 0">
+		WHERE 1=1
+	 	AND RNUM BETWEEN	#{firstIndex}+1 AND #{recordCountPerPage}
+		</if> 	
+    </select>
+    
+    <insert id="TLM_insert">
+    	INSERT INTO t_popupzone_list(
+			 TLM_KEYNO
+			,TLM_ALT
+			,TLM_COMMENT
+			,TLM_REGNM
+			,TLM_REGDT
+			,TLM_URL
+			<if test='TLM_FS_KEYNO != "" and TLM_FS_KEYNO != null'>
+			,TLM_FS_KEYNO
+			</if>
+			,TLM_TCGM_KEYNO
+			,TLM_DATE_YN
+			,TLM_STARTDT
+			,TLM_ENDT
+			,TLM_ORDER
+			)
+		VALUES(
+			 #{TLM_KEYNO}     
+			,#{TLM_ALT}     
+			,#{TLM_COMMENT}     
+			,#{TLM_REGNM}     
+			,SYSDATE 
+			,#{TLM_URL}
+			<if test='TLM_FS_KEYNO != "" and TLM_FS_KEYNO != null'>
+			,#{TLM_FS_KEYNO}     
+			</if>
+			,#{TLM_TCGM_KEYNO}
+			,#{TLM_DATE_YN}     
+			,#{TLM_STARTDT}     
+			,#{TLM_ENDT}      
+			,#{TLM_ORDER}      
+			)
+    </insert>
+    
+    <update id="TLM_choiceYN" parameterType="PopupZoneListDTO">
+   		UPDATE t_popupzone_list
+    	SET 	TLM_USE_YN		=	#{TLM_USE_YN}
+    	WHERE	TLM_KEYNO		=	#{TLM_KEYNO}
+    </update>
+    
+    <update id="TLM_delete" parameterType="hashmap">
+        UPDATE t_popupzone_list 
+        SET TLM_DEL_YN	=	'Y' , TLM_USE_YN ='N' 
+        WHERE	TLM_KEYNO		=	#{TLM_KEYNO}
+    </update>
+    
+    <select id="TLM_getData" resultType="hashmap">
+    	SELECT 	  TLM_KEYNO
+	   			, 'TLM' || TO_NUMBER(SUBSTR(TLM_KEYNO, -10)) KEYNO 
+	    		, TO_CHAR(TLM_REGDT,'YYYY-MM-dd') TLM_REGDT
+	    		, NVL(U.UI_REP_NAME, TLM_REGNM) TLM_UI_NAME
+	    		, M.TCGM_TITLE TLM_TCGM_TITLE
+	    		, TLM_ALT
+	    		, TLM_COMMENT
+	    		, TLM_URL
+	    		, TLM_FS_KEYNO
+	    		, TLM_USE_YN
+	    		, TLM_DEL_YN
+	    		, TLM_TCGM_KEYNO
+	    		, TLM_DATE_YN
+	    		, TLM_STARTDT
+	    		, TLM_ENDT
+	    		, TLM_ORDER
+	    		, M.TCGM_IMG_WIDTH TCGM_IMG_WIDTH
+	    		, M.TCGM_IMG_HEIGHT TCGM_IMG_HEIGHT
+	    		, M.TCGM_IMG_YN TCGM_IMG_YN
+	    		, M.TCGM_IMG_RESIZE_YN TCGM_IMG_RESIZE_YN
+	    		, S.FS_ORINM 
+	    		, (SELECT  COUNT(*) FROM t_popupzone_list P WHERE  TLM_DEL_YN =	'N' AND	TLM_TCGM_KEYNO = B.TLM_TCGM_KEYNO) LENGTH
+	    FROM t_popupzone_list B 
+	    LEFT JOIN u_userinfo U
+	    ON		B.TLM_REGNM	=	U.UI_KEYNO
+	    LEFT JOIN t_popupzone_category M
+	    ON		B.TLM_TCGM_KEYNO	=	M.TCGM_KEYNO
+	    LEFT JOIN s_common_file_sub S
+		ON		B.TLM_FS_KEYNO	=	S.FS_KEYNO
+		WHERE	TLM_DEL_YN = 'N'
+		<if test="TLM_KEYNO != null and TLM_KEYNO != ''">
+		AND TLM_KEYNO = #{TLM_KEYNO}
+		</if>
+    </select>
+    
+    <update id="TLM_update" parameterType="PopupZoneListDTO">
+    	UPDATE t_popupzone_list
+	   	SET	     TLM_ALT     	=    #{TLM_ALT}      
+				,TLM_FS_KEYNO   =    #{TLM_FS_KEYNO}  
+				,TLM_URL        =    #{TLM_URL}        
+				,TLM_COMMENT   	=    #{TLM_COMMENT}     
+				,TLM_TCGM_KEYNO =    #{TLM_TCGM_KEYNO}
+				,TLM_DATE_YN 	=    #{TLM_DATE_YN}     
+				,TLM_STARTDT 	=    #{TLM_STARTDT}     
+				,TLM_ENDT 		=    #{TLM_ENDT}      
+    	WHERE  	TLM_KEYNO       =	#{TLM_KEYNO}
+    </update>
+    
+    <!-- 리스트 순서 변경 --> 
+	<update id="TLM_OrderUpdate" parameterType="PopupZoneListDTO">
+		 UPDATE t_popupzone_list A
+			SET TLM_ORDER = 
+			(
+				CASE WHEN TLM_KEYNO = #{TLM_KEYNO} THEN #{TLM_ORDER}
+					<![CDATA[
+					 WHEN	TLM_ORDER >= #{TLM_ORDER} AND TLM_ORDER <= #{TLM_ORDER_BEFORE} THEN TLM_ORDER + 1
+					 WHEN	TLM_ORDER >= #{TLM_ORDER_BEFORE} AND TLM_ORDER <= #{TLM_ORDER} THEN TLM_ORDER - 1
+					]]>
+					 ELSE 	TLM_ORDER
+				END
+			)
+		WHERE TLM_TCGM_KEYNO = #{TLM_TCGM_KEYNO}
+		AND	  TLM_DEL_YN = 'N'
+	</update>
+	
+	<!-- 삭제에 의한 리스트 순서 변경 --> 
+	<update id="TLM_OrderUpdateByDelete" parameterType="PopupZoneListDTO">
+		 UPDATE t_popupzone_list A
+			SET TLM_ORDER = 
+			(
+				CASE
+					<![CDATA[
+					 WHEN	TLM_ORDER >= #{TLM_ORDER_BEFORE} THEN TLM_ORDER - 1
+					]]>
+					 ELSE 	TLM_ORDER
+				END
+			)
+		WHERE TLM_TCGM_KEYNO = #{TLM_TCGM_KEYNO}
+		AND	  TLM_DEL_YN = 'N'
+	</update>
+	
+	<!-- 리스트 추가시 정렬 기준 확인 -->
+	<select id="TLM_getListLV"  resultType="int" parameterType="PopupZoneListDTO">
+		<![CDATA[ 
+			SELECT	COUNT(*) FROM t_popupzone_list 
+			WHERE 	TLM_ORDER 		=	#{TLM_ORDER}
+			AND		TLM_DEL_YN		=	'N'
+			AND		TLM_TCGM_KEYNO	=	#{TLM_TCGM_KEYNO}
+		]]>
+	</select>
+	
+	<!-- 리스트 정렬기준 순서를 +1시켜주는 쿼리 -->
+	<update id="TLM_addListLV" parameterType="PopupZoneListDTO">
+		<![CDATA[
+			UPDATE t_popupzone_list
+			SET 	TLM_ORDER		=	TLM_ORDER + 1
+			WHERE	TLM_ORDER		>=	#{TLM_ORDER}
+			AND 	TLM_DEL_YN		=	'N'
+			AND		TLM_TCGM_KEYNO	=	#{TLM_TCGM_KEYNO}
+		]]>
+	</update>
+    
+    <sql id="TCGM_getListBody">
+  		FROM(
+  			SELECT AA.*
+		  			, ROW_NUMBER() OVER (
+		    		<choose>
+				 		<when test='orderBy.equals("1")'>
+				 		ORDER BY	COUNT ${sortDirect}
+				 		</when>
+				 		<when test='orderBy.equals("2")'>
+				 		ORDER BY	TCGM_TITLE ${sortDirect}
+				 		</when>
+				 		<when test='orderBy.equals("3")'>
+				 		ORDER BY	TCGM_UI_NAME ${sortDirect}
+				 		</when>
+				 		<when test='orderBy.equals("4")'>
+				 		ORDER BY	TCGM_REGDT ${sortDirect}
+				 		</when>
+				 		<otherwise>
+				 		ORDER BY TCGM_KEYNO DESC
+				 		</otherwise>
+				 	</choose>
+			 		) RNUM
+			FROM(
+				SELECT 	  TCGM_KEYNO
+						, ROWNUM COUNT
+			    		, TO_CHAR(TCGM_REGDT,'YYYY-MM-dd') TCGM_REGDT
+			    		, NVL(U.UI_REP_NAME, TCGM_REGNM) TCGM_UI_NAME
+			    		, TCGM_TITLE
+			    FROM t_popupzone_category B 
+			    LEFT JOIN u_userinfo U
+			    ON		B.TCGM_REGNM	=	U.UI_KEYNO
+				WHERE TCGM_DEL_YN = 'N'
+				AND TCGM_MN_HOMEDIV_C = #{TCGM_MN_HOMEDIV_C}
+			)AA
+			WHERE 1=1
+			
+			<if test="searchList != null">
+		 	<foreach collection="searchList" item="item">
+		 		<choose>
+		 			<when test='item.searchIndex.equals("1")'>
+	 		AND		COUNT 			LIKE '%' || #{item.searchKeyword} || '%'			
+		 			</when>
+		 			<when test='item.searchIndex.equals("2")'>
+	 		AND		TCGM_TITLE 		LIKE '%' || #{item.searchKeyword} || '%'				
+		 			</when>
+		 			<when test='item.searchIndex.equals("3")'>
+	 		AND		TCGM_UI_NAME	=	#{item.searchKeyword}					
+		 			</when>
+		 			<when test='item.searchIndex.equals("4")'>
+	 		AND		TCGM_REGDT 		LIKE '%' || #{item.searchKeyword} || '%'				
+		 			</when>
+		 			<when test='item.searchIndex.equals("all")'>
+	 		AND (
+	 				COUNT 			LIKE '%' || #{item.searchKeyword} || '%'	OR
+	 				TCGM_TITLE 		LIKE '%' || #{item.searchKeyword} || '%' 	OR
+	 				TCGM_UI_NAME	=	#{item.searchKeyword}  					OR
+	 				TCGM_REGDT 		LIKE '%' || #{item.searchKeyword} || '%'				
+	 		)							
+		 			</when>
+		 		</choose>
+		 	</foreach>
+		 	</if>
+	 	) AAA
+		
+	</sql>
+	
+	
+	
+    <select id="TCGM_getListCnt" resultType="int">
+			SELECT	COUNT(*)
+		<include  refid="TCGM_getListBody"/>
+    </select>
+    
+    <select id="TCGM_getList" resultType="hashmap">
+		SELECT	*
+		<include  refid="TCGM_getListBody"/>
+		<if test="recordCountPerPage != 0">
+		WHERE 1=1
+	 	AND RNUM BETWEEN #{firstIndex}+1 AND #{recordCountPerPage}
+		</if> 	
+		
+    </select>
+    
+    <insert id="TCGM_insert">
+    	INSERT INTO t_popupzone_category(
+				TCGM_KEYNO
+				,TCGM_FORM
+				,TCGM_TITLE
+				,TCGM_IMG_YN
+				<if test="TCGM_IMG_WIDTH != '' or TCGM_IMG_HEIGHT != ''">
+				,TCGM_IMG_WIDTH
+				,TCGM_IMG_HEIGHT
+				</if>
+				,TCGM_IMG_RESIZE_YN
+				,TCGM_REGNM
+				,TCGM_REGDT
+				,TCGM_MN_HOMEDIV_C
+				)
+		VALUES(
+				 #{TCGM_KEYNO}
+				,#{TCGM_FORM}
+				,#{TCGM_TITLE}
+				,#{TCGM_IMG_YN}
+				<if test="TCGM_IMG_WIDTH != '' or TCGM_IMG_HEIGHT != ''">
+				,#{TCGM_IMG_WIDTH}
+				,#{TCGM_IMG_HEIGHT}
+				</if>
+				,#{TCGM_IMG_RESIZE_YN}
+				,#{TCGM_REGNM}
+				,SYSDATE
+				,#{TCGM_MN_HOMEDIV_C}
+			)
+    </insert>
+    
+    <select id="TCGM_getData" resultMap="PopZoneMap">
+    	SELECT 	  TCGM_KEYNO
+	   			, 'TCGM' || TO_NUMBER(SUBSTR(TCGM_KEYNO, -10)) KEYNO
+	    		, TO_CHAR(TCGM_REGDT,'YYYY-MM-dd') TCGM_REGDT
+	    		, NVL(U.UI_REP_NAME, TCGM_REGNM) TCGM_UI_NAME
+	    		, TCGM_FORM
+	    		, TCGM_IMG_YN
+	    		, TCGM_IMG_RESIZE_YN
+	    		, TCGM_IMG_WIDTH
+	    		, TCGM_IMG_HEIGHT
+	    		, TCGM_TITLE
+	    FROM t_popupzone_category B 
+	    LEFT JOIN u_userinfo U
+	    ON		B.TCGM_REGNM	=	U.UI_KEYNO
+		WHERE TCGM_DEL_YN = 'N'
+		<if test="TCGM_KEYNO != null and TCGM_KEYNO != ''">
+		AND TCGM_KEYNO = #{TCGM_KEYNO}
+		</if>
+    </select>
+    
+    <update id="TCGM_update">
+    	UPDATE t_popupzone_category
+    	SET   TCGM_TITLE 		= #{TCGM_TITLE}
+    		, TCGM_FORM 		= #{TCGM_FORM}
+    		, TCGM_IMG_YN 		= #{TCGM_IMG_YN}
+    		, TCGM_IMG_WIDTH 	= #{TCGM_IMG_WIDTH}
+    		, TCGM_IMG_HEIGHT 	= #{TCGM_IMG_HEIGHT}
+    		, TCGM_IMG_RESIZE_YN = #{TCGM_IMG_RESIZE_YN}
+    	WHERE TCGM_KEYNO 		= #{TCGM_KEYNO}
+    </update>
+    
+    <update id="TCGM_delete">
+    	UPDATE t_popupzone_category
+    	SET TCGM_DEL_YN = 'Y'
+    	WHERE TCGM_KEYNO = #{TCGM_KEYNO}
+    </update>
+    
+    <select id="TCGM_getFormList" resultType="hashmap" resultMap="PopZoneMap">
+    	SELECT	TCGM_KEYNO
+    			, TCGM_FORM
+    			, TCGM_TITLE FORM_NAME
+    	FROM t_popupzone_category
+    	WHERE	TCGM_DEL_YN = 'N'
+    	<if test="TCGM_MN_HOMEDIV_C != null and TCGM_MN_HOMEDIV_C != ''">
+    	AND 	TCGM_MN_HOMEDIV_C = #{TCGM_MN_HOMEDIV_C}
+    	</if>
+    </select>
+    
+    <select id="TCGM_getCategoryData" resultType="hashmap">
+    	SELECT	TCGM_KEYNO
+    			, TCGM_IMG_YN
+    			, TCGM_IMG_RESIZE_YN
+    			, TCGM_IMG_WIDTH
+    			, TCGM_IMG_HEIGHT
+    			, (SELECT  COUNT(*) FROM t_popupzone_list P WHERE  TLM_DEL_YN =	'N' AND	TLM_TCGM_KEYNO = #{TCGM_KEYNO}) LENGTH
+    	FROM t_popupzone_category
+    	WHERE	TCGM_DEL_YN = 'N'
+    	AND		TCGM_KEYNO = #{TCGM_KEYNO}
+    </select>
+    
+    <select id="TCGM_getListByTCGM_Keyno" resultType="hashmap">
+    <![CDATA[ 
+    	SELECT	B.*
+    			, M.FS_PUBLIC_PATH THUMBNAIL_PUBLIC_PATH
+				, (M.FS_FOLDER || M.FS_CHANGENM || '.' || M.FS_EXT) AS THUMBNAIL_PATH
+    			, M.*
+    	FROM t_popupzone_list B
+    	LEFT JOIN s_common_file_sub M
+	    ON		B.TLM_FS_KEYNO	=	M.FS_KEYNO
+    	WHERE	TLM_USE_YN = 'Y'
+    	AND		TLM_DEL_YN = 'N'
+    	AND		TLM_TCGM_KEYNO = #{TCGM_KEYNO}
+    	AND		
+    	(
+    			TLM_DATE_YN = 'N'
+    			OR
+    			(
+	    			TLM_DATE_YN = 'Y'
+	    			AND TLM_STARTDT <= TO_CHAR(SYSDATE, 'YYYY-MM-DD') AND TO_CHAR(SYSDATE, 'YYYY-MM-DD') <= TLM_ENDT 
+    			)
+    	)
+    	ORDER BY	TLM_ORDER ASC  
+    ]]>
+    </select>
+    
+    <update id="TLM_deleteByKey" parameterType="hashmap">
+        UPDATE t_popupzone_list 
+        SET TLM_DEL_YN	=	'Y'
+        WHERE	TLM_TCGM_KEYNO		=	#{TCGM_KEYNO}
+    </update>
+        
+    <select id="getSkinForm" resultType="String">
+        SELECT     TCGM_FORM
+        FROM t_popupzone_category
+        WHERE     TCGM_KEYNO = #{TCGM_KEYNO}
+    </select>
+</mapper>
+ 

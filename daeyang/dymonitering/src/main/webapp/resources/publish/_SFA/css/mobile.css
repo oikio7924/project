@@ -1,0 +1,389 @@
+/* 갤럭시  s8+ */
+@media screen and (min-width:360px) and (max-width:375px) {
+  .px-3.py-1.md\:px-3.md\:py-1.lg\:px-5.lg\:py-2.w-full.rounded-lg.bg-white.my-4.md\:md-4.lg\:my-7 {
+    width: 360px;
+  }
+  .container.grid.px-6.mx-auto {
+    text-align: center;
+    padding: 0;
+  }
+  /*빨간 1번점검 길이*/
+  p.flex.items-center.rounded-full.px-2.py-1.text-xs.bg-badge-red.text-buttonText-red.mr-6.mb-2 {
+    width: 53px;
+  }
+  .w-full.rounded-lg.bg-white.my-4.md\:md-4.lg\:my-7 {
+    width: 360px;
+  }
+  p.py-1.px-2.justify-center.rounded-full.text-white.bg-active-green.flex.items-center {
+    font-size: 7px;
+    width: 156px;
+  }
+  span.py-4 {
+    font-size: 9px;
+  }
+  select.default_input_style.input_margin_x_10px.input_padding_y_4px {
+    margin: 3px;
+  }
+  td.px-4.py-3.bg-table-violet {
+    font-size: 10px;
+  }
+  td.px-4.py-3.bg-table-violet {
+    font-size: 10px;
+  }
+  
+  
+  .flex.flex-wrap.items-center {
+    display: grid;
+    margin-top: 10px;
+	}
+  
+  span.mr-3 {
+    font-size: 11px;
+    width: 107px;
+	}
+	p.imagePixel.flex.items-center.rounded-full.px-2.py-1.text-xs.bg-badge-red.text-buttonText-red.mr-6.mb-2 {
+     width: 72px;
+	}
+  select#sa2_wether {
+    margin: 0;
+    width: 90px;
+    font-size: 10px;
+	}
+	
+	input#sa2_date {
+    padding: 0;
+    margin: 0;
+    font-size: 9px;
+	}
+  .w-60 {
+    width: 10rem;
+	}
+  .w-90 {
+ 	 width: 21rem;
+	}
+  .w-96 {
+  	width: 24rem;
+	}
+  select#sa2_adminname {
+    margin: 0;
+    width: 90px;
+    font-size: 10px;
+	}
+		/*셀렉트 박스*/
+	select#su_keyno {
+    width: 106px;
+    font-size: 12px;
+	}
+	/*발전소명*/
+	span.mr-3 {
+    width: 107px;
+    font-size: 11px;
+	}
+	p.imagePixel.flex.items-center.rounded-full.px-2.py-1.text-xs.bg-badge-green.text-active-green.mr-3.mb-2 {
+    width: 71px;
+	}
+	.aaw-width{
+	min-width: 80px;
+	}
+	.width-o{
+	min-width: 0px;
+	}
+
+}
+
+/* iphone se*/ 
+@media screen and (min-width:375px) and (max-width:389px) {
+	.px-3.py-1.md\:px-3.md\:py-1.lg\:px-5.lg\:py-2.w-full.rounded-lg.bg-white.my-4.md\:md-4.lg\:my-7 {
+    width: 375px;
+    }
+  .container.grid.px-6.mx-auto {
+    text-align: center;
+    padding: 0;
+  	}
+  /*빨간 1번 점검 길이*/
+  	p.flex.items-center.rounded-full.px-2.py-1.text-xs.bg-badge-red.text-buttonText-red.mr-6.mb-2 {
+    width: 53px;
+  	}
+  	.w-full.rounded-lg.bg-white.my-4.md\:md-4.lg\:my-7 {
+    width: 375px;
+  	}
+ 	p.py-1.px-2.justify-center.rounded-full.text-white.bg-active-green.flex.items-center {
+    font-size: 8px;
+    width: 155px;
+ 	 }
+ 	td.px-4.py-3.bg-table-violet {
+    font-size: 10px;
+  	}
+ 	span.py-4 {
+  	font-size: 11px;
+  	}
+	.flex.flex-wrap.items-center {
+    display: grid;
+    margin-top: 10px;
+	}
+	
+	p.imagePixel.flex.items-center.rounded-full.px-2.py-1.text-xs.bg-badge-red.text-buttonText-red.mr-6.mb-2 {
+    font-size: 10px;
+	}	
+	p.imagePixel.flex.items-center.rounded-full.px-2.py-1.text-xs.bg-badge-green.text-active-green.mr-3.mb-2 {
+    font-size: 10px;
+    width: 61px;
+	}	
+	
+	
+	span.mr-3 {
+    font-size: 13px;
+    width: 126px;
+    margin: 0;
+	}
+	p.imagePixel.flex.items-center.rounded-full.px-2.py-1.text-xs.bg-badge-red.text-buttonText-red.mr-6.mb-2 {
+    margin: 0 auto;
+    width: 67px;
+	}
+	  .container.grid.px-6.mx-auto {
+    text-align: center;
+    padding: 0;
+    }
+  
+   select#sa2_wether {
+    margin: 0;
+    width: 90px;
+    font-size: 10px;
+	}
+	
+	input#sa2_date {
+    padding: 0;
+    margin: 0;
+    font-size: 9px;
+	}
+	.w-60 {
+    width: 10rem;
+	}
+	select#sa2_adminname {
+    margin: 0;
+    width: 97px;
+    font-size: 10px;
+}
+	/*셀렉트 박스*/
+	select#su_keyno {
+    width: 106px;
+    font-size: 12px;
+}
+	/*발전소명*/
+span.mr-3 {
+    width: 82px;
+}
+	.aaw-width{
+	min-width: 80px;
+}
+	.width-o{
+	min-width: 0px;
+	}
+	
+}
+
+
+/*iphone 12pro*/
+
+@media screen and (min-width:390px) and (max-width:413px) {
+	
+  .px-3.py-1.md\:px-3.md\:py-1.lg\:px-5.lg\:py-2.w-full.rounded-lg.bg-white.my-4.md\:md-4.lg\:my-7 {
+    width: 390px;
+  }
+  .container.grid.px-6.mx-auto {
+    text-align: center;
+    padding: 0;
+  }
+  /*빨간 1번점검 길이*/
+  p.flex.items-center.rounded-full.px-2.py-1.text-xs.bg-badge-red.text-buttonText-red.mr-6.mb-2 {
+    width: 61px;
+  }
+  .w-full.rounded-lg.bg-white.my-4.md\:md-4.lg\:my-7 {
+    width: 390px;
+  }
+  p.py-1.px-2.justify-center.rounded-full.text-white.bg-active-green.flex.items-center {
+    font-size: 4px;
+    width: 203px;
+    height: 36px;
+  }
+  .flex.flex-wrap.items-center {
+   margin-top: 10px;
+  }
+  span.py-4 {
+    font-size: 11px;
+  }
+  .flex.flex-wrap.items-center {
+    margin: auto 10;
+	}
+	span.mr-3 {
+    width: 129px;
+	}
+	.flex.flex-wrap.items-center {
+    display: grid;
+	}
+	p.imagePixel.flex.items-center.rounded-full.px-2.py-1.text-xs.bg-badge-red.text-buttonText-red.mr-6.mb-2 {
+    font-size: 10px;
+	}	
+	p.imagePixel.flex.items-center.rounded-full.px-2.py-1.text-xs.bg-badge-green.text-active-green.mr-3.mb-2 {
+    font-size: 10px;
+    width: 61px;
+	}	
+	
+	
+	select#sa2_wether {
+    margin: 0;
+    width: 90px;
+    font-size: 10px;
+	}
+	
+	input#sa2_date {
+    padding: 0;
+    margin: 0;
+    font-size: 9px;
+}
+.w-60 {
+    width: 10rem;
+}
+select#sa2_adminname {
+    margin: 0;
+    width: 99px;
+    font-size: 10px;
+}
+	/*셀렉트 박스*/
+	select#su_keyno {
+    width: 106px;
+    font-size: 12px;
+}
+	/*발전소명*/
+span.mr-3 {
+    width: 82px;
+}
+span.mr-3 {
+    font-size: 10px;
+}
+select#su_keyno {
+    width: 105px;
+    font-size: 9px;
+}
+p.imagePixel.flex.items-center.rounded-full.px-2.py-1.text-xs.bg-badge-red.text-buttonText-red.mr-6.mb-2 {
+    width: 67px;
+}
+	.aaw-width{
+	min-width: 80px;
+	}
+	.width-o{
+	min-width: 0px;
+	}
+
+}
+
+
+/* galaxy s20 ultra*/
+@media screen and (min-width:412px) and (max-width:413px) {
+  .px-3.py-1.md\:px-3.md\:py-1.lg\:px-5.lg\:py-2.w-full.rounded-lg.bg-white.my-4.md\:md-4.lg\:my-7 {
+  width: 412px;
+  }
+  .w-full.rounded-lg.bg-white.my-4.md\:md-4.lg\:my-7 {
+    width: 412px;
+  }
+  .aaw-width{
+	min-width: 80px;
+  }
+  .width-o{
+	min-width: 0px;
+	}
+  
+}
+
+
+/* iphone xr*/ 
+@media screen and (min-width:414px) and (max-width:450px) {
+  .px-3.py-1.md\:px-3.md\:py-1.lg\:px-5.lg\:py-2.w-full.rounded-lg.bg-white.my-4.md\:md-4.lg\:my-7 {
+    width: 414px;
+  }
+  .container.grid.px-6.mx-auto {
+    text-align: center;
+    padding: 0;
+  }
+  /*빨간 1번점검 길이*/
+	p.flex.items-center.rounded-full.px-2.py-1.text-xs.bg-badge-red.text-buttonText-red.mr-6.mb-2 {
+    width: 61px;
+  	}
+	.w-full.rounded-lg.bg-white.my-4.md\:md-4.lg\:my-7 {
+    width: 414px;
+	}
+	p.py-1.px-2.justify-center.rounded-full.text-white.bg-active-green.flex.items-center {
+  		font-size: 9px;
+  		width: 163px;
+  	}
+	.flex.flex-wrap.items-center {
+  		margin-right: 22px;
+  		margin-top: 10px;
+  	}
+ 	span.py-4 {
+    	font-size: 13px;
+	}
+	.px-5.text-bold.text-sm.md\:text-sm.lg\:text-base.my-2\.5 {
+    	margin: 0 auto;
+	}
+
+	p.imagePixel.flex.items-center.rounded-full.px-2.py-1.text-xs.bg-badge-green.text-active-green.mr-3.mb-2 {
+    	width: 70px;
+		}
+	span.mr-3 {
+    	width: 134px;
+	}
+	.flex.flex-wrap.items-center {
+    	display: grid;
+    	margin: auto 10;
+	}
+	p.imagePixel.flex.items-center.rounded-full.px-2.py-1.text-xs.bg-badge-green.text-active-green.mr-3.mb-2 {
+    	width: 61px;
+	}
+	p.flex.items-center.rounded-full.px-2.py-1.text-xs.bg-badge-red.text-buttonText-red.mr-6.mb-2 {
+    	width: 67px;
+	}
+	
+	
+	select#sa2_wether {
+    margin: 0;
+    width: 90px;
+    font-size: 10px;
+	}
+	
+	input#sa2_date {
+    padding: 0;
+    margin: 0;
+    font-size: 9px;
+	}
+	.w-60 {
+    width: 10rem;
+	}
+	select#sa2_adminname {
+    margin: 0;
+    width: 90px;
+    font-size: 10px;
+	}
+	/*셀렉트 박스*/
+	select#su_keyno {
+    width: 107px;
+    font-size: 12px;
+	}
+	/*발전소명*/
+	span.mr-3 {
+    width: 84px;
+    font-size: 10px;
+	}
+	.flex.flex-wrap.items-center {
+    margin: 10px 7px;
+    padding: 10px;
+    }
+	.aaw-width{
+	min-width: 80px;
+	}
+	.width-o{
+	min-width: 0px;
+	}
+
+}
+

@@ -1,0 +1,92 @@
+/* 일반  */ 
+#pop_bg_opacity{width:100%;height:100%; background-color: #000; opacity:0.7; position: fixed; top:0; left:0; z-index: 15000; display: none;} 
+#pop_bg_opacity2{width:100%;height:100%; background-color: #000; opacity:0.5; position: fixed; top:0; left:0; z-index: 19000; display: none;} 
+#tour_contents_bg_box, #tour_confirm_bg_box  { width: 100%;height: 100%;background-color: #000;opacity: 0.7;position: absolute;top: 0;left: 0;z-index: 15000;display: none;  }
+.receipt_pop_body #Form {width: 85%; margin:0 auto;}
+/* 캘린더 */
+#tour_contents_pop_box {width: 1007px;background-color: #FFF; display: none;  position: fixed; z-index: 17000; top: 50%; left: 50%; height: 545px;  border: none;}
+.contents_pop_header{height:60px; width:100%; background: #397fc6; }
+.contents_pop_cbtn{ display: inline-block;  width: 30px;  height: 20px; position: absolute;  right: 20px;  top: 9px;}
+.contents_pop_title{font-size: 25px; font-weight:bold; text-align: center; color:#fff; line-height: 61px; top:0;}
+.contents_pop_body{width:100%; height:506px; overflow-x:hidden; padding:0 25px; box-sizing:border-box; } 
+.contents_pop_footer{display:none; height:26px; width:100%; position: absolute; bottom:0; left:0; background: #999; }
+
+.year_month{ font-size: 19px; color: #434343; text-align: center; margin:15px 0px;}
+.tronixTable{ width: 100%; border-collapse:inherit; border-spacing:4px; }
+
+.tronixSchedules {font-size: 13px;}
+.tronixSchedules > a { font-size:13px; } 
+
+.colTitle{ height: 45px; } 
+.tronixTh{ width:14%; vertical-align: middle; font-size: 15px; font-weight:bold; color: #66666c; background: #fff; border-top: 1px solid #d1d1d1; border-bottom: 1px solid #d1d1d1; }  
+ 
+.tronixTr{ height: 75px; background: #fafafa; }  
+.tronixTd{ vertical-align: top; padding:5px 10px; border:1px solid #ebebeb; }  
+
+.tronixTd span {cursor: pointer;}  
+.tronixTd > div {text-align: center; }  
+
+.prevMonth, .nextMonth{margin: 0 18px; cursor: pointer; height: 19px;}
+
+.tronixTh.sun{border-top: 1px solid #e75f64; border-bottom: 1px solid #e75f64; color:#e75f64; }
+.tronixTh.sat{border-top: 1px solid #397fc6; border-bottom: 1px solid #397fc6; color:#397fc6; }
+.tronixSunday{color: #e75f64;}
+.tronixSaturday{color: #397fc6;} 
+ 
+.closeDay {
+	background: url('/resources/common/images/calendar/crossline_w.gif'), #ececec;
+	background-size: 100% 100%;
+	text-align: left;   
+	color:#525252;
+	position: relative;
+}
+.closeDay2 { 
+	background: url('/resources/common/images/calendar/crossline_w.gif'), #ccc;
+	background-size: 100% 100%;
+	text-align: left;  
+	color:#525252;
+	position: relative;
+}
+.span_open {display:inline-block;  background: #397fc6; padding:3px; font-size:12px; line-height:12px; margin-left:5px; color: #fff; border-radius:5px;}
+.no_receipt {width: 100%; text-align:center; position: absolute; top:42%; left:0;}
+
+/* 신청팝업 */   
+#receipt_pop_box{padding:20px; width: 750px; background-color: #FFF; border: 1px solid #000; display: none;  position: fixed; z-index: 20000; top: 50%; left:50%;  height: 510px; }
+/* .receipt_pop_header{height:50px; width:100%; position: absolute; top:0; left:0; background: #999; } */
+.receipt_pop_header{height:60px; width:100%; background: #397fc6; position: relative; top:0; left:0; }
+.receipt_pop_body{width:100%; overflow-x:hidden; overflow-y:scroll; border:0; height:410px; padding: 0 40px; box-sizing: border-box; margin-top:0px;} 
+.receipt_pop_cbtn{ display: inline-block;  width: 30px;  height: 20px; position: absolute;  right: 25px;  top: 10px;}
+
+.label_header{width:100%; padding-bottom:5px; border-bottom: 1px solid #bbb; margin-top:25px; padding-left:11px; font-weight: bold; font-size: 16px; font-style: italic; color: #397fc6; margin-top:20px;}
+.label_text{width:18%; padding-left:2%; font-size: 14px; margin-top:15px; height:30px; padding-top:10px; float: left;}
+.input_form{width:80%; height:40px; float: left;  margin-top:15px; }
+.input_form input[type=text]{background-color: #f6f6f7; border: none; padding:10px 2%; width:76%;  border:1px solid #F6F6F0; }
+.input_form .tel{padding:10px 1% !important; width:15% !important;} 
+ 
+.agreement .agreement_contents {padding:20px 10px; font-size:13px;}  
+.label_footer {border-top: 1px solid #bbb;} 
+.label_footer label { margin:10px 10px 20px 10px;} 
+
+
+/* 현재사용X */
+#contents_pop_box {padding-top: 40px; width: 970px; padding-left:15px; background-color: #FFF; border: 1px solid #000; display: none;  position: fixed; z-index: 20000; top: 50%; left: 50%; height: 556px; }
+#contents_pop_frame{margin-top:80px; width:100%; padding-right:5px; height:554px; overflow-x:hidden; overflow-y:scroll; border:0; padding:0; margin:0; }  
+#lastPostsLoader{width:100%; margin-top:10px; display: none; text-align: center; float: left;}
+.fu-account{padding:10px 0;} 
+.fu-account h3{font-size: 16px;} 
+
+/* li.tronixSchedules:HOVER {box-shadow:2px 2px 2px #bbb; } */
+/* .prevMonth{ margin: 0 20px; cursor: pointer;} */ 
+/* .nextMonth{ margin: 0 20px; cursor: pointer;} */
+/* .tronixSchedules{font-size: 11px; color: #66666c; } */
+/* .tronixSchedules a{font-size: 131px; color: #66666c; } */
+/* .tronixSchedules a.acclink:HOVER{ background-color: #666; color:white;} */
+
+/* .cal-container .contents_pop_header{height:60px !important;}  */
+/* .cal-container .contents_pop_link {position: absolute; left: 0; top: 33px; width: 100%; font-size: 15px;text-align: center; color: #FFF;} */
+/* .cal-container .contents_pop_link a {color: #FFF;} */
+/* .cal-container .contents_pop_cbtn {top:19px;}     */
+/* .cal-container .contents_pop_back {top:19px;}    */
+/* .cal-container .calendar_more a{font-size:11px;}   */
+/* #contents_pop_frame.calendar_pop {height:536px !important; margin-top:20px;} */
+

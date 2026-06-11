@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MainSQL"> 
+	
+	<!-- 최근 게시물  - 관리자 메인 -->
+  	<select id="get_mainPageBoardList" resultType="hashmap">
+	SELECT * FROM
+		(
+		SELECT 		M.MN_NAME
+			   		,NVL(U.UI_REP_NAME,BN_REGNM) BN_UI_NAME
+			   		,N.* 
+			   		,(SELECT COUNT(*) FROM b_board_notice) BN_TOTAL
+		FROM b_board_notice N
+		LEFT JOIN s_menu_manager M
+		ON			N.BN_MN_KEYNO = M.MN_KEYNO
+		LEFT JOIN u_userinfo U
+		ON			BN_REGNM	=	U.UI_KEYNO
+		WHERE 		BN_USE_YN = 'Y'
+		AND   		BN_DEL_YN = 'N'
+		AND			M.MN_HOMEDIV_C = #{MN_HOMEDIV_C}
+		ORDER BY 	BN_KEYNO DESC
+	) 	<![CDATA[ 
+	WHERE ROWNUM <=13 
+	]]>
+    </select>
+    
+
+    
+    <!-- 회원 목록  - 관리자 메인 -->
+	<select id="get_mainPageMemberList" resultType="USER">
+		<![CDATA[
+ 		  SELECT * FROM (
+				SELECT (SELECT   COUNT(*) FROM u_userinfo) UI_TOTAL
+	 		 		,(SELECT COUNT(*) FROM u_userinfo WHERE UI_DELYN = 'Y') UI_TOTAL_LEAVE
+	 		 		,CASE WHEN UI_DELYN = 'Y' THEN '탈퇴회원' ELSE  ( SELECT 
+             SUBSTR(XMLAgg(XMLELEMENT(x, ',', B.UIA_NAME) ORDER BY A.UI_KEYNO).Extract('//text()'), 2)
+             FROM u_userinfo_member_authority A
+             LEFT JOIN u_userinfo_authority B
+             ON A.UIA_KEYNO = B.UIA_KEYNO
+             WHERE UI_KEYNO = M.UI_KEYNO
+             ) END UIA_NAME
+	 		 		, ( SELECT 
+             SUBSTR(XMLAgg(XMLELEMENT(x, ',', B.UIA_KEYNO) ORDER BY A.UI_KEYNO).Extract('//text()'), 2)
+             FROM u_userinfo_member_authority A
+             LEFT JOIN u_userinfo_authority B
+             ON A.UIA_KEYNO = B.UIA_KEYNO
+             WHERE UI_KEYNO = M.UI_KEYNO
+             ) AS UIA_KEYNO
+	 		 		,M.*
+	                ,ROW_NUMBER() OVER(PARTITION BY M.UI_KEYNO ORDER BY 1) AS RN
+			 FROM u_userinfo M
+	        
+			 ORDER BY UI_REGDT DESC
+	         )
+	         WHERE RN = 1
+	         AND ROWNUM <= 5
+         ]]>
+    </select>
+    
+    <select id="get_mainPageKeywordList" parameterType="Keyword" resultType="HashMap">
+   	
+    	SELECT	* 
+		FROM (
+			SELECT	B.*
+					, ROW_NUMBER() OVER(ORDER BY B.SK_SIZE DESC) as COUNT
+			FROM (
+				SELECT	SK_KEYWORD
+			          	, COUNT(*) SK_SIZE 
+			  	FROM t_search_keyword 
+			  	WHERE 1=1
+			  	<if test="STDT != null and STDT != ''">
+		        	<![CDATA[
+			 		AND			SK_REGDT	>=	#{STDT}
+			 		]]>
+				 	</if>
+				 	<if test="ENDT != null and ENDT != ''">
+				 	<![CDATA[
+			 		AND			SK_REGDT	<=	#{ENDT}
+				 	]]>
+				 	</if>
+			  	GROUP BY SK_KEYWORD 
+				ORDER BY SK_SIZE DESC
+			) B
+		)AA <![CDATA[ 
+		WHERE COUNT <=13 
+		]]>
+    </select>
+    
+    <select id="get_mainPageKeywordListCnt" resultType="int" parameterType="Keyword">
+   
+		
+				SELECT COUNT(*) FROM (
+					SELECT	SK_KEYWORD
+			  		FROM t_search_keyword 
+					WHERE  1=1
+					<if test="STDT != null and STDT != ''">
+		        	<![CDATA[
+			 		AND			SK_REGDT 	>=	#{STDT}
+			 		]]>
+				 	</if>
+				 	<if test="ENDT != null and ENDT != ''">
+				 	<![CDATA[
+			 		AND			SK_REGDT 	<=	#{ENDT}
+				 	]]>
+				 	</if>
+			  		GROUP BY SK_KEYWORD 
+					) BB
+		
+	
+    </select>
+  	
+	<!--메뉴 카운팅 조회  관리자메인 페이지에서 -->
+	<select id="get_mainPageMenuCount" parameterType="Log" resultType="Log">
+	SELECT * FROM
+	(
+		SELECT AB.* FROM (
+				        SELECT AH.AH_KEYNO
+				        , AH.MN_KEYNO
+				        , CASE 
+								WHEN AH.MN_LEV = '0' THEN '메인페이지'
+								ELSE AH.MN_NAME
+							END MN_NAME
+				        ,ROW_NUMBER() OVER(PARTITION BY MN_NAME ORDER BY AH.MN_KEYNO, AH.AH_SESSION) AS RN2
+				        ,COUNT(MN_NAME) OVER(PARTITION BY MN_NAME ORDER BY MN_NAME) AS selectCount
+			         FROM (
+							SELECT 		A.AH_KEYNO, B.MN_NAME, B.MN_LEV, C.MN_NAME MN_HOMEDIV_NAME, B.MN_HOMEDIV_C,B.MN_KEYNO, A.AH_SESSION
+			                ,ROW_NUMBER() OVER(PARTITION BY B.MN_KEYNO, A.AH_SESSION ORDER BY B.MN_KEYNO, A.AH_SESSION) AS RN
+							FROM t_activity_history A
+							LEFT JOIN s_menu_manager B
+							ON 			A.AH_MENU = B.MN_KEYNO
+							LEFT JOIN s_menu_manager C
+							ON			B.MN_HOMEDIV_C = C.MN_KEYNO
+							WHERE		1=1
+							AND			AH_OS		!=	'searchbot'	
+					        AND			B.MN_KEYNO IS NOT NULL
+					        AND			A.AH_SESSION IS NOT NULL
+					        AND			A.AH_HOMEDIV_C = #{AH_HOMEDIV_C}
+							<if test="STDT != null and STDT != ''">
+				          	AND			TO_CHAR(AH_DATE,'YYYY-MM-DD') 	>=	#{STDT}
+							</if>
+					        <if test="ENDT != null and ENDT != ''">
+					        <![CDATA[
+					        AND			TO_CHAR(AH_DATE,'YYYY-MM-DD') 	<=	#{ENDT}
+					        ]]>
+					        </if>	
+							) AH WHERE AH.RN = 1
+			        ) AB
+			        WHERE AB.RN2 = 1 
+			        ORDER BY AB.selectCount DESC
+				)  <![CDATA[ 
+					WHERE ROWNUM <=7 
+					]]>
+	</select>
+	
+	<!-- 방문자 카운팅 조회  관리자메인 페이지에서 -->
+	<select id="get_mainPageVisitorCount" resultType="Log">
+		SELECT 	  A.visitorType	   AS "visitorType"
+				, NVL(L.COUNT,'0') AS "lastCount"
+				, NVL(C.COUNT,'0') AS "thisCount"
+		FROM(
+			SELECT LPAD(LEVEL, 2, '0') visitorType
+			<![CDATA[
+			FROM dual CONNECT BY LEVEL <= 12
+			]]>
+		) A
+		LEFT JOIN (
+		    	SELECT	CONTENT AS visitorType, COUNT(*) COUNT
+		    	FROM (
+			    	SELECT	ROW_NUMBER() OVER(PARTITION BY AH_SESSION ORDER BY 1) AS RNUM
+			    			, SUBSTR(TO_CHAR(AH_DATE,'YYYY-MM-DD'), 6,2) CONTENT, AH_DATE
+			       	FROM t_activity_history
+			       	WHERE	1=1
+			       	AND		AH_HOMEDIV_C  = #{AH_HOMEDIV_C}
+				 	AND		AH_OS		 !=	'searchbot'	
+				 	<![CDATA[
+				 	AND 	TO_CHAR(AH_DATE,'YYYY-MM-DD') 	>=	TO_DATE((#{lastYear}||'-01-01'),'YYYY-MM-DD')
+			 		]]>
+		 			<![CDATA[
+		 			AND		TO_CHAR(AH_DATE,'YYYY-MM-DD') 	<=	TO_DATE((#{lastYear}||'-12-31'),'YYYY-MM-DD')
+		 			]]>
+		    		ORDER BY AH_KEYNO
+		    	) BODY
+		    	WHERE RNUM = 1
+				GROUP BY CONTENT
+		) L
+		ON A.visitorType = L.visitorType
+		LEFT JOIN (
+					SELECT	 CONTENT AS visitorType, COUNT(*) COUNT
+			    	FROM (
+				    	SELECT	ROW_NUMBER() OVER(PARTITION BY AH_SESSION ORDER BY 1) AS RNUM
+			    				, SUBSTR(TO_CHAR(AH_DATE,'YYYY-MM-DD'), 6,2) CONTENT, AH_DATE
+				       	FROM t_activity_history
+				       	WHERE	1=1
+				       	AND		AH_HOMEDIV_C  = #{AH_HOMEDIV_C}
+					 	AND		AH_OS		 !=	'searchbot'	
+					 	<![CDATA[
+					 	AND 		TO_CHAR(AH_DATE,'YYYY-MM-DD') 	>=	TO_DATE((#{thisYear}||'-01-01'),'YYYY-MM-DD')
+					 	]]>
+	 					<![CDATA[
+			 			AND			TO_CHAR(AH_DATE,'YYYY-MM-DD')  	<=	TO_DATE((#{thisYear}||'-12-31'),'YYYY-MM-DD')
+			 			]]>
+			    		ORDER BY AH_KEYNO
+			    	) BODY
+			    	WHERE RNUM = 1
+					GROUP BY CONTENT
+		) C
+		ON A.visitorType = C.visitorType
+		ORDER BY A.visitorType
+	</select>
+</mapper>

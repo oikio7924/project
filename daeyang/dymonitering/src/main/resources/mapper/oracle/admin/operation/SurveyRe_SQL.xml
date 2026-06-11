@@ -1,0 +1,430 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="surveyRe"> 
+  	<resultMap id="SURVEY_MAP" type="HashMap">
+		<result property="SRD_DATA" column="SRD_DATA" jdbcType="CLOB" javaType="java.lang.String"/>
+		<result property="SRD_IN_DATA" column="SRD_IN_DATA" jdbcType="CLOB" javaType="java.lang.String"/>
+	</resultMap>
+  
+  
+  
+  	<sql id="SRM_getListBody">
+		FROM (
+			SELECT	AB.*
+					, ROW_NUMBER() OVER (
+		    		<choose>
+				 		<when test="orderBy == 1">
+				 		ORDER BY	COUNT ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 2">
+				 		ORDER BY	SRM_REGDT ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 3">
+				 		ORDER BY	SRM_IP ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 4">
+				 		ORDER BY	UI_ID ${sortDirect}
+				 		</when>
+				 		<otherwise>
+				 		ORDER BY 	COUNT DESC
+				 		</otherwise>
+			 		</choose>
+			 		) RNUM
+			FROM (
+				SELECT		ROWNUM AS COUNT , A.*	
+				FROM (
+						SELECT    R.SRM_KEYNO
+				 				, NVL(U.UI_ID,'비회원') UI_ID
+								, TO_CHAR(SRM_REGDT,'YYYY-MM-dd HH24:mi:ss') SRM_REGDT
+								, R.SRM_IP 
+					 	FROM t_survey_result_mgr R
+					 	LEFT JOIN u_userinfo U
+					 	ON			R.SRM_REGNM = U.UI_KEYNO
+					 	WHERE 		SRM_SM_KEYNO = #{SM_KEYNO}
+					 	ORDER BY 	SRM_REGDT 
+					 ) A	
+			) AB
+		WHERE 1=1
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT 				LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		SRM_REGDT			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		SRM_IP 				LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		UI_ID				LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				<if test='SM_IDYN.equals("Y")'>
+ 				UI_ID 				LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				</if>
+ 				COUNT 				LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SRM_REGDT			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SRM_IP 				LIKE '%' || #{item.searchKeyword} || '%' 		 	
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+		)AA
+	
+	</sql>
+  	
+    <select id="SRM_getListCnt" resultType="int">
+		SELECT	COUNT(*)
+		<include  refid="SRM_getListBody"/>
+    </select>
+    
+    <select id="SRM_getList" resultType="hashmap">
+    	SELECT	* 
+		<include  refid="SRM_getListBody"/>
+		<if test=" recordCountPerPage != 0">
+		WHERE 1=1
+		AND 	RNUM BETWEEN  #{firstIndex} AND #{lastIndex} 
+		</if>  
+    </select>
+  
+  
+  
+  <!-- 설문결과 관리 입력 -->
+  <insert id="SRM_insert" parameterType="SrmDTO">
+  	INSERT INTO t_survey_result_mgr
+  		(
+  			 SRM_KEYNO
+  			,SRM_SM_KEYNO
+  			,SRM_REGDT
+  			<if test="SRM_REGNM != null">
+  			,SRM_REGNM
+  			</if>
+  			,SRM_IP
+  		)
+  	VALUES
+  		(
+  			 SRM_SEQ.NEXTVAL
+  			,#{SRM_SM_KEYNO}
+  			,SYSDATE
+  			<if test="SRM_REGNM != null">
+  			,#{SRM_REGNM}
+  			</if>
+  			,#{SRM_IP}
+  		)
+	    <selectKey resultType="String" keyProperty="SRM_KEYNO" order="AFTER">
+            SELECT SRM_SEQ.CURRVAL FROM dual
+        </selectKey>            
+  </insert>
+  
+  <!-- 설문 목록 -->
+ 	<select id="SRM_selectBySmkey" resultType="hashmap" parameterType="SmDTO">
+	 	SELECT 		R.*
+	 				, U.UI_ID
+	 	FROM t_survey_result_mgr R
+	 	LEFT JOIN u_userinfo U
+	 	ON			R.SRM_REGNM = U.UI_KEYNO
+	 	WHERE 		SRM_SM_KEYNO = #{SM_KEYNO}
+	 	ORDER BY	SRM_KEYNO DESC
+ 	</select>
+  
+  <!-- 설문 결과 데이터 입력 -->
+  <insert id="SRD_insert2" parameterType="SrmDTO">
+  	INSERT INTO t_survey_result_data
+  		(
+  			 SRD_KEYNO
+  			,SRD_SM_KEYNO
+  			,SRD_SRM_KEYNO
+  			,SRD_SQ_KEYNO
+  			,SRD_DATA
+  			<if test="SRD_SQO_KEYNO != null">
+  			,SRD_SQO_KEYNO
+  			,SRD_SQO_VALUE
+  			</if>
+  			<if test="SRD_IN_DATA != null">  
+ 			,SRD_IN_DATA
+	 		</if>  			
+  		)
+  	VALUES
+  		(
+  			 SRD_SEQ.NEXTVAL
+  			,#{SRD_SM_KEYNO}
+  			,#{SRD_SRM_KEYNO}
+  			,#{SRD_SQ_KEYNO}
+  			,#{SRD_DATA}
+  			<if test="SRD_SQO_KEYNO != null">
+  			,#{SRD_SQO_KEYNO}
+  			,#{SRD_SQO_VALUE}
+  			</if>
+  			<if test="SRD_IN_DATA != null">  
+  			,#{SRD_IN_DATA}
+	 		</if>
+  		)
+  </insert>
+  
+  <insert id="SRD_insert" parameterType="HashMap">
+  		INSERT ALL
+		<foreach collection="SQO_LIST" item="item"> 
+		INTO T_SURVEY_RESULT_DATA(
+			 SRD_KEYNO
+  			,SRD_SM_KEYNO
+  			,SRD_SRM_KEYNO
+  			,SRD_SQ_KEYNO
+  			,SRD_SQO_KEYNO
+  			,SRD_SQO_VALUE
+		) 
+		VALUES
+		(
+			 SRD_SEQ.NEXTVAL
+  			,#{SRD_SM_KEYNO}
+  			,#{SRD_SRM_KEYNO}
+  			,#{SRD_SQ_KEYNO}
+  			,#{item.SRD_SQO_KEYNO}
+  			,#{item.SRD_SQO_VALUE}
+		)
+		</foreach>
+		SELECT * FROM dual
+  </insert>
+  
+   <!-- 객관식 보기,결과 가져오기 -->
+ 	<select id="SRD_selectResultBySmkey_op" resultType="SqDTO" parameterType="SmDTO">
+	 	SELECT 	 a.SQO_KEYNO
+	 			,a.SQO_SQ_KEYNO
+	 			,a.SQO_NUM
+	 			,a.SQO_OPTION
+	 			,a.SQO_VALUE
+	 			,NVL(b.CNT_CHOICE, 0) as CNT_CHOICE
+	 			,NVL(b.SUM_VAL, 0) as SUM_VAL
+		FROM 
+			(SELECT  SQO_KEYNO
+			 		,SQO_SQ_KEYNO
+			 		,SQO_NUM
+			 		,SQO_OPTION
+			 		,SQO_VALUE 
+			 FROM t_survey_question_option
+			 WHERE SQO_SQ_KEYNO in (SELECT SQ_KEYNO FROM t_survey_question WHERE SQ_SM_KEYNO=#{SM_KEYNO})
+			 ORDER BY SQO_NUM) a
+		LEFT OUTER JOIN
+			(SELECT  SRD_SQ_KEYNO
+					,SRD_SQO_KEYNO
+					,COUNT(SRD_SQO_KEYNO) as CNT_CHOICE
+					,SUM(SRD_SQO_VALUE) as SUM_VAL
+			 FROM t_survey_result_data
+			 GROUP BY SRD_SQO_KEYNO, SRD_SQ_KEYNO) b
+		ON a.SQO_KEYNO = b.SRD_SQO_KEYNO
+		ORDER BY a.SQO_SQ_KEYNO, a.SQO_NUM
+ 	</select>
+ 	
+ 	<!-- 주관식 결과 가져오기 -->
+ 	<select id="SRD_selectResultBySmkey_an" resultType="SrmDTO" parameterType="SmDTO">
+	 	SELECT * 
+	 	FROM t_survey_result_data
+		WHERE SRD_SM_KEYNO = #{SM_KEYNO}
+		AND SRD_DATA IS NOT NULL
+		ORDER BY SRD_SQ_KEYNO, SRD_KEYNO
+ 	</select>
+ 	
+ 	
+ 	<!-- 내부 기타의견 결과 가져오기 -->
+ 	<select id="SRD_selectResultBySmkey_an2" resultType="SrmDTO" parameterType="SmDTO">
+	 	SELECT * 
+	 	FROM t_survey_result_data
+		WHERE SRD_SM_KEYNO = #{SM_KEYNO}
+		AND SRD_IN_DATA IS NOT NULL
+		ORDER BY SRD_SQ_KEYNO, SRD_KEYNO
+ 	</select>
+ 	<select id="SRD_getList" resultMap="SURVEY_MAP">
+ 		WITH V_TEMP1 AS (
+			SELECT C.* FROM (
+				SELECT 	SQ_KEYNO
+				 	  , SQ_ST_TYPE
+				 	  , SQ_NUM
+				 	  , SQ_QUESTION
+				 	  , SQ_ORDER_TYPE
+				 	  , SQ_IN_ORDER_TYPE
+				 	  , B.SRD_DATA
+				 	  , B.SRD_SQO_KEYNO
+				 	  , B.SRD_IN_DATA
+					  , ROW_NUMBER() OVER( PARTITION BY SQ_KEYNO ORDER BY SQ_KEYNO ) AS RN
+				FROM (
+						SELECT SQ.*
+						FROM t_survey_question SQ
+						WHERE SQ_SM_KEYNO = (
+											SELECT  SRD_SM_KEYNO
+											FROM t_survey_result_data
+											WHERE SRD_SRM_KEYNO = #{SRM_KEYNO}
+											GROUP BY SRD_SM_KEYNO
+										)
+						AND   SQ.SQ_DELYN = 'N'
+					) A	
+				LEFT JOIN (
+							SELECT SRD_DATA, SRD_SQO_KEYNO, SRD_SQ_KEYNO, SRD_IN_DATA
+						    FROM t_survey_result_data
+						    WHERE SRD_SRM_KEYNO = #{SRM_KEYNO}
+						  ) B
+				ON A.SQ_KEYNO = B.SRD_SQ_KEYNO
+			) C
+			WHERE C.RN = 1
+		)
+		, V_TEMP2 AS (
+			  SELECT  SQ_KEYNO
+						, LISTAGG(SQO.SQO_KEYNO,'||')  WITHIN GROUP (ORDER BY SQO.SQO_NUM) AS ALL_SQO_KEYNO
+						, LISTAGG(SQO.SQO_NUM,'||')  WITHIN GROUP (ORDER BY SQO.SQO_NUM) AS ALL_SQO_NUM
+						, LISTAGG(SQO.SQO_OPTION,'||')  WITHIN GROUP (ORDER BY SQO.SQO_NUM) AS ALL_SQO_OPTION
+						, LISTAGG(SQO.SQO_VALUE,'||')  WITHIN GROUP (ORDER BY SQO.SQO_NUM) AS ALL_SQO_VALUE
+				FROM(
+					SELECT *
+					FROM t_survey_question
+					WHERE SQ_SM_KEYNO = (
+										SELECT SRM_SM_KEYNO
+										FROM t_survey_result_mgr
+										WHERE SRM_KEYNO = #{SRM_KEYNO}
+										)
+					AND	  SQ_DELYN = 'N'				
+					ORDER BY SQ_NUM	
+				) A
+				LEFT JOIN t_survey_question_option SQO
+				ON A.SQ_KEYNO = SQO.SQO_SQ_KEYNO
+				GROUP BY A.SQ_KEYNO
+		)
+		, V_TEMP3 AS (
+			  SELECT  SRD_SQ_KEYNO
+					  ,NVL(LISTAGG(SRD_SQO_KEYNO, '||') WITHIN GROUP (ORDER BY SRD_SQO_KEYNO), ' ') AS SELECTED_SQ_KEYNO		
+					  ,LISTAGG(SRD_SQO_VALUE, '||') WITHIN GROUP (ORDER BY SRD_SQO_KEYNO) AS SELECTED_SQ_VALUE		
+			  FROM t_survey_result_data
+			  WHERE SRD_SRM_KEYNO = #{SRM_KEYNO}
+			  GROUP BY SRD_SQ_KEYNO
+		)
+		SELECT A.*, B.ALL_SQO_KEYNO, B.ALL_SQO_NUM,B.ALL_SQO_OPTION,B.ALL_SQO_VALUE,C.SELECTED_SQ_KEYNO , C.SELECTED_SQ_VALUE
+		FROM v_temp1 A
+		INNER JOIN v_temp2 B
+		ON A.SQ_KEYNO = B.SQ_KEYNO
+		INNER JOIN v_temp3 C
+		ON A.SQ_KEYNO = C.SRD_SQ_KEYNO
+		ORDER BY SQ_NUM
+ 	</select>
+  	
+  		<!-- 설문참여결과 -->
+  	<select id="GET_RESULTDATA" resultType="HashMap" >
+		WITH V_TEMP1 AS (
+			SELECT C.* FROM (	
+				SELECT SRM.SRM_KEYNO
+			    	, SRM.SRM_REGDT
+			    	, SRM.SRM_IP
+			    	, SRD.SRD_SQ_KEYNO
+			    	, SRD.SRD_DATA
+			    	, SRD.SRD_IN_DATA			    	
+			    	, ROW_NUMBER() OVER( PARTITION BY SRD_SQ_KEYNO ORDER BY SRD_SQ_KEYNO ) AS RN
+			    FROM t_survey_result_mgr SRM
+			    LEFT JOIN t_survey_result_data SRD
+			    ON SRM.SRM_KEYNO = SRD.SRD_SRM_KEYNO
+			    LEFT JOIN ( SELECT SQO.SQO_KEYNO, SQO.SQO_OPTION
+			            FROM t_survey_question SQ, T_SURVEY_QUESTION_OPTION SQO
+			            WHERE SQ.SQ_KEYNO = SQO.SQO_SQ_KEYNO
+			            AND   SQ.SQ_SM_KEYNO = #{SRM_SM_KEYNO}
+			            AND   SQ.SQ_DELYN = 'N'
+			            ORDER BY SQ.SQ_NUM) AA  
+			    ON SRD.SRD_SQO_KEYNO = AA.SQO_KEYNO
+			    WHERE SRM_KEYNO = #{SRM_KEYNO}
+		) C
+			WHERE C.RN = 1
+		)
+		, V_TEMP2 AS (
+			<![CDATA[
+			SELECT 	SRD_SQ_KEYNO
+				, LISTAGG(AA.SQO_OPTION,'<br>')  WITHIN GROUP (ORDER BY AA.SQO_OPTION) AS SQO_OPTION
+		    FROM t_survey_result_mgr SRM
+		    LEFT JOIN t_survey_result_data SRD
+		    ON SRM.SRM_KEYNO = SRD.SRD_SRM_KEYNO
+		    LEFT JOIN ( SELECT SQO.SQO_KEYNO, SQO.SQO_OPTION
+		            FROM t_survey_question SQ, T_SURVEY_QUESTION_OPTION SQO
+		            WHERE SQ.SQ_KEYNO = SQO.SQO_SQ_KEYNO
+		            AND   SQ.SQ_SM_KEYNO = #{SRM_SM_KEYNO}
+		            AND   SQ.SQ_DELYN = 'N') AA  
+		    ON SRD.SRD_SQO_KEYNO = AA.SQO_KEYNO
+		    WHERE SRM_KEYNO = #{SRM_KEYNO}
+		    AND   SRD_SQO_KEYNO IS NOT NULL
+			GROUP BY SRD_SQ_KEYNO
+		)
+		SELECT A.SRM_KEYNO, A.SRM_REGDT, A.SRM_IP, A.SRD_SQ_KEYNO, 
+		(
+		CASE
+			(SELECT SQ_ST_TYPE FROM t_survey_question WHERE A.SRD_SQ_KEYNO = SQ_KEYNO)			
+		WHEN 'R'		 	
+	 	THEN
+	 		(CASE	
+	 			NVL(TO_CHAR(A.SRD_DATA), '결과 없음')
+	 		WHEN TO_CHAR(A.SRD_DATA)
+	 		THEN 
+	 			 B.SQO_OPTION || '<br>' || '기타의견 - ' || TO_CHAR(A.SRD_DATA)
+	 		ELSE B.SQO_OPTION
+	 		END)
+	 	WHEN 'O'
+	 	THEN
+	 		(CASE
+	 			NVL(TO_CHAR(A.SRD_DATA), '결과 없음')
+	 		WHEN TO_CHAR(A.SRD_DATA)
+	 		THEN
+	 			(CASE
+	 				NVL(TO_CHAR(A.SRD_IN_DATA), '결과 없음')
+	 			WHEN TO_CHAR(A.SRD_IN_DATA)
+	 			THEN
+		 			 B.SQO_OPTION || '<br>' || '기타의견 - ' || TO_CHAR(A.SRD_DATA)|| '<br>' || '기타의견(선택형) - ' || TO_CHAR(A.SRD_IN_DATA)
+	 			ELSE
+	 				 B.SQO_OPTION || '<br>' || '기타의견 - ' || TO_CHAR(A.SRD_DATA) 
+	 			END)
+	 		ELSE 
+	 			(CASE
+	 				NVL(TO_CHAR(A.SRD_IN_DATA), '결과 없음')
+	 			WHEN TO_CHAR(A.SRD_IN_DATA)
+	 			THEN
+	 				B.SQO_OPTION || '<br>' || '기타의견(선택형) - ' || TO_CHAR(A.SRD_IN_DATA)
+	 			ELSE
+		 			B.SQO_OPTION
+		 		END)
+	 		END)	
+	 	ELSE	
+			NVL(NVL(TO_CHAR(A.SRD_DATA), B.SQO_OPTION), '결과 없음')	
+		END) RESULTDATA			
+		FROM v_temp1 A
+		LEFT JOIN v_temp2 B
+		ON A.SRD_SQ_KEYNO = B.SRD_SQ_KEYNO
+		]]>		
+  	</select>
+  	
+  	<select id="GET_RESULTDATA_back" resultType="HashMap" resultMap="SURVEY_MAP">
+		SELECT A.SRM_KEYNO, A.SRM_REGDT, A.SRM_IP, A.SRD_SQ_KEYNO, 
+		      (A.SRD_DATA || A.SQO_OPTION) RESULTDATA
+		FROM(
+		    SELECT SRM.SRM_KEYNO, SRM.SRM_REGDT, SRM.SRM_IP, SRD.SRD_SQ_KEYNO, SRD.SRD_DATA, SRD.SRD_SQO_KEYNO, AA.SQO_OPTION
+		    FROM t_survey_result_mgr SRM
+		    LEFT JOIN t_survey_result_data SRD
+		    ON SRM.SRM_KEYNO = SRD.SRD_SRM_KEYNO
+		      
+		    LEFT JOIN ( SELECT SQO.SQO_KEYNO, SQO.SQO_OPTION
+		            FROM t_survey_question SQ, T_SURVEY_QUESTION_OPTION SQO
+		            WHERE SQ.SQ_KEYNO = SQO.SQO_SQ_KEYNO
+		            AND   SQ.SQ_SM_KEYNO = #{SRM_SM_KEYNO}
+		            AND   SQ.SQ_DELYN = 'N') AA  
+		    ON SRD.SRD_SQO_KEYNO = AA.SQO_KEYNO
+		                
+		    WHERE SRM_KEYNO = #{SRM_KEYNO}
+		    ) A
+		ORDER BY A.SRD_SQ_KEYNO
+  	</select>
+  	
+  	 <delete id="SRM_delete">
+  		DELETE FROM t_survey_result_mgr
+  		WHERE SRM_KEYNO = #{SRM_KEYNO}
+  	</delete>  
+  	 	
+  	 <delete id="SRD_delete">
+  		DELETE FROM t_survey_result_data
+  		WHERE SRD_SRM_KEYNO = #{SRM_KEYNO}
+  	</delete>  
+  	
+</mapper>
+ 

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:p="http://www.springframework.org/schema/p"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="http://www.springframework.org/schema/beans"
+    xmlns:util="http://www.springframework.org/schema/util"
+    xmlns:task="http://www.springframework.org/schema/task"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+                        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+                        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.0.xsd
+                        http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-4.1.xsd">
+    
+    <context:component-scan base-package="com">
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/><!-- 태그에 해당하는 어노테이션만 제외한 나머지 bean을 등록시킴 -->
+    </context:component-scan>
+    
+    <task:annotation-driven/>
+    
+    <!-- Properties -->
+    <util:properties id="config" location="classpath:/config.properties" />
+    <context:property-placeholder properties-ref="config" />
+    
+    
+     <bean name="propertiesService" class="egovframework.rte.fdl.property.impl.EgovPropertyServiceImpl" destroy-method="destroy">
+		<property name="properties">
+	        <map>
+	        <!-- 	<entry key="FileExt" value="${file.ext}"/>
+	        	<entry key="FilePath" value="${fileupload.filePath}"/>
+	        	<entry key="resourcePath" value="${resource.path}"/>
+	        	<entry key="jspPath" value="${jsp.path}"/>
+	        	<entry key="pageUnit" value="20"/>
+	        	<entry key="pageSize" value="10"/>
+	        	<entry key="mailName" value="${email.name}"/>
+	        	<entry key="mailAddress" value="${email.username}"/> -->
+	        </map>
+		</property>
+	</bean>
+	
+	<!-- 메일 발송 -->
+	<bean id="mailSender" class ="org.springframework.mail.javamail.JavaMailSenderImpl" >
+	    <property name="host" value="smtp.gmail.com" />
+	    <property name="port" value="587" />
+	    <property name="username" value="uu1541@gmail.com" />
+	    <property name="password" value="xmfhslrtm1!" />
+	    <property name="javaMailProperties">
+	    <props>
+	        <prop key="mail.smtp.starttls.enable">true</prop>
+	    </props>
+	    </property>
+	</bean>
+	
+	<bean id="NormalRenderer" class="com.tx.common.service.page.NormalPagination"/>
+	<bean id="ManagerRenderer" class="com.tx.common.service.page.ManagerPagination"/>
+	
+	<bean id="paginationManager" class="egovframework.rte.ptl.mvc.tags.ui.pagination.DefaultPaginationManager">
+		<property name="rendererType">
+			<map>
+				<entry key="normal" value-ref="NormalRenderer"/>
+				<entry key="Manager" value-ref="ManagerRenderer"/>
+			</map>
+		</property> 
+	</bean>
+	
+   <util:properties id="EXAMPLE_CONFIG">
+	    <!-- 링크아이디 -->
+	    <prop key="LinkID">DAEYANG</prop>
+	    <!-- 비밀키 -->
+	    <prop key="SecretKey">qjS+SO7fY73+No/uXK8YB7I9E0NRzCUjg5ETSY/a54k=</prop>
+	    <!-- 연동환경 설정값 true(개발용), false(상업용) -->
+	    <prop key="IsTest">false</prop>
+	    <!-- 인증토큰 아이피 제한 기능 사용여부 권장(true) -->
+	    <prop key="IsIPRestrictOnOff">true</prop>
+	    <!-- 팝빌 API 서비스 고정 IP 사용여부, true-사용, false-미사용, 기본값(false) -->
+	    <prop key="UseStaticIP">false</prop>
+	    <!-- 로컬시스템 시간 사용여부 true-사용(기본값-권장), false-미사용 -->
+	    <prop key="UseLocalTimeYN">true</prop>
+	</util:properties>
+	
+
+	    <!-- 전자세금계산서 Service Implementation Bean registration.  -->
+	    <bean id="taxinvoiceService" class="com.popbill.api.taxinvoice.TaxinvoiceServiceImp">
+	        <property name="linkID" value="#{EXAMPLE_CONFIG.LinkID}"/>
+	        <property name="secretKey" value="#{EXAMPLE_CONFIG.SecretKey}"/>
+	        <property name="test" value="#{EXAMPLE_CONFIG.IsTest}"/>
+	        <property name="IPRestrictOnOff" value="#{EXAMPLE_CONFIG.IsIPRestrictOnOff}"/>
+	        <property name="useStaticIP" value="#{EXAMPLE_CONFIG.UseStaticIP}"/>
+	        <property name="useLocalTimeYN" value="#{EXAMPLE_CONFIG.UseLocalTimeYN}"/>
+	   </bean>
+
+
+</beans>

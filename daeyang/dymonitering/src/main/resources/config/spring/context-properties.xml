@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.3.xsd">
+    
+    <bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+	   <property name="basenames">
+	       <list>
+	           	<value>/WEB-INF/messages/spring_security_messages</value>
+	           	<value>/WEB-INF/messages/validate_messages</value>
+				<value>classpath:/egovframework/message/com/message-common</value>
+				<value>classpath:/egovframework/rte/fdl/idgnr/messages/idgnr</value>
+				<value>classpath:/egovframework/rte/fdl/property/messages/properties</value>
+				<value>classpath:/egovframework/egovProps/globals</value>
+	       </list>
+	   </property>
+	   <property name="defaultEncoding" value="UTF-8"/>
+	   <property name="cacheSeconds" value="5"/>
+	</bean>
+	
+</beans>

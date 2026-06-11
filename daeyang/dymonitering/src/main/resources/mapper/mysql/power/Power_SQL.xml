@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="power"> 
+  	
+  	<sql id="Pw_getListBody">
+		FROM (
+			SELECT	B.*
+					, @ROWNUM:=@ROWNUM+1 as COUNT
+			FROM (
+				SELECT *
+				FROM   dy_power_plant
+		        WHERE  DPP_DEL_YN = 'N'
+				ORDER BY DPP_KEYNO
+			) B
+			WHERE (@ROWNUM:=0)=0
+		)AA
+		WHERE 1=1
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT 				LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		DPP_AREA			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		DPP_NAME			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		DPP_DATE			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT 				LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				DPP_AREA			LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				DPP_NAME			LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				DPP_DATE			LIKE CONCAT( '%',#{item.searchKeyword},'%')
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+	</sql>
+  	
+    <select id="Pw_getListCnt" resultType="int">
+		SELECT	COUNT(*)
+		<include  refid="Pw_getListBody"/>
+    </select>
+    
+    <select id="Pw_getList" resultMap="ResultMap.rownumHashMap">
+    	SELECT	* 
+		<include  refid="Pw_getListBody"/>
+		<choose>
+	 		<when test="orderBy == 1">
+	 		ORDER BY	COUNT ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 2">
+	 		ORDER BY	DPP_AREA ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 3">
+	 		ORDER BY	DPP_NAME ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 4">
+	 		ORDER BY	DPP_DATE ${sortDirect}
+	 		</when>
+	 		<otherwise>
+	 		ORDER BY 	COUNT DESC
+	 		</otherwise>
+ 		</choose>
+		<if test=" recordCountPerPage != 0">
+		LIMIT  	#{recordCountPerPage} OFFSET #{firstIndex} 
+		</if>  
+    </select>
+  	
+  	
+  	
+	<!-- 발전소 등록 -->
+	<insert id="Pw_insert" parameterType="PowerDTO">
+       	INSERT INTO dy_power_plant
+		(
+				  DPP_NAME
+				, DPP_VOLUM
+				, DPP_USER
+				, DPP_STATUS
+				, DPP_IMG
+				, DPP_X_LOCATION
+				, DPP_Y_LOCATION
+				, DPP_INVER
+				, DPP_INVER_COUNT
+				, DPP_AREA
+				, DPP_LOCATION
+				, DPP_SN
+				, DPP_OTHER_VOLUM
+		)
+		VALUES
+		(
+	              #{DPP_NAME}
+				, #{DPP_VOLUM}
+				, #{DPP_USER}
+				, #{DPP_STATUS}
+				, #{DPP_IMG}
+				, #{DPP_X_LOCATION}
+				, #{DPP_Y_LOCATION}
+				, #{DPP_INVER}
+				, #{DPP_INVER_COUNT}
+				, #{DPP_AREA}
+				, #{DPP_LOCATION}
+				, #{DPP_SN}
+				, #{DPP_OTHER_VOLUM}
+		)
+    </insert>
+    
+	<!-- 발전소 수정 -->
+	<update id="Pw_update" parameterType="PowerDTO">
+       	UPDATE dy_power_plant
+       	SET 
+       		 DPP_NAME			= #{DPP_NAME}
+			, DPP_VOLUM 		= #{DPP_VOLUM}
+			, DPP_USER 			= #{DPP_USER}
+			, DPP_STATUS		= #{DPP_STATUS}
+			, DPP_IMG			= #{DPP_IMG}
+			, DPP_X_LOCATION	= #{DPP_X_LOCATION}
+			, DPP_Y_LOCATION	= #{DPP_Y_LOCATION}
+			, DPP_INVER			= #{DPP_INVER}
+			, DPP_INVER_COUNT	= #{DPP_INVER_COUNT}
+			, DPP_AREA			= #{DPP_AREA}
+			, DPP_LOCATION		= #{DPP_LOCATION}
+			, DPP_SN			= #{DPP_SN}			
+			, DPP_OTHER_VOLUM	= #{DPP_OTHER_VOLUM}
+		WHERE DPP_KEYNO 		= #{DPP_KEYNO}
+    </update>
+
+	<!-- 발전소 추가 수정 sn_num -->
+	<update id="Pw_SN_update" parameterType="PowerDTO">
+       	UPDATE dy_power_plant
+       	SET 	DPP_SN_NUM			= #{DPP_SN_NUM}			
+		WHERE DPP_KEYNO 		= #{DPP_KEYNO}
+    </update>
+    
+    <select id="Pw_getData" parameterType="PowerDTO" resultType="PowerDTO">
+    	SELECT * 
+    	FROM dy_power_plant
+    	WHERE DPP_KEYNO = #{DPP_KEYNO}
+    </select>
+    
+</mapper>
+ 

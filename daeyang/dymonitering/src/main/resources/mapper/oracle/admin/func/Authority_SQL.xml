@@ -1,0 +1,827 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Authority"> 
+  
+  	<select id="UIA_GetSystemList" resultType="hashmap">
+    	<![CDATA[ 
+    		SELECT 	* 
+    		FROM u_userinfo_authority
+    		WHERE	UIA_SYSTEM	=	'Y'
+    	]]>
+	</select>
+  	
+  	<select id="UIA_GetList3" resultType="hashmap">
+    	<![CDATA[ 
+    		SELECT 	* 
+    		FROM u_userinfo_authority
+    		WHERE	UIA_SYSTEM	!=	'Y'
+    		AND		UIA_DIVISION IN ('G','A')
+    		ORDER BY UIA_DEPTH,UIA_ORDER
+    	]]>
+	</select>
+	
+	<select id="UIA_GetAllList" resultType="String">
+    	<![CDATA[ 
+    		SELECT 	UIA_KEYNO 
+    		FROM u_userinfo_authority
+    		WHERE	UIA_DIVISION	IN 	('A','U')
+    	]]>
+	</select>
+	
+	<select id="UIA_GetListForDomain" resultType="hashmap" parameterType="String">
+    	<![CDATA[ 
+    		SELECT 		A.*
+                        , SUBSTR(B.HAM_DEFAULT_URL,length(#{HM_TILES})+1) HAM_DEFAULT_URL
+    		FROM u_userinfo_authority A
+    		LEFT JOIN s_home_authority_manager B
+    		ON			A.UIA_KEYNO = B.UIA_KEYNO
+    		AND			B.HM_KEYNO	=	#{HM_KEYNO}
+    		WHERE		A.UIA_DIVISION	IN 	('A','U')
+    		AND			A.UIA_NAME != 'ANONYMOUS'
+    	]]>
+	</select>
+	
+	<insert id="UIA_insertData">
+		INSERT INTO u_userinfo_authority
+		(
+				  UIA_KEYNO
+				, UIA_NAME
+				, UIA_SYSTEM
+				, UIA_MAINKEY
+				, UIA_DEPTH
+				, UIA_ORDER
+				, UIA_DIVISION
+				, UIA_HOMEKEY
+		)
+		VALUES
+		(
+	   		   	  #{UIA_KEYNO}
+				, #{UIA_NAME}
+				, #{UIA_SYSTEM}
+				, #{UIA_MAINKEY}
+				, #{UIA_DEPTH}
+				<choose>
+					<when test="UIA_ORDER == -1">
+				, (SELECT NVL(MAX(UIA_ORDER),0) + 1 FROM u_userinfo_authority WHERE UIA_MAINKEY = #{UIA_MAINKEY})
+					</when>
+					<otherwise>
+				, #{UIA_ORDER}	
+					</otherwise>
+				</choose>
+				, #{UIA_DIVISION}
+				, #{UIA_HOMEKEY}
+		)
+	</insert>
+	
+	<insert id="UIA_insertAll">
+		INSERT ALL
+		<foreach collection="list" item="item">
+		INTO U_USERINFO_AUTHORITY
+		(
+			  UIA_KEYNO
+			, UIA_NAME
+			, UIA_SYSTEM
+			, UIA_MAINKEY
+			, UIA_DEPTH
+			, UIA_ORDER
+			, UIA_DIVISION
+		)
+		VALUES
+        (
+   		   	  #{item.UIA_KEYNO}
+			, #{item.UIA_NAME}
+			, #{item.UIA_SYSTEM}
+			, #{item.UIA_MAINKEY}
+			, #{item.UIA_DEPTH}
+			, #{item.UIA_ORDER}
+			, #{item.UIA_DIVISION}
+		)
+        </foreach>
+        SELECT * FROM dual
+	</insert>
+	
+	<select id="UIA_isChange" resultType="int">
+		SELECT	COUNT(*)
+		FROM u_userinfo_authority
+		WHERE	UIA_KEYNO	=	#{UIA_KEYNO}
+		<choose>
+			<when test="UIA_MAINKEY == null or UIA_MAINKEY == ''">
+		AND		(UIA_MAINKEY	IS	NULL or UIA_MAINKEY = '')	
+			</when>
+			<otherwise>
+		AND		UIA_MAINKEY	=	#{UIA_MAINKEY}
+			</otherwise>
+		</choose>
+		AND		UIA_DEPTH	=	#{UIA_DEPTH}
+	</select>
+	
+	<select id="UIA_getData" parameterType="String" resultType="hashmap">
+  		SELECT	A.*
+  				, UIA_NAME NAME
+  		FROM u_userinfo_authority A
+  		WHERE	UIA_KEYNO	=	#{UIA_KEYNO}
+  	</select>
+	
+	<select id="UIA_getDataByUIKEYNO" parameterType="String" resultType="String">
+  		SELECT	UIA_KEYNO
+  		FROM u_userinfo_member_authority 
+  		WHERE	UI_KEYNO	=	#{UI_KEYNO}
+  	</select>
+	
+  	<!-- 권한 리스트 -->
+	<select id="UIA_GetList" resultType="USER">
+    	<![CDATA[ 
+    		SELECT 	* 
+    		FROM u_userinfo_authority
+    		WHERE	UIA_DIVISION	=	'A'
+    	]]>
+	</select>
+	
+	 <!-- 권한 리스트 (시스템권한 제외)-->
+	<select id="UIA_GetList2" resultType="USER">
+    	<![CDATA[ 
+    		SELECT 	* 
+    		FROM u_userinfo_authority
+    		WHERE	UIA_SYSTEM		!=	'Y'
+    		AND		UIA_DIVISION	=	'A'
+    	]]>
+	</select>
+	
+	<!-- 권한 리스트 (개발자권한 제외)-->
+	<select id="UIA_GetList4" resultType="String">
+    	<![CDATA[ 
+    		SELECT 	* 
+    		FROM u_userinfo_authority
+    		WHERE	UIA_KEYNO		!= 'UIA_ASDFG'
+    	]]>
+	</select>
+	
+	<select id="UIA_GetListwidthUrl" resultType="hashmap" parameterType="String">
+    	-- LOG OFF
+    	<![CDATA[ 
+    		SELECT 	U.*,
+			(
+				SELECT 	LISTAGG(UIA_NAME,',') WITHIN GROUP (ORDER BY UIA_NAME) UIA_NAME
+			    FROM u_userinfo_authority A, U_USERINFO_AUTHORITY_ROLL B
+			    WHERE	B.UIA_KEYNO		=	A.UIA_KEYNO	
+			    AND		B.MN_KEYNO	=	(SELECT MN_KEYNO FROM s_menu_manager WHERE MN_URL = #{MN_URL})
+			    AND		B.UIR_KEYNO	=	U.UIR_KEYNO
+			) AUTHORITY_LIST
+			FROM u_userinfo_roll U
+			WHERE	U.UIR_TYPE	=	'SC_MYKFE'
+    	]]>
+	</select>
+	
+	<!-- 서브 권한 리스트 -->
+	<select id="UIR_GetList" resultType="USER" parameterType="USER">
+    	<![CDATA[ 
+    		SELECT 		R.*,S.SC_CODENM UIR_TYPE_NAME
+    		FROM u_userinfo_roll R
+    		LEFT JOIN s_common_code_sub S
+    		ON			R.UIR_TYPE	=	S.SC_KEYNO
+    	]]>
+    	<if test='UIR_TYPE != null and UIR_TYPE != ""'>
+    		WHERE		UIR_TYPE	=	#{UIR_TYPE}
+    	</if>
+	</select> 
+	
+	    
+    <!-- 권한에  리소스 매핑 -->
+	<insert id="URA_insert" parameterType="Resource">
+        INSERT ALL
+		<foreach collection="urlResources" item="item">
+		INTO U_USERINFO_RESOURCE_AUTHORITY
+		(
+			  UIA_KEYNO
+			, USR_KEYNO 
+		)
+		VALUES
+            (#{item}, #{USR_KEYNO})
+        </foreach>
+        SELECT * FROM dual
+    </insert>
+    
+    
+    <delete id="URA_delete" parameterType="Resource">
+    	DELETE FROM u_userinfo_resource_authority
+    	WHERE	UIA_KEYNO	=	#{UIA_KEYNO}
+    </delete>
+    
+    <delete id="URA_deleteWidthUSR" parameterType="String">
+    	DELETE FROM u_userinfo_resource_authority
+    	WHERE	USR_KEYNO	=	#{USR_KEYNO}
+    </delete>
+    
+    <!-- 리소스 등록 -->
+	<insert id="USR_insert" parameterType="Resource">
+	
+		INSERT INTO u_userinfo_secured_resource
+		(			
+				  	USR_KEYNO
+				  ,	USR_NAME
+				  ,	USR_PATTERN
+				  ,	USR_TYPE
+				  ,	USR_UIR_KEYNO
+				  ,	USR_ORDER
+				  ,	USR_ORDER_CLASS
+		)
+        VALUES 
+        (
+        		  	#{USR_KEYNO}
+				  ,	#{USR_NAME}
+				  ,	#{USR_PATTERN}
+				  ,	#{USR_TYPE}
+				  ,	#{USR_UIR_KEYNO}
+				  ,	#{USR_ORDER}
+				  ,	#{USR_ORDER_CLASS}
+        )
+    </insert>
+    
+	
+	<!-- 관리자 여부 -->
+	<select id="UIA_isAdmin" parameterType="hashmap" resultType="String">
+		SELECT		CASE WHEN COUNT(*) > 0 THEN 'Y' ELSE 'N' END  
+		FROM u_userinfo_secured_resource A
+		LEFT JOIN u_userinfo_resource_authority B
+		ON 			A.USR_KEYNO = B.USR_KEYNO
+		LEFT JOIN u_userinfo_authority C 
+		ON 			B.UIA_KEYNO = C.UIA_KEYNO
+		WHERE 		USR_MN_KEYNO = 'MN_0000000999'
+		AND	 		UIA_NAME IN 
+	  	<foreach collection="authList" item="auth" open="(" close=")" separator=",">
+					#{auth}		  
+	  	</foreach>
+	</select>
+	
+	<delete id="MN_deleteData">
+		DELETE FROM u_userinfo_authority_roll
+		WHERE	MN_KEYNO	=	#{MN_KEYNO}
+	</delete>
+	
+	<delete id="UAR_deleteData">
+		DELETE FROM u_userinfo_authority_roll
+		WHERE	UIA_KEYNO	=	#{UIA_KEYNO}
+	</delete>
+	
+	<delete id="UAR_deleteData2">
+		DELETE FROM u_userinfo_authority_roll
+		WHERE UIA_KEYNO IN (
+			SELECT A.UIA_KEYNO FROM u_userinfo_authority_roll A LEFT JOIN u_userinfo_authority B ON A.UIA_KEYNO = B.UIA_KEYNO
+			WHERE B.UIA_DIVISION != 'U'
+			<if test="notDeleteKeyList != null">
+			AND	A.UIA_KEYNO NOT IN
+			<foreach collection="notDeleteKeyList" item="item" open="(" close=")" separator="," >
+				#{item}
+			</foreach>
+			</if>
+		)
+	</delete>
+	
+	<insert id="UAR_insertAll">
+		INSERT ALL
+		<foreach collection="roleList" item="item">
+		INTO U_USERINFO_AUTHORITY_ROLL
+		(
+			  UIA_KEYNO
+			, MN_KEYNO
+			, UIR_KEYNO
+		)
+		VALUES
+        (
+   		   	  #{UIA_KEYNO}
+			, #{item.MN_KEYNO}
+			, #{item.UIR_KEYNO}
+		)
+        </foreach>
+        SELECT * FROM dual
+	</insert>
+	
+	<insert id="UAR_insertAll2">
+		INSERT ALL
+		<foreach collection="roleList" item="item">
+		INTO U_USERINFO_AUTHORITY_ROLL
+		(
+			  UIA_KEYNO
+			, MN_KEYNO
+			, UIR_KEYNO
+		)
+		VALUES
+        (
+   		   	  #{item.UIA_KEYNO}
+			, #{item.MN_KEYNO}
+			, #{item.UIR_KEYNO}
+		)
+        </foreach>
+        SELECT * FROM dual
+	
+	</insert>
+	
+	<insert id="UAA_insertAll2">
+		INSERT ALL
+		<foreach collection="adminAuthList" item="adminAuth">
+			<foreach collection="menuList" item="menu">
+		INTO U_USERINFO_AUTHORITY_ADMIN
+		(
+			  MN_KEYNO
+			, HM_KEYNO
+			, UIA_KEYNO
+		)
+		VALUES
+        (
+        
+   		   	  #{menu.MN_KEYNO}
+			, #{HM_KEYNO}
+			, #{adminAuth}
+		)
+			</foreach>
+        </foreach>
+        SELECT * FROM dual
+	
+	</insert>
+        
+        
+	<insert id="UAR_insertByMainKey">
+		INSERT INTO u_userinfo_authority_roll 
+	    SELECT 	#{UIA_KEYNO},MN_KEYNO,UIR_KEYNO 
+	    FROM u_userinfo_authority_roll  
+	    WHERE 	UIA_KEYNO 	= 	#{UIA_MAINKEY}
+	</insert>
+	
+	<select id="UIA_selectChildAuthorityMappingKeyno" resultType="HashMap">
+		SELECT UIA_KEYNO
+		FROM u_userinfo_authority
+		WHERE UIA_MAINKEY = #{UIA_KEYNO}
+	</select>
+	
+	<delete id="UIA_deleteSubChildAuthorityMappingBoard">
+		DELETE 	FROM u_userinfo_authority_roll
+		WHERE 	UIA_KEYNO 	= #{UIA_KEYNO}
+		AND  	MN_KEYNO 	= #{MN_KEYNO}
+	</delete>
+	
+	
+	<select id="UIA_selectChildAuthorityMappingMenu" resultType="HashMap">
+		SELECT A.UIA_KEYNO,A.MN_KEYNO
+		FROM (
+			SELECT * 
+			FROM u_userinfo_authority_roll
+			WHERE	UIR_KEYNO	=	#{UIR_KEYNO}
+			AND		UIA_KEYNO IN 
+			<foreach collection="childAuthoirtyList" item="item" open="(" close=")" separator=",">
+					#{item.UIA_KEYNO}
+			</foreach>
+		) A
+		LEFT JOIN (
+			SELECT * 
+			FROM u_userinfo_authority_roll
+			WHERE	UIR_KEYNO	=	#{UIR_KEYNO}
+			AND		UIA_KEYNO	=	#{UIA_KEYNO}
+		) B
+		ON 		A.MN_KEYNO = B.MN_KEYNO
+		WHERE	B.UIA_KEYNO IS NULL
+	</select>
+	
+	<delete id="UIA_deleteSubChildAuthorityMappingMenu">
+		DELETE FROM u_userinfo_authority_roll
+		WHERE 		UIA_KEYNO IN ( 	SELECT UIA_KEYNO
+									FROM u_userinfo_authority
+									WHERE UIA_MAINKEY = #{UIA_MAINKEY}
+								  )
+		AND   		MN_KEYNO = #{MN_KEYNO}
+	</delete>
+	
+	<delete id="UIA_deleteChildAuthorityMappingMenu">
+		DELETE FROM u_userinfo_authority_roll
+		WHERE	(UIA_KEYNO,MN_KEYNO) IN (
+					SELECT A.UIA_KEYNO,A.MN_KEYNO
+					FROM (
+						SELECT * 
+						FROM u_userinfo_authority_roll
+						WHERE	UIR_KEYNO	=	#{UIR_KEYNO}
+						AND		UIA_KEYNO IN 
+						<foreach collection="childAuthoirtyList" item="item" open="(" close=")" separator=",">
+								#{item.UIA_KEYNO}
+						</foreach>
+					) A
+					LEFT JOIN (
+						SELECT * 
+						FROM u_userinfo_authority_roll
+						WHERE	UIR_KEYNO	=	#{UIR_KEYNO}
+						AND		UIA_KEYNO	=	#{UIA_KEYNO}
+					) B
+					ON 		A.MN_KEYNO = B.MN_KEYNO
+					WHERE	B.UIA_KEYNO IS NULL
+				)
+	</delete>
+	
+	<select id="USR_getMenuListWidthAuthority" resultType="hashmap">
+		SELECT 	AA.*
+				, CASE B.MN_PAGEDIV_C
+						WHEN 'SC_QXCFB' THEN (90 - MN_LEV*10 - 1) 
+						ELSE (90 - MN_LEV*10) 
+				END USR_ORDER
+		FROM (
+			SELECT 		A.MN_KEYNO,LISTAGG(A.UIA_KEYNO,',')  WITHIN GROUP (ORDER BY A.UIA_KEYNO) AS UIA_KEYNO
+			FROM u_userinfo_authority_roll A
+			LEFT JOIN u_userinfo_authority C
+			ON			A.UIA_KEYNO 	= 	C.UIA_KEYNO
+			WHERE		UIR_KEYNO 		=	#{UIR_KEYNO}
+			AND			C.UIA_DIVISION	IN 	('A','U')
+			GROUP BY 	A.MN_KEYNO
+		) AA
+		LEFT JOIN s_menu_manager B 
+		ON			AA.MN_KEYNO = B.MN_KEYNO AND B.MN_DEL_YN = 'N'
+		WHERE		B.MN_NAME IS NOT NULL
+		ORDER BY USR_ORDER
+	
+	</select>
+	
+	<insert id="securedResourceInsertAllData">
+		INSERT ALL
+		<foreach collection="securedResourceList" item="item">
+		INTO U_USERINFO_SECURED_RESOURCE
+		(
+			  USR_KEYNO
+			, USR_PATTERN
+			, USR_ORDER
+			, USR_UIR_KEYNO
+			, USR_MN_KEYNO
+		)
+		VALUES
+        (
+   		   	  #{item.USR_KEYNO}
+			, #{item.USR_PATTERN}
+			, #{item.USR_ORDER}
+			, #{item.USR_UIR_KEYNO}
+			, #{item.USR_MN_KEYNO}
+		)
+        </foreach>
+        SELECT * FROM dual
+	
+	</insert>
+	
+	<insert id="resourceAuthorityInsertAllData">
+		INSERT ALL
+		<foreach collection="resourceAuthorityList" item="item">
+		INTO U_USERINFO_RESOURCE_AUTHORITY
+		(
+			  USR_KEYNO
+			, UIA_KEYNO
+		)
+		VALUES
+        (
+   		   	  #{item.USR_KEYNO}
+			, #{item.UIA_KEYNO}
+		)
+        </foreach>
+        SELECT * FROM dual
+	</insert>
+	
+	<select id="UIA_boardList" resultType="hashmap">
+		SELECT AA.*, A.MN_NAME, B.MN_NAME MN_HOMEDIV_NAME 
+		FROM (
+			SELECT 	A.MN_KEYNO, LISTAGG(UIR_KEYNO,',')  WITHIN GROUP (ORDER BY UIR_KEYNO) UIR_KEYNO
+			FROM s_menu_manager A
+			LEFT JOIN u_userinfo_authority_roll C
+			ON			A.MN_KEYNO 		= 	C.MN_KEYNO
+			AND			C.UIA_KEYNO		=	#{UIA_KEYNO}
+			WHERE		A.MN_PAGEDIV_C 	= 	'SC_TFOVO'
+			AND 		A.MN_DEL_YN		=	'N'
+			GROUP BY A.MN_KEYNO
+		) AA
+		LEFT JOIN s_menu_manager A 
+		ON 			AA.MN_KEYNO 	= 	A.MN_KEYNO
+		LEFT JOIN s_menu_manager B
+		ON 			A.MN_HOMEDIV_C 	= 	B.MN_KEYNO
+		LEFT JOIN s_home_manager H
+		ON 			A.MN_HOMEDIV_C 	= 	H.HM_MN_HOMEDIV_C 
+		WHERE 		H.HM_USE_YN = 'Y'
+		ORDER BY 	A.MN_HOMEDIV_C, A.MN_REGDT DESC
+	</select>
+	
+	<delete id="UIA_deleteCustomAuthorityData">
+		DELETE 
+		FROM u_userinfo_authority
+		WHERE 	UIA_KEYNO IN (
+			SELECT 		A.UIA_KEYNO 
+			FROM u_userinfo_authority A 
+			LEFT JOIN u_userinfo_authority B 
+			ON 			A.UIA_MAINKEY 	= 	B.UIA_KEYNO
+   			WHERE 		A.UIA_DIVISION 	= 	'U' 
+   			AND			A.UIA_SYSTEM	=	'N'
+   			AND 		B.UIA_KEYNO IS NULL
+		)
+	</delete>
+	
+	<delete id="UIA_deleteCustomAuthorityData2">
+		DELETE 
+		FROM 	${tableName}
+		WHERE 	UIA_KEYNO IN (
+			SELECT 		A.UIA_KEYNO
+  			FROM 		${tableName} A 
+  			LEFT JOIN u_userinfo_authority B 
+  			ON 			A.UIA_KEYNO = B.UIA_KEYNO 
+  			WHERE 		B.UIA_NAME IS NULL
+		)
+	</delete>
+	
+	<!-- 20190618 -->
+	<select id="UIA_GetUserList" resultType="hashmap">
+  		WITH V_TEMP1 AS (
+			SELECT B.* FROM(
+				SELECT 	  ROW_NUMBER() OVER(PARTITION BY UA.UIA_KEYNO ORDER BY UA.UIA_KEYNO) AS RN
+						, UA.*
+						, UAR.MN_KEYNO
+						, (SELECT COUNT(*) FROM u_userinfo_authority WHERE UA.UIA_KEYNO = UIA_MAINKEY) CHILD_CNT	
+						, (SELECT COUNT(*) FROM u_userinfo_authority WHERE UA.UIA_MAINKEY = UIA_MAINKEY) SIBLING_CNT 
+						, MN.MN_URL, MN.MN_PAGEDIV_C, MN.MN_FORWARD_URL 
+						, (	SELECT COUNT(*)
+					    	FROM u_userinfo_authority_roll
+					    	WHERE UIA_KEYNO = (SELECT UIA_MAINKEY FROM u_userinfo_authority WHERE UIA_KEYNO = UA.UIA_KEYNO)
+					    	AND   MN_KEYNO = #{MN_KEYNO}
+					      ) ROLES_MAIN_CNT
+		   		FROM u_userinfo_authority UA
+		   		LEFT JOIN ( SELECT *
+		   					FROM u_userinfo_authority_roll
+		   					WHERE MN_KEYNO = #{MN_KEYNO}
+		   			      ) UAR
+		   		ON 		UA.UIA_KEYNO = UAR.UIA_KEYNO
+		   		LEFT JOIN s_menu_manager MN
+		   		ON      UAR.MN_KEYNO = MN.MN_KEYNO
+		   		WHERE	UA.UIA_SYSTEM	!=	'Y'
+		   		ORDER BY UA.UIA_DEPTH,UA.UIA_ORDER
+	   		) B
+	   		WHERE B.RN = 1
+		)
+		, V_TEMP2 AS (
+			SELECT 	 UA.UIA_KEYNO
+					,LISTAGG(UIR_KEYNO,',') WITHIN GROUP (ORDER BY UIR_KEYNO) UIR_KEYNO
+	   		FROM u_userinfo_authority UA
+	   		LEFT JOIN ( SELECT *
+	   					FROM u_userinfo_authority_roll
+	   					WHERE MN_KEYNO = #{MN_KEYNO}
+	   			      ) UAR
+	   		ON 		UA.UIA_KEYNO = UAR.UIA_KEYNO
+	   		LEFT JOIN s_menu_manager MN
+	   		ON      UAR.MN_KEYNO = MN.MN_KEYNO
+	   		WHERE	UA.UIA_SYSTEM	!=	'Y'
+	   		GROUP BY UA.UIA_KEYNO
+		)	
+		
+		SELECT 		 NVL(V1.UIA_MAINKEY, 'UIA_00000') UIA_MAINKEY
+			   		,V1.*, V2.UIR_KEYNO
+		FROM v_temp1 V1
+		INNER JOIN v_temp2 V2
+		ON V1.UIA_KEYNO = V2.UIA_KEYNO
+		ORDER BY V1.UIA_DEPTH,V1.UIA_ORDER
+	</select>
+	
+ 	<select id="UIA_GetAnonymous" resultType="hashmap">
+  		WITH V_TEMP1 AS (
+			SELECT B.* FROM(
+				SELECT 	  ROW_NUMBER() OVER(PARTITION BY UA.UIA_KEYNO ORDER BY UA.UIA_KEYNO) AS RN
+						, UA.*
+						, UAR.MN_KEYNO
+						, (SELECT COUNT(*) FROM u_userinfo_authority WHERE UA.UIA_KEYNO = UIA_MAINKEY) CHILD_CNT	
+						, (SELECT COUNT(*) FROM u_userinfo_authority WHERE UA.UIA_MAINKEY = UIA_MAINKEY) SIBLING_CNT 
+						, MN.MN_URL, MN.MN_PAGEDIV_C
+						, (	SELECT COUNT(*)
+					    	FROM u_userinfo_authority_roll
+					    	WHERE UIA_KEYNO = (SELECT UIA_MAINKEY FROM u_userinfo_authority WHERE UIA_KEYNO = UA.UIA_KEYNO)
+					    	AND   MN_KEYNO = #{MN_KEYNO}
+					      ) ROLES_MAIN_CNT
+		   		FROM u_userinfo_authority UA
+		   		LEFT JOIN ( SELECT *
+		   					FROM u_userinfo_authority_roll
+		   					WHERE MN_KEYNO = #{MN_KEYNO}
+		   			      ) UAR
+		   		ON 		UA.UIA_KEYNO = UAR.UIA_KEYNO
+		   		LEFT JOIN s_menu_manager MN
+		   		ON      UAR.MN_KEYNO = MN.MN_KEYNO
+		   		WHERE	UA.UIA_KEYNO = 'UIA_EAFDS'
+		   		ORDER BY UA.UIA_DEPTH,UA.UIA_ORDER
+	   		) B
+	   		WHERE B.RN = 1
+		)
+		, V_TEMP2 AS (
+			SELECT 	 UA.UIA_KEYNO
+					,LISTAGG(UIR_KEYNO,',') WITHIN GROUP (ORDER BY UIR_KEYNO) UIR_KEYNO
+	   		FROM u_userinfo_authority UA
+	   		LEFT JOIN ( SELECT *
+	   					FROM u_userinfo_authority_roll
+	   					WHERE MN_KEYNO = #{MN_KEYNO}
+	   			      ) UAR
+	   		ON 		UA.UIA_KEYNO = UAR.UIA_KEYNO
+	   		LEFT JOIN s_menu_manager MN
+	   		ON      UAR.MN_KEYNO = MN.MN_KEYNO
+	   		WHERE	UA.UIA_KEYNO = 'UIA_EAFDS'
+	   		GROUP BY UA.UIA_KEYNO
+		)	
+		
+		SELECT V1.*, V2.UIR_KEYNO
+		FROM v_temp1 V1
+		INNER JOIN v_temp2 V2
+		ON V1.UIA_KEYNO = V2.UIA_KEYNO
+		ORDER BY V1.UIA_DEPTH,V1.UIA_ORDER
+	</select>
+	
+	<insert id="UAR_Menu_insertAll">
+		INSERT ALL
+		<foreach collection="roleList" item="item">
+		INTO U_USERINFO_AUTHORITY_ROLL
+		(
+			  UIA_KEYNO
+			, MN_KEYNO
+			, UIR_KEYNO
+		)
+		VALUES
+        (
+   		   	  #{item.UIA_KEYNO}
+			, #{MN_KEYNO}
+			, #{item.UIR_KEYNO}
+		)
+        </foreach>
+        SELECT * FROM dual
+	</insert>
+	
+	<select id="get_MainMenuAuth" resultType="HashMap">
+		SELECT NVL(LISTAGG(UAR.UIA_KEYNO,',') WITHIN GROUP (ORDER BY UAR.UIA_KEYNO), '') MAIN_AUTH_KEY
+		FROM u_userinfo_authority_roll UAR
+		LEFT JOIN u_userinfo_authority UA
+		ON UAR.UIA_KEYNO = UA.UIA_KEYNO
+		WHERE MN_KEYNO = (  SELECT MN_KEYNO
+							FROM s_menu_manager
+							WHERE MN_KEYNO = 
+							<if test="MenuLev == 0">
+							#{AUTH_KEY}
+							</if>
+							<if test="MenuLev != 0">
+							(SELECT MN_MAINKEY
+							FROM s_menu_manager
+							WHERE MN_KEYNO = #{AUTH_KEY}) 
+							</if>
+						)	
+	</select>
+	
+	<delete id="clean_authority_roll">
+		DELETE FROM u_userinfo_authority_roll
+		WHERE	(UIA_KEYNO,MN_KEYNO) IN (
+			SELECT A.UIA_KEYNO,A.MN_KEYNO
+			FROM u_userinfo_authority_roll A 
+			LEFT JOIN s_menu_manager B 
+			ON 		A.MN_KEYNO = B.MN_KEYNO
+			LEFT JOIN u_userinfo_authority C 
+			ON 		A.UIA_KEYNO = C.UIA_KEYNO
+			WHERE (B.MN_KEYNO IS NULL OR C.UIA_KEYNO IS NULL)
+			GROUP BY A.UIA_KEYNO,A.MN_KEYNO
+		)
+	</delete>
+	
+	<delete id="delete_auth_roll">
+		DELETE FROM u_userinfo_authority_roll
+		WHERE  UIA_KEYNO = (SELECT UIA_KEYNO
+							FROM u_userinfo_authority
+							WHERE UIA_NAME LIKE '%('||#{UI_ID}||')%')
+	</delete>
+	<delete id="delete_auth_resource">
+		DELETE FROM u_userinfo_resource_authority
+		WHERE  UIA_KEYNO = ( SELECT UIA_KEYNO
+							FROM u_userinfo_authority
+							WHERE UIA_NAME LIKE '%('||#{UI_ID}||')%')
+	</delete>
+	<delete id="delete_auth_member">
+		DELETE FROM u_userinfo_member_authority
+		WHERE  UI_KEYNO = (  SELECT UI_KEYNO
+							FROM u_userinfo
+							WHERE UI_ID = #{UI_ID})
+	</delete>
+	<delete id="delete_auth">
+		DELETE FROM u_userinfo_authority
+		WHERE  UIA_NAME LIKE '%('||#{UI_ID}||')%'
+	</delete>
+	
+	<select id="UAR_getMainKeysBoardAuthList" resultType="hashmap">
+		SELECT 		MN_KEYNO
+					, A.UIR_KEYNO 
+		FROM u_userinfo_authority_roll A 
+		LEFT JOIN u_userinfo_roll B 
+		ON 			A.UIR_KEYNO = 	B.UIR_KEYNO 
+		WHERE 		B.UIR_TYPE 	= 	#{UIR_TYPE} 
+		AND 		A.UIA_KEYNO = 	#{UIA_KEYNO}
+	
+	</select>
+	
+	<select id="UIA_getGroupAuthCnt" parameterType="String" resultType="USER">
+		SELECT	*
+		FROM u_userinfo_authority
+		WHERE	UIA_SYSTEM	=	'P'
+		AND		UIA_HOMEKEY	=	#{UIA_HOMEKEY}
+	</select>
+	
+	<select id="UIA_checkDuplName" parameterType="String" resultType="int">
+		SELECT 	COUNT(*)
+		FROM u_userinfo_authority
+		WHERE	UIA_NAME IN (#{UIA_NAME}, #{UIA_NAME} || ' 관리자')	
+	</select>
+	
+	<delete id="UAR_deleteByHomeManager" parameterType="String">
+		DELETE 
+		FROM u_userinfo_authority_roll 
+		WHERE 	UIA_KEYNO IN (
+			SELECT UIA_KEYNO 
+			FROM u_userinfo_authority 
+			WHERE UIA_HOMEKEY = #{HM_KEYNO}
+			)
+	</delete>
+	
+	<delete id="UMA_deleteByHomeManager" parameterType="String">
+		DELETE 
+		FROM u_userinfo_member_authority 
+		WHERE 	UIA_KEYNO IN (
+			SELECT UIA_KEYNO 
+			FROM u_userinfo_authority 
+			WHERE UIA_HOMEKEY = #{HM_KEYNO}
+			)
+	</delete>
+	
+	<delete id="UIA_deleteByHomeManager" parameterType="String">
+		DELETE 
+		FROM u_userinfo_authority 
+		WHERE 	UIA_HOMEKEY  = #{HM_KEYNO}
+	</delete>
+	
+	<delete id="UAA_deleteData">
+		DELETE FROM u_userinfo_authority_admin
+		WHERE	UIA_KEYNO	=	#{UIA_KEYNO}
+	</delete>
+	
+	<insert id="UAA_insertAll">
+		INSERT ALL
+		<foreach collection="adminPageRoleList" item="item">
+		INTO U_USERINFO_AUTHORITY_ADMIN
+		(
+			  MN_KEYNO
+			, HM_KEYNO
+			, UIA_KEYNO
+		)
+		VALUES
+        (
+   		   	  #{item.MN_KEYNO}
+			, #{item.HM_KEYNO}
+			, #{UIA_KEYNO}
+		)
+        </foreach>
+        SELECT * FROM dual
+	</insert>
+	
+	<select id="UAA_getList" resultType="hashmap" parameterType="String">
+		SELECT 	*
+		FROM u_userinfo_authority_admin
+		WHERE	UIA_KEYNO	=	#{UIA_KEYNO}
+	
+	</select>
+	
+	<delete id="UAA_deleteByHomeManager" parameterType="String">
+		DELETE 
+		FROM u_userinfo_authority_admin 
+		WHERE 	UIA_KEYNO IN (
+			SELECT UIA_KEYNO 
+			FROM u_userinfo_authority 
+			WHERE UIA_HOMEKEY = #{HM_KEYNO}
+			)
+	</delete>
+	
+	
+	<select id="getManageableDomain" resultType="hashmap">
+		SELECT 		*
+		FROM s_home_manager A 
+		LEFT JOIN s_menu_manager B 
+		ON 			A.HM_MN_HOMEDIV_C = B.MN_KEYNO
+		WHERE 		HM_USE_YN = 'Y'
+		AND 		HM_MN_HOMEDIV_C  IN (
+						SELECT	HM_KEYNO
+						FROM u_userinfo_authority_admin  
+						WHERE 	UIA_KEYNO = #{UIA_KEYNO}
+						AND 	MN_KEYNO  = (SELECT MN_KEYNO FROM s_menu_manager WHERE MN_URL = #{MN_URL})
+					)
+	
+	</select>
+	
+	<select id="UAA_getAdminAuthMenuList" resultType="hashmap">
+    	SELECT		A.MN_KEYNO
+    				, CASE WHEN B.MN_KEYNO IS NULL THEN 'N' ELSE 'Y' END adminAuth 
+    	FROM		(
+    		SELECT	*
+    		FROM s_menu_manager
+    		WHERE 	MN_DEL_YN	=	'N'
+    		AND		MN_URL LIKE '/dyAdmin/homepage%'
+    	) A
+    	LEFT JOIN u_userinfo_authority_admin B
+    	ON			A.MN_KEYNO 	= 	B.MN_KEYNO 
+    	AND			B.HM_KEYNO	=	#{HM_KEYNO}
+    	AND 		B.UIA_KEYNO	=	#{UIA_KEYNO}
+    	
+    </select>
+	
+</mapper>
+ 

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Common"> 
+  
+	<!-- 고유 키값 조회 처리 -->
+	<select id="getTableKey" parameterType="String" resultType="int">
+	-- LOG OFF
+ 		 SELECT 	CASE 
+ 		 				WHEN SQ_TYPE = 'R' THEN -1 
+ 		 				WHEN SQ_TYPE != 'R' OR SQ_TYPE IS NULL THEN NVL(SQ_CNT,0) 
+ 		 			END
+       	 FROM s_common_seq_cnt
+       	 WHERE		SQ_TABLE_NM = #{TableName}
+    </select>
+    
+    <insert id="createTableKey" parameterType="hashmap">
+    -- LOG OFF
+    	INSERT INTO s_common_seq_cnt (
+    		SQ_TABLE_NM
+    	)
+    	VALUES (
+    		#{TableName}
+    	)
+    </insert>
+    
+    <!-- 고유 키값 조회 처리 - random -->
+	<select id="checkTableKey" parameterType="hashmap" resultType="int">
+	-- LOG OFF
+ 		 SELECT 	NVL(COUNT(*),0)
+       	 FROM 		${TableName}
+       	 WHERE		${TableCode} = #{CodeColumn}
+    </select>
+    
+    <!-- 고유 키값 카운트 업데이트 처리 -->
+	<update id="CountTableKey" parameterType="String">
+	-- LOG OFF
+	   		<![CDATA[ 
+				UPDATE s_common_seq_cnt 
+				SET			 SQ_CNT 		=	NVL(SQ_CNT,0) + 1 
+				WHERE		 SQ_TABLE_NM 	= 	#{TableName}
+		 	]]>
+	</update>
+	
+	<update id="updateTableKey" parameterType="hashmap">
+   		<![CDATA[ 
+			UPDATE s_common_seq_cnt 
+			SET			 SQ_CNT 		=	#{cnt} 
+			WHERE		 SQ_TABLE_NM 	= 	#{TableName}
+	 	]]>
+	</update>
+	
+    <delete id="deleteTableData">
+    	DELETE FROM ${tableName}
+    	<if test="columns != null">
+    	<where>
+    		<foreach collection="columns" item="column" separator="AND">
+    		${column.name} ${column.operator} #{column.value}
+    		</foreach>
+    	</where>
+    	</if>
+    </delete>
+    
+     <update id="set_AutoIncremeantVal">
+   		SELECT ${SEQUENCE_NAME}.NEXTVAL FROM dual
+		<selectKey resultType="Integer" keyProperty="incrementVal" order="AFTER">
+			 SELECT LAST_NUMBER 
+			 FROM user_sequences 
+			 WHERE SEQUENCE_NAME = #{SEQUENCE_NAME}
+	    </selectKey>   
+    </update>
+</mapper>
+ 

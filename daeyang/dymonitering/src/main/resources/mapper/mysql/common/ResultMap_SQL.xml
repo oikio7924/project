@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ResultMap"> 
+  
+	<resultMap id="rownumHashMap" type="HashMap">
+		<result property="COUNT" column="COUNT"  javaType="int"/>
+	</resultMap>
+		
+	<resultMap id="rownumHashMap2" type="HashMap">
+		<result property="NUM" column="NUM"  javaType="int"/>
+	</resultMap>
+		
+	<resultMap id="rownumHashMap3" type="HashMap">
+		<result property="RNUM" column="RNUM"  javaType="int"/>
+	</resultMap>
+		
+	<resultMap id="rownumHashMap4" type="HashMap">
+		<result property="BOARD_NUMBER" column="BOARD_NUMBER"  javaType="int"/>
+	</resultMap>	
+</mapper>
+ 

@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BoardType"> 
+  	
+  	<sql id="BT_getListBody">
+		FROM(
+			SELECT 	  BT_KEYNO
+		    		, BT_TYPE_NAME
+		    		, CASE WHEN BT_HTML_YN = 'Y' THEN 'O' ELSE 'X' END BT_HTML_YN
+		    		, CASE WHEN BT_THUMBNAIL_YN = 'Y' THEN 'O' ELSE 'X' END BT_THUMBNAIL_YN
+		    		, CASE WHEN BT_REPLY_YN = 'Y' THEN 'O' ELSE 'X' END BT_REPLY_YN
+		    		, CASE WHEN BT_COMMENT_YN = 'Y' THEN 'O' ELSE 'X' END BT_COMMENT_YN
+		    		, CASE WHEN BT_SECRET_YN = 'Y' THEN 'O' ELSE 'X' END BT_SECRET_YN
+		    		, CASE WHEN BT_UPLOAD_YN = 'Y' THEN 'O' ELSE 'X' END BT_UPLOAD_YN
+		    		, CASE WHEN BT_EMAIL_YN = 'Y' THEN BT_EMAIL_ADDRESS ELSE 'X' END BT_EMAIL
+ 		    		, CASE WHEN BT_HTMLMAKER_PLUS_YN = 'N' THEN 'X' ELSE 'O' END BT_HTMLMAKER_PLUS_YN
+ 		    		, CASE WHEN BT_PREVIEW_YN = 'Y' THEN 'O' ELSE 'X' END BT_PREVIEW_YN
+		    		, BT_TICKET_PR_YN
+		    		, BT_SNS_YN
+		    		, BT_RSS_YN
+		    		, SC_CODENM 
+ 		            , ( SELECT GROUP_CONCAT(CONCAT(MN.MN_NAME,'(',(SELECT MN_NAME FROM s_menu_manager WHERE MN_KEYNO = MN.MN_HOMEDIV_C AND MN_DEL_YN = 'N'),')'))
+                        FROM s_menu_manager MN WHERE MN_BT_KEYNO = B.BT_KEYNO AND MN_DEL_YN = 'N' AND MN_PAGEDIV_C = 'SC_TFOVO') MN_NAME
+                    , CASE 
+		    			WHEN B.BT_LIST_KEYNO = 'list' then '기본 리스트 폼'  
+		    			WHEN B.BT_LIST_KEYNO = 'no_detail' then '상세페이지 없는 리스트 폼'  
+		    			WHEN B.BT_LIST_KEYNO = 'gallery' then '갤러리 폼'  
+		    			WHEN B.BT_LIST_KEYNO = 'calendar' then '캘린더 폼' 
+		    			ELSE  (SELECT BST_TITLE FROM b_board_skin_template WHERE BST_KEYNO = B.BT_LIST_KEYNO ) 
+		    			END BT_LIST_TITLE 
+		    FROM b_board_type B 
+		    LEFT JOIN (
+			    		SELECT * 
+			    		FROM s_common_code_sub
+			    		WHERE SC_MC_IN_C = 'AC'
+			    		ORDER BY SC_CODELV
+		    		) C
+		 	ON B.BT_CODEKEY = C.SC_KEYNO
+			WHERE BT_USE_YN = 'Y'
+		)AA
+		WHERE 1=1
+		
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		BT_TYPE_NAME 			LIKE CONCAT('%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		SC_CODENM				LIKE CONCAT('%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		MN_NAME 				LIKE CONCAT('%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		BT_HTML_YN			=	#{item.searchKeyword}					
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		BT_THUMBNAIL_YN 	=	#{item.searchKeyword}						
+	 			</when>
+	 			<when test='item.searchIndex.equals("6")'>
+ 		AND		BT_REPLY_YN 		=	#{item.searchKeyword}						
+	 			</when>
+	 			<when test='item.searchIndex.equals("7")'>
+ 		AND		BT_COMMENT_YN 		=	#{item.searchKeyword}						
+	 			</when>
+	 			<when test='item.searchIndex.equals("8")'>
+ 		AND		BT_SECRET_YN 		=	#{item.searchKeyword}					
+	 			</when>
+	 			<when test='item.searchIndex.equals("9")'>
+ 		AND		BT_UPLOAD_YN 		=	#{item.searchKeyword}					
+	 			</when>
+	 			<when test='item.searchIndex.equals("10")'>
+ 		AND		BT_HTMLMAKER_PLUS_YN 		=	#{item.searchKeyword}					
+	 			</when>	 			
+	 			<when test='item.searchIndex.equals("11")'>
+ 		AND		BT_EMAIL 				LIKE CONCAT('%',#{item.searchKeyword},'%')						
+	 			</when>
+	 			<when test='item.searchIndex.equals("12")'>
+ 		AND		BT_PREVIEW_YN 		=	#{item.searchKeyword}					
+	 			</when>	 			
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				BT_TYPE_NAME 			LIKE CONCAT('%',#{item.searchKeyword},'%') 	OR
+ 				SC_CODENM				LIKE CONCAT('%',#{item.searchKeyword},'%') 	OR
+ 				MN_NAME 				LIKE CONCAT('%',#{item.searchKeyword},'%') 	OR
+ 				BT_HTML_YN			=	#{item.searchKeyword}  						OR
+ 				BT_THUMBNAIL_YN 	=	#{item.searchKeyword}  						OR
+ 				BT_REPLY_YN 		=	#{item.searchKeyword} 						OR
+ 				BT_COMMENT_YN 		=	#{item.searchKeyword}  						OR
+				BT_SECRET_YN 		=	#{item.searchKeyword}						OR
+ 				BT_UPLOAD_YN 		=	#{item.searchKeyword}						OR
+ 				BT_HTMLMAKER_PLUS_YN  		=	#{item.searchKeyword}				OR
+ 				BT_EMAIL 				LIKE CONCAT('%',#{item.searchKeyword},'%')  OR
+ 				BT_PREVIEW_YN 		=	#{item.searchKeyword}
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+		
+	</sql>
+	
+    <select id="BT_getListCnt" resultType="int">
+			SELECT	COUNT(*)
+		<include  refid="BT_getListBody"/>
+    </select>
+    <select id="BT_getList" resultType="hashmap">
+		SELECT	*
+		<include  refid="BT_getListBody"/>
+		
+		<choose>
+	 		<when test="orderBy == 1">
+	 		ORDER BY	BT_TYPE_NAME ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 2">
+	 		ORDER BY	SC_CODENM ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 3">
+	 		ORDER BY	MN_NAME ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 4">
+	 		ORDER BY	BT_HTML_YN ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 5">
+	 		ORDER BY	BT_THUMBNAIL_YN ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 6">
+	 		ORDER BY	BT_REPLY_YN ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 7">
+	 		ORDER BY	BT_COMMENT_YN ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 8">
+	 		ORDER BY	BT_SECRET_YN ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 9">
+	 		ORDER BY	BT_UPLOAD_YN ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 10">
+	 		ORDER BY	BT_HTMLMAKER_PLUS_YN ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 11">
+	 		ORDER BY	BT_EMAIL ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 12">
+	 		ORDER BY	BT_PREVIEW_YN ${sortDirect}
+	 		</when>
+	 		<otherwise>
+	 		ORDER BY BT_KEYNO DESC
+	 		</otherwise>
+	 	</choose>
+		<if test="recordCountPerPage != 0">
+		 	LIMIT  	#{recordCountPerPage} OFFSET #{firstIndex}
+		</if> 	
+		
+    </select>
+  	
+	<select id="BT_getList2" resultType="BoardType">
+		SELECT * FROM b_board_type
+		WHERE BT_USE_YN = 'Y'
+		ORDER BY BT_KEYNO
+    </select>
+  	
+  	<select id="BT_getData" resultType="BoardType" parameterType="String">
+		SELECT * FROM b_board_type
+		WHERE BT_USE_YN	=	'Y'
+		AND   BT_KEYNO  =	#{BT_KEYNO}
+    </select>
+    
+    <select id="BT_getData2" resultType="BoardType" parameterType="String">
+		SELECT 		T.* 
+		FROM b_board_type T
+		LEFT JOIN s_menu_manager M
+		ON			T.BT_KEYNO 	= M.MN_BT_KEYNO
+		WHERE		M.MN_KEYNO	=	#{MN_KEYNO}
+    </select>  
+    
+    <insert id="BT_insert" parameterType="BoardType">
+	<![CDATA[
+		INSERT INTO b_board_type(
+				BT_KEYNO,
+				BT_TYPE_NAME,
+				BT_CODEKEY,
+				BT_REPLY_YN,
+				BT_COMMENT_YN,
+				BT_SECRET_YN,
+				BT_UPLOAD_YN,
+				BT_FILE_CNT_LIMIT,
+				BT_FILE_SIZE_LIMIT,
+				BT_REGNM,
+				BT_REGDT,
+				BT_EDU_PR_YN,
+				BT_TICKET_PR_YN,
+				BT_SNS_YN,
+				BT_RSS_YN,
+				BT_USE_YN,
+				BT_HTML_YN,
+				BT_THUMBNAIL_YN,
+				BT_THUMBNAIL_WIDTH,
+				BT_THUMBNAIL_HEIGHT,
+				BT_FILE_IMAGE_WIDTH,
+				BT_FILE_IMAGE_HEIGHT,
+				BT_EMAIL_YN,
+				BT_EMAIL_ADDRESS,
+				BT_PAGEUNIT,
+				BT_PAGESIZE,
+				BT_DEL_LISTVIEW_YN,
+				BT_HTMLMAKER_PLUS_YN,
+				BT_DEL_COMMENT_YN,
+				BT_XSS_YN,
+				BT_FILE_EXT,
+				BT_NUMBERING_TYPE,
+				BT_SHOW_MINE_YN,
+				BT_DEL_POLICY,
+				BT_PERSONAL_YN,
+				BT_PERSONAL,
+				BT_ZIP_YN,
+				BT_MOVIE_THUMBNAIL_YN,
+				BT_CATEGORY_YN,
+				BT_CATEGORY_INPUT,
+				BT_SECRET_COMMENT_YN,
+				BT_THUMBNAIL_INSERT,
+				BT_LIST_KEYNO,
+				BT_DETAIL_KEYNO,
+				BT_INSERT_KEYNO,
+				BT_CALENDAR_YN,
+				BT_PREVIEW_YN,
+				BT_PAGEUNIT_C,
+				BT_PAGESIZE_C,
+				BT_DEL_MANAGE_YN,
+				BT_SUBJECT_NUM,
+				BT_FORBIDDEN_YN,
+				BT_FORBIDDEN
+				)
+		VALUES(
+				#{BT_KEYNO},
+				#{BT_TYPE_NAME},
+				#{BT_CODEKEY},
+				#{BT_REPLY_YN},
+				#{BT_COMMENT_YN},
+				#{BT_SECRET_YN},
+				#{BT_UPLOAD_YN},
+				#{BT_FILE_CNT_LIMIT},
+				#{BT_FILE_SIZE_LIMIT},
+				#{BT_REGNM},
+				SYSDATE(),
+				#{BT_EDU_PR_YN},
+				#{BT_TICKET_PR_YN},
+				#{BT_SNS_YN},
+				#{BT_RSS_YN},
+				'Y',
+				#{BT_HTML_YN},
+				#{BT_THUMBNAIL_YN},	
+				#{BT_THUMBNAIL_WIDTH},	
+				#{BT_THUMBNAIL_HEIGHT},	
+				#{BT_FILE_IMAGE_WIDTH},
+				#{BT_FILE_IMAGE_HEIGHT},
+				#{BT_EMAIL_YN},	
+				#{BT_EMAIL_ADDRESS},	
+				#{BT_PAGEUNIT},
+				#{BT_PAGESIZE},	
+				#{BT_DEL_LISTVIEW_YN},
+				#{BT_HTMLMAKER_PLUS_YN},	
+				#{BT_DEL_COMMENT_YN},
+				#{BT_XSS_YN},	
+				#{BT_FILE_EXT},	
+				#{BT_NUMBERING_TYPE},	
+				#{BT_SHOW_MINE_YN},	
+				#{BT_DEL_POLICY},
+				#{BT_PERSONAL_YN},
+				#{BT_PERSONAL},	
+				#{BT_ZIP_YN},
+				#{BT_MOVIE_THUMBNAIL_YN},	
+				#{BT_CATEGORY_YN},
+				#{BT_CATEGORY_INPUT},
+				#{BT_SECRET_COMMENT_YN},
+				#{BT_THUMBNAIL_INSERT},
+				#{BT_LIST_KEYNO},
+				#{BT_DETAIL_KEYNO},
+				#{BT_INSERT_KEYNO},
+				#{BT_CALENDAR_YN},
+				#{BT_PREVIEW_YN},
+				#{BT_PAGEUNIT_C},
+				#{BT_PAGESIZE_C},
+				#{BT_DEL_MANAGE_YN},
+				#{BT_SUBJECT_NUM},
+				#{BT_FORBIDDEN_YN},
+				#{BT_FORBIDDEN}
+				)
+		]]>
+	</insert>
+	
+	<update id="BT_update" parameterType="BoardType">
+	<![CDATA[
+		UPDATE b_board_type 
+		SET		BT_TYPE_NAME		        = #{BT_TYPE_NAME},
+				BT_CODEKEY			        = #{BT_CODEKEY},
+				BT_REPLY_YN			        = #{BT_REPLY_YN},
+				BT_COMMENT_YN		        = #{BT_COMMENT_YN},
+				BT_SECRET_YN		        = #{BT_SECRET_YN},
+				BT_UPLOAD_YN		        = #{BT_UPLOAD_YN},
+				BT_FILE_CNT_LIMIT	        = #{BT_FILE_CNT_LIMIT},
+				BT_FILE_SIZE_LIMIT	        = #{BT_FILE_SIZE_LIMIT},
+				BT_MODNM 			        = #{BT_MODNM},
+				BT_EDU_PR_YN 		        = #{BT_EDU_PR_YN},
+				BT_TICKET_PR_YN 	        = #{BT_TICKET_PR_YN},
+				BT_SNS_YN 			        = #{BT_SNS_YN},
+				BT_RSS_YN 			        = #{BT_RSS_YN},
+				BT_MODDT 			        = SYSDATE(),
+				BT_HTML_YN 			        = #{BT_HTML_YN},
+				BT_THUMBNAIL_YN 	        = #{BT_THUMBNAIL_YN},
+				BT_THUMBNAIL_WIDTH 	        = #{BT_THUMBNAIL_WIDTH},
+				BT_THUMBNAIL_HEIGHT	        = #{BT_THUMBNAIL_HEIGHT},
+				BT_FILE_IMAGE_WIDTH         = #{BT_FILE_IMAGE_WIDTH},
+				BT_FILE_IMAGE_HEIGHT        = #{BT_FILE_IMAGE_HEIGHT},
+				BT_EMAIL_YN			        = #{BT_EMAIL_YN},
+				BT_EMAIL_ADDRESS	        = #{BT_EMAIL_ADDRESS},
+				BT_PAGEUNIT 		        = #{BT_PAGEUNIT},
+				BT_PAGESIZE 		        = #{BT_PAGESIZE},
+				BT_DEL_LISTVIEW_YN 	        = #{BT_DEL_LISTVIEW_YN},
+				BT_HTMLMAKER_PLUS_YN        = #{BT_HTMLMAKER_PLUS_YN},
+				BT_DEL_COMMENT_YN 	        = #{BT_DEL_COMMENT_YN},
+				BT_XSS_YN 			        = #{BT_XSS_YN},
+				BT_FILE_EXT 		        = #{BT_FILE_EXT},
+				BT_NUMBERING_TYPE 	        = #{BT_NUMBERING_TYPE},
+				BT_SHOW_MINE_YN 	        = #{BT_SHOW_MINE_YN},
+				BT_ZIP_YN 			        = #{BT_ZIP_YN},
+				BT_PERSONAL_YN 		        = #{BT_PERSONAL_YN },
+				BT_PERSONAL			        = #{BT_PERSONAL},
+				BT_DEL_POLICY 		        = #{BT_DEL_POLICY},
+				BT_MOVIE_THUMBNAIL_YN 		= #{BT_MOVIE_THUMBNAIL_YN},
+				BT_CATEGORY_YN				= #{BT_CATEGORY_YN},
+				BT_CATEGORY_INPUT 			= #{BT_CATEGORY_INPUT},
+				BT_SECRET_COMMENT_YN		= #{BT_SECRET_COMMENT_YN},
+				BT_THUMBNAIL_INSERT			= #{BT_THUMBNAIL_INSERT},
+				BT_LIST_KEYNO	 		    = #{BT_LIST_KEYNO},
+				BT_DETAIL_KEYNO	 			= #{BT_DETAIL_KEYNO},
+				BT_INSERT_KEYNO	 		    = #{BT_INSERT_KEYNO},
+				BT_CALENDAR_YN	 		    = #{BT_CALENDAR_YN},
+				BT_PREVIEW_YN				= #{BT_PREVIEW_YN},
+				BT_PAGEUNIT_C 		        = #{BT_PAGEUNIT_C},
+				BT_PAGESIZE_C 		        = #{BT_PAGESIZE_C},
+				BT_DEL_MANAGE_YN 		    = #{BT_DEL_MANAGE_YN},
+				BT_SUBJECT_NUM  		    = #{BT_SUBJECT_NUM},
+				BT_FORBIDDEN_YN  		    = #{BT_FORBIDDEN_YN},
+				BT_FORBIDDEN  			    = #{BT_FORBIDDEN}
+		WHERE   BT_KEYNO			= #{BT_KEYNO}
+		]]>
+	</update>
+	
+	<!-- 삭제 -->
+	<update id="BT_delete" parameterType="BoardType">
+	<![CDATA[
+		UPDATE b_board_type 
+		SET		BT_USE_YN			= 'N'
+		WHERE   BT_KEYNO			= #{BT_KEYNO}
+		]]>
+	</update>
+	
+	<select id="BT_getData_pramMenukey" resultType="BoardType" parameterType="String">
+		SELECT * FROM b_board_type
+		WHERE BT_USE_YN = 'Y'
+		AND BT_KEYNO = (SELECT MN_BT_KEYNO FROM s_menu_manager WHERE MN_KEYNO = #{MN_KEYNO} )
+    </select>
+    
+    <select id="BT_getData_pramBoardkey" resultType="BoardType" parameterType="String">
+		SELECT * FROM b_board_type
+		WHERE BT_USE_YN = 'Y'
+		AND BT_KEYNO = (SELECT MN_BT_KEYNO FROM s_menu_manager WHERE MN_KEYNO = (SELECT BN_MN_KEYNO FROM b_board_notice WHERE BN_KEYNO = #{BN_KEYNO}) )
+    </select>
+    
+  	
+</mapper>
+ 

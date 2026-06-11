@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">
+	
+    <context:component-scan base-package="com" use-default-filters="false">  <!-- use-default-filters="false" 어노테이션 자동검색안함 -->
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/><!-- 태그에 해당하는 어노테이션만 검색하고 bean을 등록시킴 -->
+    </context:component-scan>
+
+ 	<mvc:resources mapping="/resources/**" location="/resources/" />
+ 	<mvc:interceptors>
+        <!-- hometax(/bill/**) 전용 로그인 체크 -->
+        <mvc:interceptor>
+            <mvc:mapping path="/bill.do"/>
+            <mvc:mapping path="/bill/**/*.do"/>
+            <mvc:exclude-mapping path="/bill/login.do"/>
+            <mvc:exclude-mapping path="/bill/loginProc.do"/>
+            <mvc:exclude-mapping path="/bill/registerProc.do"/>
+            <mvc:exclude-mapping path="/bill/logout.do"/>
+            <bean id="HometaxAuthInterceptor" class="com.tx.hometax.interceptor.HometaxAuthInterceptor"></bean>
+        </mvc:interceptor>
+
+        <mvc:interceptor>
+            <mvc:mapping path="/*.do"/>
+            <mvc:mapping path="/**/*.do"/>
+            <mvc:exclude-mapping path="/dyAdmin/admin/ipfilter/error.do"/>
+            <mvc:exclude-mapping path="/dyAdmin/admin/ipfilter/error.do"/>
+            <mvc:exclude-mapping path="/dyAdmin/admin/ipfilter.do"/>
+            <mvc:exclude-mapping path="/dyAdmin/admin/ipfilter/**/*.do"/>
+            <bean id="loggerInterceptor" class="com.tx.dyAdmin.admin.ipfilter.interceptor.IpFilterInterceptor"></bean>
+        </mvc:interceptor>
+      
+        <mvc:interceptor>
+            <mvc:mapping path="/**/*.do"/>
+            <mvc:exclude-mapping path="/error.do"/>
+            <mvc:exclude-mapping path="/login/denied.do"/>
+            <mvc:exclude-mapping path="/common/file.do"/>
+            <bean id="UserInterceptor" class="com.tx.common.interceptor.UserInterceptor"></bean>
+        </mvc:interceptor>
+        
+    </mvc:interceptors>
+    
+     <bean id="validator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean">
+	    <property name="validationMessageSource" ref="messageSource" />
+	</bean>
+    <mvc:annotation-driven validator="validator">
+        <mvc:argument-resolvers>
+            <bean class="com.tx.common.config.resolver.CustomMapArgumentResolver"></bean>       
+        </mvc:argument-resolvers>
+        <mvc:message-converters>
+	        <!-- @ResponseBody로 String 처리할때 한글처리 -->
+	        <bean class="org.springframework.http.converter.StringHttpMessageConverter">
+	            <property name="supportedMediaTypes">
+	                <list>
+	                    <value>text/html;charset=UTF-8</value>
+	                </list>
+	            </property>
+	        </bean>
+	    </mvc:message-converters>
+    </mvc:annotation-driven>
+    
+    <tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true"/>  
+
+    <bean class="org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping"/>
+     
+    <!-- <bean class="org.springframework.web.servlet.view.BeanNameViewResolver" p:order="0" />
+    <bean id="jsonView" class="org.springframework.web.servlet.view.json.MappingJacksonJsonView" />     -->
+    
+  
+    <!-- Tiles -->
+  	<bean id="tilesViewResolver" class="org.springframework.web.servlet.view.UrlBasedViewResolver" p:order="1">
+		<property name="viewClass" value="org.springframework.web.servlet.view.tiles3.TilesView" />
+	</bean>
+
+	<bean id="tilesConfigurer"  class="org.springframework.web.servlet.view.tiles3.TilesConfigurer">
+		<property name="definitions">
+			<list>
+				<value>/WEB-INF/tiles.xml</value>
+			</list>
+		</property>
+	</bean>
+	
+    <bean
+        class="org.springframework.web.servlet.view.UrlBasedViewResolver" p:order="2"
+        p:viewClass="org.springframework.web.servlet.view.JstlView"
+        p:prefix="/WEB-INF/jsp/" p:suffix=".jsp">
+    </bean>
+    
+    
+    
+	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver" />
+    
+    <bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter" >
+     <property name="messageConverters">
+          <list>
+             <bean class = "org.springframework.http.converter.StringHttpMessageConverter">
+                <property name = "supportedMediaTypes">
+                   <list>
+                      <value>text/plain;charset=utf-8</value>
+                   </list>
+                </property>
+             </bean>
+          </list>
+      </property>
+	</bean>
+	
+</beans>

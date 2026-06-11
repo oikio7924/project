@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="busDev">
+
+	<insert id="PlantInsert" parameterType="busDevDTO">
+		INSERT INTO dy_bd_plant
+		(
+			bd_plant_name,
+			bd_plant_owner,
+			bd_plant_phone,
+			bd_plant_add,
+			bd_plant_volum,
+			bd_plant_installtype,
+			bd_plant_BusDueDate,
+			bd_plant_BusStart,
+			bd_plant_BusEndDate,
+			bd_plant_DevStartDate,
+			bd_plant_DevEndDate,
+			bd_plant_DevCompletionDate,
+			bd_plant_OperationStartDate,
+			bd_plant_PPADate,
+			bd_plant_PPAVolum,
+			bd_plant_memo
+		)VALUES(
+			#{bd_plant_name},
+			#{bd_plant_owner},
+			#{bd_plant_phone},
+			#{bd_plant_add},
+			#{bd_plant_volum},
+			#{bd_plant_installtype},
+			#{bd_plant_BusDueDate},
+			#{bd_plant_BusStart},
+			#{bd_plant_BusEndDate},
+			#{bd_plant_DevStartDate},
+			#{bd_plant_DevEndDate},
+			#{bd_plant_DevCompletionDate},
+			#{bd_plant_OperationStartDate},
+			#{bd_plant_PPADate},
+			#{bd_plant_PPAVolum},
+			#{bd_plant_memo}
+		)
+	</insert>
+
+	<update id="PlantUpdate" parameterType="busDevDTO">
+			UPDATE dy_bd_plant
+			<set>
+				<if test='bd_plant_name != null and bd_plant_name != ""'>bd_plant_name = #{bd_plant_name},</if>
+				<if test='bd_plant_owner != null and bd_plant_owner != ""'>bd_plant_owner = #{bd_plant_owner},</if>
+				<if test='bd_plant_phone != null and bd_plant_phone != ""'>bd_plant_phone = #{bd_plant_phone},</if>
+				<if test='bd_plant_add != null and bd_plant_add != ""'>bd_plant_add = #{bd_plant_add},</if>
+				<if test='bd_plant_volum != null and bd_plant_volum != ""'>bd_plant_volum = #{bd_plant_volum},</if>
+				<if test='bd_plant_installtype != null and bd_plant_installtype != ""'>bd_plant_installtype = #{bd_plant_installtype},</if>
+				<if test='bd_plant_BusDueDate != null and bd_plant_BusDueDate != ""'>bd_plant_BusDueDate = #{bd_plant_BusDueDate},</if>
+				<if test='bd_plant_BusStart != null and bd_plant_BusStart != ""'>bd_plant_BusStart = #{bd_plant_BusStart},</if>
+				<if test='bd_plant_BusEndDate != null and bd_plant_BusEndDate != ""'>bd_plant_BusEndDate = #{bd_plant_BusEndDate},</if>
+				<if test='bd_plant_DevStartDate != null and bd_plant_DevStartDate != ""'>bd_plant_DevStartDate = #{bd_plant_DevStartDate},</if>
+				<if test='bd_plant_DevEndDate != null and bd_plant_DevEndDate != ""'>bd_plant_DevEndDate = #{bd_plant_DevEndDate},</if>
+				<if test='bd_plant_DevCompletionDate != null and bd_plant_DevCompletionDate != ""'>bd_plant_DevCompletionDate = #{bd_plant_DevCompletionDate},</if>
+				<if test='bd_plant_OperationStartDate != null and bd_plant_OperationStartDate != ""'>bd_plant_OperationStartDate = #{bd_plant_OperationStartDate},</if>
+				<if test='bd_plant_PPADate != null and bd_plant_PPADate != ""'>bd_plant_PPADate = #{bd_plant_PPADate},</if>
+				<if test='bd_plant_PPAVolum != null and bd_plant_PPAVolum != ""'>bd_plant_PPAVolum = #{bd_plant_PPAVolum},</if>
+				<if test='bd_plant_memo != null'>bd_plant_memo = #{bd_plant_memo},</if>
+			</set>
+			WHERE bd_plant_keyno = #{bd_plant_keyno}
+	</update>
+	
+	<update id="CalnederUpdate" parameterType="calenderDTO">
+			UPDATE dy_bd_plant
+			<set>
+	       		<choose>
+		            <when test="value.equals('bus')">
+		                bd_plant_BusEndDate = #{end}
+		            </when>
+		            <when test="value.equals('dev')">
+		                bd_plant_DevEndDate = #{end}
+		            </when>
+	       		</choose>
+       		</set>
+			WHERE bd_plant_keyno = #{id}
+	</update>
+	
+	<delete id="PlantDelete" parameterType="String">
+		DELETE FROM dy_bd_plant 
+		WHERE bd_plant_keyno  = #{bd_plant_keyno}
+	</delete>
+	
+	<delete id="PlantDeleteArray" parameterType="arraylist">
+			DELETE FROM dy_bd_plant 
+			where
+			<foreach item = "l" index="index" collection="array" open="(" close=")" separator="or">
+			bd_plant_keyno = #{l}
+			</foreach>
+	</delete>
+	
+	<select id="AllPlantSelect" resultType="hashmap" parameterType="hashmap">
+		SELECT * 
+		FROM dy_bd_plant
+	</select>
+	
+	<select id="PlantSelect" resultType="hashmap" parameterType="String">
+			SELECT * 
+			FROM dy_bd_plant
+			WHERE bd_plant_keyno = #{bd_plant_keyno}
+	</select>
+	
+	<select id="CalenderDateSelect" resultType="hashmap" parameterType="String">
+			SELECT bd_plant_keyno,bd_plant_name, bd_plant_BusEndDate, bd_plant_DevEndDate, bd_plant_BusDueDate
+			FROM dy_bd_plant
+	</select>
+	
+	<select id="ALimDataSelect" resultType="hashmap" parameterType="String">
+			SELECT bd_plant_name,
+	       	DATEDIFF(bd_plant_DevEndDate, CURRENT_DATE) AS caldateD,
+	       	DATEDIFF(bd_plant_BusEndDate, CURRENT_DATE) AS caldateB
+			FROM dy_bd_plant
+			<![CDATA[
+			WHERE (DATEDIFF(bd_plant_DevEndDate, CURRENT_DATE) <= 30 OR DATEDIFF(bd_plant_BusEndDate, CURRENT_DATE) <= 30)
+			AND bd_plant_DevCompletionDate IS NULL
+			]]>
+	</select>
+	
+	
+	<!-- 페이징, 정렬, 검색 처리 sql -->
+	<sql id="Bd_getListBody">
+	from (
+		select B.*
+			, @ROWNUM:=@ROWNUM+1 as COUNT
+		from (
+			select *
+			from dy_bd_plant
+			order by bd_plant_keyno
+		) B
+		where (@ROWNUM:=0)=0
+		<choose>
+			<when test="AH_HOMEDIV_C != null and AH_HOMEDIV_C != ''">
+				<if test="searchBeginDate != null and searchBeginDate != ''">
+					AND			${AH_HOMEDIV_C} 	>=	#{searchBeginDate}
+				</if>
+				<if test="searchEndDate != null and searchEndDate != ''">
+					<![CDATA[
+					AND			${AH_HOMEDIV_C} 	<=	#{searchEndDate}
+					]]>
+				</if>
+			</when>
+			<otherwise>
+				<if test="searchBeginDate != null and searchBeginDate != ''">
+					AND	(		bd_plant_BusEndDate 	>=	#{searchBeginDate} OR
+								bd_plant_DevEndDate 	>=	#{searchBeginDate}
+						)
+				</if>
+				<if test="searchEndDate != null and searchEndDate != ''">
+					<![CDATA[
+					AND	(		bd_plant_BusEndDate 	<=	#{searchEndDate} OR
+								bd_plant_DevEndDate 	<=	#{searchEndDate}
+						)
+					]]>
+				</if>
+			</otherwise>
+		</choose>
+	)AA
+	where 1=1
+	<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT 				LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		bd_plant_name 		LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		bd_plant_add			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		bd_plant_BusEndDate				LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		bd_plant_DevEndDate			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT					LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				bd_plant_name 			LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				bd_plant_add 				LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				bd_plant_BusEndDate				LIKE CONCAT( '%',#{item.searchKeyword},'%')     OR
+ 				bd_plant_DevEndDate				LIKE CONCAT( '%',#{item.searchKeyword},'%') 	
+ 				
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+	</sql>
+	
+	<select id="Bd_getListCnt" resultType="int" parameterType="String">
+		SELECT	COUNT(*)
+		<include  refid="Bd_getListBody"/>
+    </select>
+    
+    <select id="Bd_getList" resultMap="ResultMap.rownumHashMap" parameterType="String">
+    	SELECT	* 
+		<include  refid="Bd_getListBody"/>
+		<choose>
+			<when test="orderBy == 1">
+	 		ORDER BY	COUNT ${sortDirect}
+	 		</when>
+			<when test="orderBy == 2">
+	 		ORDER BY	bd_plant_name ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 3">
+	 		ORDER BY	bd_plant_add ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 4">
+	 		ORDER BY	bd_plant_BusEndDate ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 5">
+	 		ORDER BY	bd_plant_DevEndDate ${sortDirect}
+	 		</when>
+	 		<otherwise>
+	 		ORDER BY 	COUNT DESC
+	 		</otherwise>
+ 		</choose>
+		<if test=" recordCountPerPage != 0">
+		LIMIT  	#{recordCountPerPage} OFFSET #{firstIndex} 
+		</if>  
+    </select>
+
+</mapper>

@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="keyword"> 
+  
+  	
+  
+  	<sql id="SK_getDataListBody">
+		FROM (
+			SELECT	AB.*
+					, ROW_NUMBER() OVER (
+		    		<choose>
+				 		<when test="orderBy == 1">
+				 		ORDER BY	COUNT ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 2">
+				 		
+				 		ORDER BY	SK_KEYWORD ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 3">
+				 		ORDER BY	SK_SIZE ${sortDirect}
+				 		</when>
+				 		<otherwise>
+				 		ORDER BY 	COUNT
+				 		</otherwise>
+			 		</choose>
+			 		) RNUM
+			FROM (
+				SELECT 	ROWNUM AS COUNT
+						, A.*
+				FROM (
+				 	 <include refid="keywordSearchOptions"/>
+				) A
+				ORDER BY COUNT
+			) AB
+		WHERE 1=1
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT 				LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		SK_KEYWORD			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		SK_SIZE 			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT 				LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SK_KEYWORD			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SK_SIZE 			LIKE '%' || #{item.searchKeyword} || '%' 	
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+		)AA
+	
+	</sql>
+  	
+    <select id="SK_getDataListCnt" resultType="int">
+		SELECT	COUNT(*)
+		<include  refid="SK_getDataListBody"/>
+    </select>
+    
+    <select id="SK_getDataList" resultType="hashmap">
+    	SELECT	* 
+		<include  refid="SK_getDataListBody"/>
+		<if test=" recordCountPerPage != 0">
+		WHERE 1=1
+		AND 	RNUM BETWEEN  #{firstIndex}+1 AND #{lastIndex} 
+		</if>  
+    </select>
+  
+
+
+	  <sql id="keywordSearchOptions">
+	    	SELECT BODY.* FROM (
+		    	SELECT	ROW_NUMBER() OVER(PARTITION BY SK_KEYWORD ORDER BY BB.SK_SIZE) AS RN
+		    			,SK_KEYWORD
+		    			,BB.SK_SIZE
+		       FROM	(SELECT BBB.*, COUNT(*) OVER(PARTITION BY SK_KEYWORD) AS SK_SIZE FROM t_search_keyword BBB) BB
+		       	WHERE	1=1
+		        <if test="searchBeginDate != null and searchBeginDate != ''">
+		 		AND		SK_REGDT 	>=	#{searchBeginDate}
+			 	</if>
+			 	<if test="searchEndDate != null and searchEndDate != ''">
+			 	<![CDATA[
+		 		AND		SK_REGDT	<=	#{searchEndDate}
+			 	]]>
+			 	</if>
+				ORDER BY SK_SIZE DESC
+	    	) BODY
+		 	WHERE BODY.RN = 1
+	    </sql>
+  
+  
+  
+  	<!-- 키워드 저장 -->
+	<insert id="SK_insert" parameterType="keyword">
+	
+		MERGE INTO T_SEARCH_KEYWORD MAIN
+			USING (
+					SELECT #{SK_KEYWORD} AS SK_KEYWORD, TO_CHAR(SYSDATE,'YYYY-MM-DD') AS SK_REGDT,#{SK_IP} AS SK_IP,#{SK_USERID} AS SK_USERID
+				 	FROM dual
+				 ) TEMP
+			ON (MAIN.SK_KEYWORD = TEMP.SK_KEYWORD AND MAIN.SK_REGDT = TEMP.SK_REGDT AND MAIN.SK_IP = TEMP.SK_IP)
+		
+		WHEN MATCHED THEN
+			UPDATE set SK_USERID = #{SK_USERID} 
+		WHEN NOT MATCHED THEN
+			INSERT (SK_KEYWORD, SK_REGDT, SK_IP, SK_USERID)
+			VALUES (#{SK_KEYWORD}, TO_CHAR(SYSDATE,'YYYY-MM-DD')
+			, #{SK_IP}
+			, #{SK_USERID})
+	
+	
+	</insert>
+  	
+  	<!-- 키워드 리스트  -->
+	<select id="SK_getList" parameterType="keyword" resultType="keyword">
+		<![CDATA[
+		SELECT * FROM (
+			SELECT SK_KEYWORD, COUNT(*) SK_SIZE 
+					FROM t_search_keyword 
+					GROUP BY SK_KEYWORD
+					HAVING COUNT(*) > #{minCount}
+					ORDER BY SK_SIZE DESC
+			        )
+		WHERE ROWNUM <= #{KeywordSize} 
+		]]>
+	</select>
+	
+	<!-- 키워드 디테일 리스트  -->
+	<select id="SK_getDetailList" parameterType="keyword" resultType="keyword">
+		SELECT 		S.*,NVL(U.UI_ID,CASE WHEN SK_USERID = '비회원' THEN '비회원' WHEN SK_USERID = '투니DB' THEN '투니DB' ELSE '관리자 조작' END) UI_ID  
+		FROM t_search_keyword S
+		LEFT JOIN u_userinfo U
+		ON			S.SK_USERID = U.UI_KEYNO
+		WHERE	SK_KEYWORD	=	#{SK_KEYWORD}
+	</select>
+	
+	<delete id="SK_deleteData" parameterType="keyword">
+	
+		DELETE FROM t_search_keyword
+		WHERE	SK_KEYWORD	=	#{SK_KEYWORD}
+		AND		SK_IP		=	#{SK_IP}
+		AND		SK_REGDT	=	#{SK_REGDT}
+		AND		SK_USERID	=	#{SK_USERID}
+	</delete>
+	
+	<delete id="SK_deleteDataWithKeyword" parameterType="keyword">
+	
+		DELETE FROM t_search_keyword
+		WHERE	SK_KEYWORD	=	#{SK_KEYWORD}
+	</delete>
+	
+	<!-- 키워드 조작 -->
+	<insert id="SK_updateKeyword" parameterType="hashmap">
+	
+		INSERT ALL
+		<foreach collection="list" item="item">
+		INTO T_SEARCH_KEYWORD
+		(
+			  SK_KEYWORD
+			, SK_REGDT 
+			, SK_IP
+			, SK_USERID
+		)
+		VALUES
+            (
+			  #{item.SK_KEYWORD}
+			, TO_CHAR(SYSDATE,'YYYY-MM-DD')
+			, #{item.SK_IP}
+			, #{item.SK_USERID}
+		) 
+        </foreach>
+        SELECT * FROM dual
+	</insert>
+	
+</mapper>
+ 

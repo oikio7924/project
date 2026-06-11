@@ -1,0 +1,1021 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Application">
+	<resultMap id="APPLICATION_MAP" type="HashMap">
+		<result property="AP_SUMMARY" column="AP_SUMMARY" jdbcType="CLOB" javaType="java.lang.String"/>
+	</resultMap>
+	
+	<!-- 프로그램 관리 -->
+	<sql id="AP_getDataListBody">
+		FROM (
+			SELECT	AB.*
+					, ROW_NUMBER() OVER (
+		    		<choose>
+				 		<when test="orderBy == 1">
+				 		ORDER BY	KEYNO ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 2">
+				 		ORDER BY	AP_NAME ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 3">
+				 		ORDER BY	TYPENAME ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 4">
+				 		ORDER BY	TO_NUMBER(REPLACE(REPLACE(PRICE, ',', ''), '원', '')) ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 5">
+				 		ORDER BY	PM_NAME ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 6">
+				 		ORDER BY	UI_NAME ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 7">
+				 		ORDER BY	AP_REGDT ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 8">
+				 		ORDER BY	AP_USE_NM ${sortDirect}
+				 		</when>
+				 		<otherwise>
+				 		ORDER BY 	AP_KEYNO DESC
+				 		</otherwise>
+				 	</choose>
+			 		) RNUM
+			FROM (
+				SELECT PP.*, ROWNUM KEYNO
+				FROM(SELECT 
+							 AP_KEYNO 
+							, AP_NAME 
+							, CS.SC_CODENM	AS TYPENAME
+							, CASE AP_PRICE WHEN '0' THEN '무료' ELSE TO_CHAR(AP_PRICE,'999,999,999') || '원' END PRICE
+							, P.PM_NAME
+							, U.UI_NAME
+							, TO_CHAR(AP_REGDT,'YYYY-MM-dd HH24:mi:ss') AP_REGDT
+							, CASE WHEN AP.AP_USE = 'N' THEN '사용안함' WHEN AP.AP_USE = 'Y' THEN '사용함' END AS AP_USE_NM
+							, TO_CHAR(SYSDATE,'YYYY-MM-dd') NOW_DATE
+					 		, CASE WHEN AP.AP_DEADLINE = 'N' THEN '진행중' WHEN AP.AP_DEADLINE = 'Y' THEN '마감' END AS DEADLINE
+					 		, AP_APPLY_EN_DATE
+					 		, AP_ENDT
+				FROM t_applicaiton_manager AP
+				LEFT JOIN t_place_manager P
+				ON			AP.AP_PLACE 	=	P.PM_KEYNO
+				LEFT JOIN u_userinfo U
+				ON			AP.AP_REGNM		=	U.UI_KEYNO
+				LEFT JOIN s_common_code_sub	CS
+		        ON			AP.AP_TYPE		=	CS.SC_KEYNO
+				WHERE		AP_USE		   !=	'D'
+				<if test="AP_MN_HOMEDIV_C != null and AP_MN_HOMEDIV_C != ''">
+				AND AP_MN_HOMEDIV_C = #{AP_MN_HOMEDIV_C}
+				</if>
+				ORDER BY AP_KEYNO ASC
+				)PP
+			) AB
+		WHERE 1=1
+		ORDER BY KEYNO DESC
+		<if test="searchList != null">
+			<foreach collection="searchList" item="item">
+		 		<choose>
+		 			<when test='item.searchIndex.equals("1")'>
+	 		AND		KEYNO  			LIKE '%' || #{item.searchKeyword} || '%'						
+		 			</when>
+		 			<when test='item.searchIndex.equals("2")'>
+	 		AND		AP_NAME			LIKE '%' || #{item.searchKeyword} || '%'					
+		 			</when>
+		 			<when test='item.searchIndex.equals("3")'>
+	 		AND		TYPENAME  		= 	#{item.searchKeyword}						
+		 			</when>
+		 			<when test='item.searchIndex.equals("4")'>
+			AND		PRICE			LIKE '%' || #{item.searchKeyword} || '%'				
+		 			</when>
+		 			<when test='item.searchIndex.equals("5")'>
+	 		AND		PM_NAME 		LIKE '%' || #{item.searchKeyword} || '%'						
+		 			</when>
+		 			<when test='item.searchIndex.equals("6")'>
+	 		AND		UI_NAME 		LIKE '%' || #{item.searchKeyword} || '%'							
+		 			</when>
+		 			<when test='item.searchIndex.equals("7")'>
+	 		AND		AP_REGDT  		LIKE '%' || #{item.searchKeyword} || '%'     
+		 			</when>
+		 			<when test='item.searchIndex.equals("8")'>
+	 		AND		AP_USE_NM 		LIKE '%' || #{item.searchKeyword} || '%'					
+		 			</when>
+		 			
+		 			<when test='item.searchIndex.equals("all")'>
+	 		AND (
+	 				KEYNO  				LIKE '%' || #{item.searchKeyword} || '%'	OR
+	 				AP_NAME				LIKE '%' || #{item.searchKeyword} || '%' 	OR
+	 				TYPENAME  			= 	#{item.searchKeyword} 					OR
+	 				PRICE 				LIKE '%' || #{item.searchKeyword} || '%'  	OR
+	 				PM_NAME 			LIKE '%' || #{item.searchKeyword} || '%'  	OR
+	 				UI_NAME 			LIKE '%' || #{item.searchKeyword} || '%'	OR
+	 				AP_REGDT  			LIKE '%' || #{item.searchKeyword} || '%'   	OR
+	 				AP_USE_NM 			LIKE '%' || #{item.searchKeyword} || '%'  	
+	 		)							
+		 			</when>
+		 		</choose>
+		 	</foreach>
+	 	</if>
+		)AA
+	</sql>
+	
+	<!-- 프로그램신청관리 - 신청프로그램관리 - 프로그램관리 카운트 -->
+	<select	id="AP_getDataListCnt" resultType="int">
+		SELECT COUNT(*) 
+		<include refid="AP_getDataListBody"/>
+	</select>
+	
+	
+	<!-- 프로그램신청관리 - 신청프로그램관리 - 프로그램관리  -->
+	<select	id="AP_getDataList" resultMap="APPLICATION_MAP">
+		SELECT	* 
+		<include  refid="AP_getDataListBody"/>
+		<if test="recordCountPerPage != 0">
+		WHERE 1=1
+		AND 	RNUM BETWEEN  #{firstIndex}+1 AND #{lastIndex} 
+		</if>
+	</select>
+	
+	
+	<select	id="AP_getList" resultMap="APPLICATION_MAP">
+		WITH V_TEMP1 AS (
+			SELECT A.* FROM (
+			SELECT 		CASE WHEN AP.AP_USE = 'N' THEN '사용안함' WHEN AP.AP_USE = 'Y' THEN '사용함' END AS AP_USE_NM
+							, TO_CHAR(SYSDATE,'YYYY-MM-DD') NOW_DATE
+					 		, CASE WHEN AP.AP_DEADLINE = 'N' THEN '진행중' WHEN AP.AP_DEADLINE = 'Y' THEN '마감' END AS DEADLINE
+							, AP.*
+							, P.PM_NAME
+							, U.UI_NAME				
+							, CS.SC_CODENM	AS TYPENAME
+		                    ,ROW_NUMBER() OVER(PARTITION BY AP.AP_KEYNO ORDER BY AP.AP_KEYNO) AS RN                    
+				FROM t_applicaiton_manager AP
+				LEFT JOIN t_place_manager P
+				ON			AP.AP_PLACE 	=	P.PM_KEYNO
+				LEFT JOIN u_userinfo U
+				ON			AP.AP_REGNM		=	U.UI_KEYNO
+				LEFT JOIN t_applicaiton_discount_select ADS
+				ON			AP.AP_KEYNO		=	ADS.AP_KEYNO
+				LEFT JOIN s_common_code_sub	CS
+		        ON			AP.AP_TYPE		=	CS.SC_KEYNO
+				WHERE		AP_USE		   !=	'D'
+				<if test="AP_KEYNO != null and AP_KEYNO != ''">
+				AND			AP.AP_KEYNO		=	#{AP_KEYNO}
+				</if>
+				ORDER BY	AP.AP_KEYNO DESC
+		        ) A
+		        WHERE A.RN = 1
+		)
+		, V_TEMP2 AS (
+			SELECT 		
+		                    LISTAGG(AD_KEYNO,',')  WITHIN GROUP (ORDER BY AD_KEYNO) AS AD_KEYNO
+							,AP.AP_KEYNO
+				FROM t_applicaiton_manager AP
+				LEFT JOIN t_place_manager P
+				ON			AP.AP_PLACE 	=	P.PM_KEYNO
+				LEFT JOIN u_userinfo U
+				ON			AP.AP_REGNM		=	U.UI_KEYNO
+				LEFT JOIN t_applicaiton_discount_select ADS
+				ON			AP.AP_KEYNO		=	ADS.AP_KEYNO
+				LEFT JOIN s_common_code_sub	CS
+		        ON			AP.AP_TYPE		=	CS.SC_KEYNO
+				WHERE		AP_USE		   !=	'D'
+		        <if test="AP_KEYNO != null and AP_KEYNO != ''">
+				AND			AP.AP_KEYNO		=	#{AP_KEYNO}
+				</if>
+				GROUP BY 	AP.AP_KEYNO
+				ORDER BY	AP.AP_KEYNO DESC
+		)
+		SELECT A.*,B.AD_KEYNO
+		FROM v_temp1 A
+		INNER JOIN v_temp2 B
+		ON A.AP_KEYNO = B.AP_KEYNO
+	</select>
+	
+	
+	
+	<!-- 신청자 리스트 -->
+	<sql id="APP_ApplicantListBody">
+		FROM (
+			SELECT	AB.*
+					, ROW_NUMBER() OVER (
+		    		<choose>
+				 		<when test="orderBy == 1">
+				 		ORDER BY	COUNT ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 2">
+				 		ORDER BY	DIVISION ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 3"> 
+				 		ORDER BY	AP_NAME ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 4"> 
+				 		ORDER BY	UI_NAME ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 5"> 
+				 		ORDER BY	SEQ ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 6"> 
+				 		ORDER BY	PRICE ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 7"> 
+				 		ORDER BY	APP_REGDT ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 8">
+				 		ORDER BY	STATUS ${sortDirect}
+				 		</when>
+				 		<otherwise>
+				 		ORDER BY 	COUNT DESC
+				 		</otherwise>
+				 	</choose>
+			 		) RNUM
+			FROM (
+				SELECT 	ROWNUM AS "COUNT"
+						, A.*
+						, DECODE(A.DIVISION, '신청', A.APP_ST_DATE || ' / (' || APP_SEQUENCE || ')' || APP_ST_TIME, A.APP_ST_DATE || ' / ' || APP_ST_TIME) SEQ
+                        , CASE TOTALPRICE WHEN 0 THEN '무료' ELSE TO_CHAR(TOTALPRICE,'999,999,999') || '원' END PRICE
+				FROM (
+					SELECT	TO_NUMBER(SUBSTR(APP.APP_AP_KEYNO,-10)) APP_AP_KEYNO
+				          	, AM.AP_NAME
+		             	  	, U.UI_REP_NAME UI_NAME
+		             	  	, TO_NUMBER(SUBSTR(APP.APP_KEYNO,-10)) APP_KEYNO
+				          	, TO_CHAR(APP.APP_REGDT, 'YYYY-MM-dd HH24:mi:ss') APP_REGDT
+				          	, APP.APP_ST_DATE
+				          	, APP.APP_SEQUENCE
+				          	, APP.APP_ST_TIME
+                         	, CASE 
+                         		WHEN APP.APP_DIVISION = 'SC_0000000342' THEN '신청'
+                                WHEN APP.APP_DIVISION = 'SC_0000000343' THEN '강좌'
+                           	END AS DIVISION  
+                         	, CASE 
+                         		WHEN APP.APP_STATUS = 'SC_0000000344' THEN '결제대기'
+                                WHEN APP.APP_STATUS = 'SC_0000000345' THEN '신청완료'
+                                WHEN APP.APP_STATUS = 'SC_0000000346' THEN '신청취소'
+                                WHEN APP.APP_STATUS = 'SC_0000000347' THEN '대기자'
+                                WHEN APP.APP_STATUS = 'SC_0000000348' THEN '결제만료'
+                                WHEN APP.APP_STATUS = 'SC_0000000349' THEN '관람완료'
+                           	END AS STATUS  
+             				, NVL(SUM(APD.APD_PRICE*APD.APD_CNT) OVER(PARTITION BY APD.APD_APP_KEYNO ORDER BY APD.APD_APP_KEYNO),0) AS TOTALPRICE
+             				, ROW_NUMBER() OVER(PARTITION BY APD.APD_APP_KEYNO ORDER BY APD.APD_APP_KEYNO) AS RN
+					FROM t_application_participate APP
+				
+				    LEFT JOIN t_application_user AU
+			        ON			APP.APP_APU_KEYNO = AU.APU_KEYNO
+			        
+			        LEFT JOIN u_userinfo	U
+			        ON			AU.APU_UI_KEYNO = U.UI_KEYNO
+					
+					LEFT JOIN t_apply_participate_discount APD
+					ON 		  APP.APP_KEYNO = APD.APD_APP_KEYNO
+					
+					LEFT JOIN t_applicaiton_manager AM
+					ON		  APP.APP_AP_KEYNO = AM.AP_KEYNO
+					WHERE		AM.AP_KEYNO IS NOT NULL
+				<if test="AP_MN_HOMEDIV_C != null and AP_MN_HOMEDIV_C != ''">
+				AND AP_MN_HOMEDIV_C = #{AP_MN_HOMEDIV_C}
+				</if>					
+					ORDER BY  APP.APP_REGDT 
+		        ) A
+		        WHERE A.RN = 1
+			) AB
+		WHERE 1=1
+		<if test="searchList != null">
+		 	<foreach collection="searchList" item="item">
+		 		<choose>
+		 			<when test='item.searchIndex.equals("1")'>
+	 		AND		COUNT   LIKE '%' || #{item.searchKeyword} || '%'			
+		 			</when>
+		 			<when test='item.searchIndex.equals("2")'>
+	 		AND		DIVISION  = #{item.searchKeyword}					
+		 			</when>
+		 			<when test='item.searchIndex.equals("3")'>
+	 		AND		AP_NAME  LIKE '%' || #{item.searchKeyword} || '%'					
+		 			</when>
+		 			<when test='item.searchIndex.equals("4")'>
+	 		AND		UI_NAME 	LIKE '%' || #{item.searchKeyword} || '%'						
+		 			</when>
+		 			<when test='item.searchIndex.equals("5")'>
+	 		AND		SEQ  		LIKE '%' || #{item.searchKeyword} || '%'							
+		 			</when>
+ 					<when test='item.searchIndex.equals("6")'>
+ 			AND		PRICE  		LIKE '%' || #{item.searchKeyword} || '%'			
+		 			</when>
+		 			<when test='item.searchIndex.equals("7")'>
+	 		AND		APP_REGDT  	LIKE '%' || #{item.searchKeyword} || '%'     
+		 			</when>
+		 			<when test='item.searchIndex.equals("8")'>
+	 		AND		STATUS   = #{item.searchKeyword}						
+		 			</when>
+		 			
+		 			<when test='item.searchIndex.equals("all")'>
+	 		AND (
+	 				COUNT   LIKE '%' || #{item.searchKeyword} || '%'		OR
+	 				DIVISION  = #{item.searchKeyword}		OR
+	 				AP_NAME  LIKE '%' || #{item.searchKeyword} || '%'			OR
+	 				UI_NAME 	LIKE '%' || #{item.searchKeyword} || '%'			OR
+	 				SEQ  		LIKE '%' || #{item.searchKeyword} || '%'	OR
+	 				PRICE  		LIKE '%' || #{item.searchKeyword} || '%'	OR
+	 				APP_REGDT  		LIKE '%' || #{item.searchKeyword} || '%'	OR
+	 				STATUS   = #{item.searchKeyword}	
+	 		)							
+		 			</when>
+		 		</choose>
+		 	</foreach>
+	 	</if>
+		)AA
+	</sql>
+	
+	<!-- 프로그램신청관리 - 신청프로그램관리 - 신청자 카운트 -->
+	<select	id="APP_ApplicantListCnt" resultType="int">
+		SELECT COUNT(*) 
+		<include refid="APP_ApplicantListBody"/>
+	</select>
+	
+	
+	<!-- 프로그램신청관리 - 신청프로그램관리 - 신청자 리스트  -->
+	<select	id="APP_ApplicantList" resultType="Hashmap">
+		SELECT	* 
+		<include  refid="APP_ApplicantListBody"/>
+		<if test="recordCountPerPage != 0">
+		WHERE 1=1
+		AND 	RNUM BETWEEN  #{firstIndex}+1 AND #{lastIndex} 
+		</if>
+	</select>
+	
+	
+	<insert id="AP_insertData" parameterType="ApplicationDTO" >
+		
+		INSERT INTO t_applicaiton_manager (
+			  AP_KEYNO
+			, AP_NAME
+			, AP_SUMMARY
+			, AP_LIMIT_AGE_YN
+			, AP_LIMIT_AGE_MIN
+			, AP_LIMIT_AGE_MAX
+			, AP_LIMIT_PERSON
+			, AP_PLACE
+			, AP_PRICE
+			, AP_STDT
+			, AP_ENDT
+			, AP_DATE_COMMENT
+			, AP_REGDT
+			, AP_REGNM
+			, AP_USE
+			, AP_SEAT_YN
+			, AP_APPLY_ST_DATE
+			, AP_APPLY_EN_DATE
+			, AP_BUTTON_TEXT1
+			, AP_BUTTON_TEXT2
+			, AP_BUTTON_TEXT3
+			, AP_TICKET_CNT
+			, AP_HOILDAY
+			, AP_TYPE
+			, AP_WAITING_YN
+			, AP_WAITING_TEXT
+			, AP_EXPIRED
+			, AP_MN_HOMEDIV_C
+		)
+		VALUES (
+			  AP_SEQ.NEXTVAL
+			, #{AP_NAME}
+			, #{AP_SUMMARY}
+			, #{AP_LIMIT_AGE_YN}
+			, #{AP_LIMIT_AGE_MIN}
+			, #{AP_LIMIT_AGE_MAX}
+			, #{AP_LIMIT_PERSON}
+			, #{AP_PLACE}
+			, #{AP_PRICE}
+			, #{AP_STDT}
+			, #{AP_ENDT}
+			, #{AP_DATE_COMMENT}
+			, SYSDATE
+			, #{AP_REGNM}
+			, #{AP_USE}
+			, #{AP_SEAT_YN}
+			, #{AP_APPLY_ST_DATE}
+			, #{AP_APPLY_EN_DATE}
+			, #{AP_BUTTON_TEXT1}
+			, #{AP_BUTTON_TEXT2}
+			, #{AP_BUTTON_TEXT3}
+			, #{AP_TICKET_CNT}
+			, #{AP_HOILDAY}
+			, #{AP_TYPE}
+			, #{AP_WAITING_YN}
+			, #{AP_WAITING_TEXT}
+			, #{AP_EXPIRED}
+			, #{AP_MN_HOMEDIV_C}
+		)
+		
+		<selectKey resultType="String" keyProperty="AP_KEYNO" order="AFTER">
+			SELECT AP_SEQ.CURRVAL  FROM dual
+		</selectKey>
+	</insert>
+	
+	<update id="AP_updateData">
+		UPDATE t_applicaiton_manager 
+		SET		AP_NAME				=	#{AP_NAME}
+			  , AP_SUMMARY			=	#{AP_SUMMARY}
+			  , AP_LIMIT_AGE_YN		=	#{AP_LIMIT_AGE_YN}
+			  , AP_LIMIT_AGE_MIN	=	#{AP_LIMIT_AGE_MIN}
+			  , AP_LIMIT_AGE_MAX	=	#{AP_LIMIT_AGE_MAX}
+			  , AP_LIMIT_PERSON		=	#{AP_LIMIT_PERSON}
+			  , AP_PLACE			=	#{AP_PLACE}
+			  , AP_PRICE			=	#{AP_PRICE}
+			  , AP_STDT				=	#{AP_STDT}
+			  , AP_ENDT				=	#{AP_ENDT}
+			  , AP_DATE_COMMENT		=	#{AP_DATE_COMMENT}
+			  , AP_MODDT			=	SYSDATE
+			  , AP_MODNM			=	#{AP_MODNM}
+			  , AP_USE				=	#{AP_USE}
+			  , AP_SEAT_YN			=	#{AP_SEAT_YN}
+			  , AP_APPLY_ST_DATE	=	#{AP_APPLY_ST_DATE}
+			  , AP_APPLY_EN_DATE	=	#{AP_APPLY_EN_DATE}
+			  , AP_BUTTON_TEXT1		=	#{AP_BUTTON_TEXT1}
+			  , AP_BUTTON_TEXT2		=	#{AP_BUTTON_TEXT2}
+			  , AP_BUTTON_TEXT3		=	#{AP_BUTTON_TEXT3}
+			  , AP_TICKET_CNT		=	#{AP_TICKET_CNT}
+			  , AP_HOILDAY			=	#{AP_HOILDAY}
+			  , AP_TYPE				=	#{AP_TYPE}
+			  , AP_WAITING_YN		=	#{AP_WAITING_YN}
+			  , AP_WAITING_TEXT		=	#{AP_WAITING_TEXT}
+			  , AP_EXPIRED			=	#{AP_EXPIRED}
+		WHERE	AP_KEYNO			=	#{AP_KEYNO}
+	
+	</update>
+	
+	<update id="AP_Deadline">
+		UPDATE t_applicaiton_manager
+		SET		AP_DEADLINE		=	'Y'
+		WHERE	AP_KEYNO	=	#{AP_KEYNO}
+	</update>
+	
+	<update id="AP_deleteData">
+		UPDATE t_applicaiton_manager
+		SET		AP_USE		=	'D'
+		WHERE	AP_KEYNO	=	#{AP_KEYNO}
+	</update>
+	
+	<select	id="AP_ticketCnt" resultType="hashmap">
+		SELECT  AP_TICKET_CNT
+		FROM t_applicaiton_manager
+		<if test="AP_KEYNO != null and AP_KEYNO != ''">
+		WHERE	AP_KEYNO	=	#{AP_KEYNO}
+		</if>
+	</select>
+
+	<!-- 프로그램신청관리 - 신청프로그램관리 상세 데이터  -->
+	<select	id="AP_getData" resultType="HashMap" resultMap="APPLICATION_MAP">
+		WITH V_TEMP1 AS (
+			SELECT A.* FROM (
+			SELECT 		CASE WHEN AP.AP_USE = 'N' THEN '사용안함' WHEN AP.AP_USE = 'Y' THEN '사용함' END AS AP_USE_NM
+							, TO_CHAR(SYSDATE,'YYYY-MM-DD') NOW_DATE
+					 		, CASE WHEN AP.AP_DEADLINE = 'N' THEN '진행중' WHEN AP.AP_DEADLINE = 'Y' THEN '마감' END AS DEADLINE
+							, AP.*
+							, P.PM_NAME
+							, U.UI_NAME				
+							, CS.SC_CODENM	AS TYPENAME
+		                    ,ROW_NUMBER() OVER(PARTITION BY AP.AP_KEYNO ORDER BY AP.AP_KEYNO) AS RN                    
+				FROM t_applicaiton_manager AP
+				LEFT JOIN t_place_manager P
+				ON			AP.AP_PLACE 	=	P.PM_KEYNO
+				LEFT JOIN u_userinfo U
+				ON			AP.AP_REGNM		=	U.UI_KEYNO
+				LEFT JOIN t_applicaiton_discount_select ADS
+				ON			AP.AP_KEYNO		=	ADS.AP_KEYNO
+				LEFT JOIN s_common_code_sub	CS
+		        ON			AP.AP_TYPE		=	CS.SC_KEYNO
+				WHERE		AP_USE		   !=	'D'
+				AND			AP.AP_KEYNO		=	#{AP_KEYNO}
+				ORDER BY	AP.AP_KEYNO DESC
+		        ) A
+		        WHERE A.RN = 1
+		)
+		, V_TEMP2 AS (
+			SELECT 		
+		                    LISTAGG(AD_KEYNO,',')  WITHIN GROUP (ORDER BY AD_KEYNO) AS AD_KEYNO
+							,AP.AP_KEYNO
+				FROM t_applicaiton_manager AP
+				LEFT JOIN t_place_manager P
+				ON			AP.AP_PLACE 	=	P.PM_KEYNO
+				LEFT JOIN u_userinfo U
+				ON			AP.AP_REGNM		=	U.UI_KEYNO
+				LEFT JOIN t_applicaiton_discount_select ADS
+				ON			AP.AP_KEYNO		=	ADS.AP_KEYNO
+				LEFT JOIN s_common_code_sub	CS
+		        ON			AP.AP_TYPE		=	CS.SC_KEYNO
+				WHERE		AP_USE		   !=	'D'
+				AND			AP.AP_KEYNO		=	#{AP_KEYNO}
+				GROUP BY 	AP.AP_KEYNO
+				ORDER BY	AP.AP_KEYNO DESC
+		)
+		SELECT A.*,B.AD_KEYNO
+		FROM v_temp1 A
+		INNER JOIN v_temp2 B
+		ON A.AP_KEYNO = B.AP_KEYNO
+	</select>
+	
+	<select	id="AP_getAllList" resultMap="APPLICATION_MAP">
+		SELECT A.* FROM (
+		SELECT		AP.*
+					, P.PM_NAME
+					, P.PM_FS_KEYNO
+					, '/resources/img/upload/'||FS_FOLDER,FS_CHANGENM||'.'||FS_EXT FS_PATH
+                    , P.PM_SEAT_FS_KEYNO
+					, U.UI_NAME					
+                    ,MAX(ASM_ENDT) OVER(PARTITION BY AP.AP_KEYNO ORDER BY AP.AP_KEYNO) AS END_DATE
+                    , ROW_NUMBER() OVER(PARTITION BY AP.AP_KEYNO ORDER BY AP.AP_KEYNO) AS RN
+		FROM t_applicaiton_manager AP
+		
+		LEFT JOIN t_application_schedule_main ASM
+        ON			AP.AP_KEYNO = ASM.ASM_AP_KEYNO		
+		LEFT JOIN t_place_manager P
+		ON			AP.AP_PLACE 	=	P.PM_KEYNO		
+		LEFT JOIN u_userinfo U
+		ON			AP.AP_REGNM		=	U.UI_KEYNO		
+		LEFT JOIN t_applicaiton_discount_select ADS
+		ON			AP.AP_KEYNO		=	ADS.AP_KEYNO		
+	    LEFT JOIN s_common_file_sub	FS
+        ON			P.PM_FS_KEYNO	=	FS.FS_KEYNO        
+		WHERE		AP_USE		    =	'Y'
+		AND			AP.AP_TYPE 		= 	#{AP_TYPE}
+		AND 		AP_MN_HOMEDIV_C = (SELECT HM_MN_HOMEDIV_C FROM s_home_manager WHERE HM_TILES = #{apTiles} AND HM_USE_YN='Y')
+		ORDER BY	AP.AP_KEYNO DESC
+        ) A 
+        WHERE A.RN = 1
+	</select>
+	
+	<insert id="AD_insertData">
+		INSERT INTO t_application_discount (
+			  AD_KEYNO
+			, AD_NAME
+			, AD_TYPE
+			, AD_MONEY
+			, AD_COMENT
+			, AD_DEFAULT_YN
+			, AD_USE
+		)
+		VALUES (
+			  #{AD_KEYNO}
+			, #{AD_NAME}
+			, #{AD_TYPE}
+			, #{AD_MONEY}
+			, #{AD_COMENT}
+			, #{AD_DEFAULT_YN}
+			, #{AD_USE}
+		)
+	</insert>
+	
+	<update id="AD_updateData">
+		UPDATE t_application_discount 
+		SET		AD_NAME				=	#{AD_NAME}
+			  , AD_TYPE				=	#{AD_TYPE}
+			  , AD_MONEY			=	#{AD_MONEY}
+			  , AD_COMENT			=	#{AD_COMENT}
+			  , AD_DEFAULT_YN		=	#{AD_DEFAULT_YN}
+			  , AD_USE				=	#{AD_USE}
+		WHERE	AD_KEYNO			=	#{AD_KEYNO}
+	
+	</update>
+	
+	<update id="AD_deleteData">
+		UPDATE t_application_discount
+		SET		AD_USE		=	'D'
+		WHERE	AD_KEYNO	=	#{AD_KEYNO}
+	</update>
+	
+	
+	<sql id="AD_getListBody">
+	FROM (
+		SELECT	AB.*
+				, ROW_NUMBER() OVER (
+	    		<choose>
+			 		<when test="orderBy == 1">
+			 		ORDER BY	COUNT ${sortDirect}
+			 		</when>
+			 		<when test="orderBy == 2">
+			 		ORDER BY	AD_NAME ${sortDirect}
+			 		</when>
+			 		<when test="orderBy == 3"> 
+			 		ORDER BY	AD_USE ${sortDirect}
+			 		</when>
+			 		<when test="orderBy == 4"> 
+			 		ORDER BY	TO_NUMBER(REPLACE(REPLACE(MONEY, '원',''),'%',''))	${sortDirect}
+			 		</when>
+			 		<when test="orderBy == 5"> 
+			 		ORDER BY	AD_COMENT ${sortDirect}
+			 		</when>
+			 		<when test="orderBy == 6"> 
+			 		ORDER BY	AD_DEFAULT_YN ${sortDirect}
+			 		</when>
+			 		<otherwise>
+			 		ORDER BY 	COUNT DESC
+			 		</otherwise>
+			 	</choose>
+		 		) RNUM
+		FROM (
+			SELECT 	ROWNUM AS COUNT
+					, A.*
+			FROM(
+				SELECT		DECODE(AD.AD_TYPE,'A', AD.AD_MONEY||'%', AD.AD_MONEY||'원') MONEY
+	   						, AD.AD_NAME
+    						, AD.AD_COMENT
+    						, CASE AD_USE
+								WHEN 'Y' THEN 'O'
+								WHEN 'N' THEN 'X'
+							END AD_USE
+							, CASE AD_DEFAULT_YN
+								WHEN 'Y' THEN 'O'
+								WHEN 'N' THEN 'X'
+							END AD_DEFAULT_YN
+							, TO_NUMBER(SUBSTR(AD_KEYNO,-10)) AD_KEYNO
+				FROM t_application_discount AD
+				WHERE		AD_USE		!=	'D'
+				AND			AD_TYPE 	!= 	'C'
+				ORDER BY	AD_KEYNO DESC
+		    )A
+		) AB
+	WHERE 1=1
+	<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT   LIKE '%'||#{item.searchKeyword}||'%'				
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		AD_NAME  LIKE '%'||#{item.searchKeyword}||'%'							
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		AD_USE   = #{item.searchKeyword}			
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		MONEY 	LIKE '%'||#{item.searchKeyword}||'%'						
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		AD_COMENT  LIKE '%'||#{item.searchKeyword}||'%'				
+	 			</when>
+	 			<when test='item.searchIndex.equals("6")'>
+ 		AND		AD_DEFAULT_YN   = #{item.searchKeyword}						
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT   LIKE '%'||#{item.searchKeyword}||'%'		OR
+ 				AD_NAME  LIKE '%'||#{item.searchKeyword}||'%'		OR
+ 				AD_USE   = #{item.searchKeyword}					OR
+ 				MONEY 	LIKE '%'||#{item.searchKeyword}||'%'		OR
+ 				AD_COMENT  LIKE '%'||#{item.searchKeyword}||'%'		OR
+ 				AD_DEFAULT_YN  = #{item.searchKeyword}		
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+ 	</if>
+	)AA
+	</sql>
+	
+	<!-- 할인정책관리 상세보기 -->
+	<select	id="AD_getData" resultType="hashmap">
+		SELECT		AD.*
+		FROM t_application_discount AD
+		WHERE		AD_USE		   !=	'D'
+		AND			AD_KEYNO		=	#{AD_KEYNO}
+		AND			AD_TYPE != 'C'
+		ORDER BY	AD_KEYNO DESC
+	</select>
+	
+	<!-- 할인정책관리 카운트 -->
+	<select	id="AD_getListCnt" resultType="int">
+		SELECT COUNT(*) 
+		<include refid="AD_getListBody"/>
+	</select>
+	
+	<!-- 할인정책관리 리스트  -->
+	<select	id="AD_getList" resultType="Hashmap">
+		SELECT * 
+		<include refid="AD_getListBody"/>
+		<if test="recordCountPerPage != 0">
+		WHERE 1=1
+		AND 	RNUM BETWEEN  #{firstIndex}+1 AND #{lastIndex} 
+		</if> 	
+	</select>
+
+	<select	id="AD_getAllList" resultType="hashmap">
+		SELECT		AD.*
+		FROM t_application_discount AD
+		WHERE		AD_USE		   !=	'D'
+		AND			AD_TYPE		   != 	'C'
+        ORDER BY CASE WHEN AD_DEFAULT_YN = 'Y' THEN 1
+			    	  WHEN AD_DEFAULT_YN = 'N' THEN 2
+		    	 END, AD_KEYNO
+	</select>
+	
+	
+	<insert id="ASM_insertData">
+	
+	
+		INSERT INTO t_application_schedule_main (
+			  ASM_KEYNO
+			, ASM_AP_KEYNO
+			, ASM_NAME
+			, ASM_STDT
+			, ASM_ENDT
+			, ASM_DAY
+		)
+		VALUES (
+			  ASM_SEQ.NEXTVAL
+			, #{ASM_AP_KEYNO}
+			, #{ASM_NAME}
+			, #{ASM_STDT}
+			, #{ASM_ENDT}
+			, #{ASM_DAY}
+		)
+	
+		<selectKey resultType="String" keyProperty="ASM_KEYNO" order="AFTER">
+			SELECT ASM_SEQ.CURRVAL  FROM dual
+		</selectKey>
+		
+	</insert>
+	
+	<insert id="ASS_insertData">
+		INSERT INTO t_application_schedule_sub (
+			  ASS_KEYNO
+			, ASS_ASM_KEYNO
+			, ASS_ST_TIME
+			, ASS_EN_TIME
+			, ASS_MAXIMUM
+			, ASS_SUBTITLE
+		)
+		VALUES (
+			  ASS_SEQ.NEXTVAL
+			, #{ASS_ASM_KEYNO}
+			, #{ASS_ST_TIME}
+			, #{ASS_EN_TIME}
+			, #{ASS_MAXIMUM}
+			, #{ASS_SUBTITLE}
+		)
+	</insert>
+	
+	<delete id="ASS_deleteData">
+		DELETE FROM t_application_schedule_sub
+		WHERE		ASS_ASM_KEYNO IN
+		(
+		    SELECT ASM_KEYNO
+		    FROM t_application_schedule_main
+		    WHERE ASM_AP_KEYNO = #{AP_KEYNO}
+		)
+	</delete>
+	
+	<delete id="ASM_deleteData">
+		DELETE FROM t_application_schedule_main
+		WHERE  ASM_AP_KEYNO = #{AP_KEYNO}
+	</delete>
+	
+	<select id="ApplyCnt" resultType="int">
+		SELECT COUNT(*)
+        FROM t_application_participate
+        WHERE APP_AP_KEYNO = #{AP_KEYNO}
+        AND   APP_DELYN = 'N'
+	</select>
+	<select id="ScheduleMain" resultType="Hashmap">
+		SELECT *
+		FROM t_application_schedule_main
+		WHERE ASM_AP_KEYNO = #{AP_KEYNO}
+	</select>
+	<select id="ScheduleSub" resultType="Hashmap">
+		SELECT    ASS.*
+		        , SUBSTR(ASS.ASS_ST_TIME, 1,2) AS ST_H
+		        , SUBSTR(ASS.ASS_ST_TIME, -2) AS ST_M
+		        , SUBSTR(ASS.ASS_EN_TIME, 1,2) AS EN_H
+		        , SUBSTR(ASS.ASS_EN_TIME, -2) AS EN_M
+		FROM t_application_schedule_main ASM
+		        
+		LEFT JOIN t_application_schedule_sub ASS
+		ON ASM.ASM_KEYNO = ASS.ASS_ASM_KEYNO
+		
+		WHERE ASM_AP_KEYNO = #{AP_KEYNO}
+		ORDER BY ASS_ST_TIME
+	</select>
+	
+	<insert id="AD_insertSelectData">
+		INSERT ALL
+		<foreach collection="adList" item="item">
+		INTO T_APPLICAITON_DISCOUNT_SELECT (
+			AP_KEYNO , AD_KEYNO
+		)
+		VALUES		
+		(
+			#{AP_KEYNO} , #{item}
+		)
+		</foreach>
+		SELECT * FROM dual
+	</insert>
+	
+	<delete id="AD_deleteSelectData">
+		DELETE FROM t_applicaiton_discount_select
+		WHERE	AP_KEYNO	=	#{AP_KEYNO}
+	
+	</delete>
+	
+	<!-- 할인적용 리스트 -->
+	<select	id="AD_SELECT" resultType="hashmap">
+		SELECT AD.*
+		FROM t_applicaiton_manager AM
+		
+		LEFT JOIN t_applicaiton_discount_select ADS
+		ON ADS.AP_KEYNO = AM.AP_KEYNO
+		LEFT JOIN t_application_discount AD
+		ON ADS.AD_KEYNO = AD.AD_KEYNO
+		
+		WHERE AM.AP_KEYNO = #{AP_KEYNO}
+	</select>
+	
+	<!-- 할인설명 -->
+	<select	id="SaleComent" resultType="String">
+		SELECT  AD_COMENT
+        FROM t_application_discount
+        WHERE	AD_KEYNO =  #{AD_KEYNO}
+	</select>
+	
+	<select id="PROGRRAM_PRICE" resultType="hashmap">
+	   SELECT AP_PRICE
+       FROM t_applicaiton_manager
+       WHERE AP_KEYNO = #{AP_KEYNO}
+	</select>
+	
+	<!-- 프로그램 신청 등록 -->
+	<insert id="APP_Insert" parameterType="ApplicationDTO">
+		INSERT INTO t_application_participate (
+			 	  APP_KEYNO
+				, APP_AP_KEYNO
+				, APP_ASM_KEYNO
+				, APP_APU_KEYNO
+				, APP_ST_DATE
+				, APP_ST_TIME
+				, APP_COUNT
+				, APP_REGDT
+				, APP_ASS_KEYNO
+				, APP_SEQUENCE
+				, APP_STATUS
+				, APP_DIVISION
+				, APP_EXPIRED
+		)
+		VALUES (
+			 	  APP_SEQ.NEXTVAL
+				, #{APP_AP_KEYNO}
+				, #{APP_ASM_KEYNO}
+				, #{APP_APU_KEYNO}
+				, #{APP_ST_DATE}
+				, #{APP_ST_TIME}
+				, #{APP_COUNT}
+				, SYSDATE
+				, #{APP_ASS_KEYNO}
+				, #{APP_SEQUENCE}
+				, #{APP_STATUS}
+				, #{APP_DIVISION}
+				, #{APP_EXPIRED}
+		)
+		
+		<selectKey resultType="String" keyProperty="APP_KEYNO" order="AFTER">
+			SELECT APP_SEQ.CURRVAL  FROM dual
+		</selectKey>
+		
+	</insert>
+	
+	<!-- 프로그램 요금 등록 -->
+	<insert id="APP_Charge" parameterType="ApplicationDTO">
+		INSERT INTO t_apply_participate_discount (
+		 	   	  APD_AD_KEYNO
+				, APD_APP_KEYNO
+				, APD_CNT
+				, APD_PRICE
+		)
+		VALUES (
+			 	  #{APD_AD_KEYNO}
+				, #{APP_KEYNO}
+				, #{APD_CNT}
+				, #{APD_PRICE}
+		)
+	</insert>
+	
+	<!-- 신청가능한 프로그램 리스트 -->
+	<select id="APP_ProgramList" resultType="Hashmap">
+	    SELECT *
+		FROM t_application_participate
+		<if test="AP_KEYNO != null">
+		WHERE APP_AP_KEYNO  = #{AP_KEYNO}
+		AND	  APP_DELYN 	= 'N'
+		AND	  APP_STATUS IN
+		
+				<foreach collection="searchConditionArr" item="item" open="(" close=")" separator=",">
+						#{item}
+				</foreach>
+		</if>
+	</select>
+	
+	<!-- 수강대상자 추가 -->
+	<insert id="APU_Insert">
+		INSERT INTO t_application_user (
+			 	  APU_KEYNO
+				, APU_UI_KEYNO
+				, APU_NAME
+				, APU_RELATION
+				, APU_PHONE
+				, APU_BIRTH
+				, APU_REGDT
+				, APU_GENDER
+				, APU_SELFYN
+		)
+		VALUES (
+			 	  APU_SEQ.NEXTVAL
+				, #{APU_UI_KEYNO}
+				, #{APU_NAME}
+				, #{APU_RELATION}
+				, #{APU_PHONE}
+				, #{APU_BIRTH}
+				, SYSDATE
+				, #{APU_GENDER}
+				, #{APU_SELFYN}
+		)
+		
+		<selectKey resultType="String" keyProperty="APU_KEYNO" order="AFTER">
+			SELECT APU_SEQ.CURRVAL  FROM dual
+		</selectKey>
+	</insert>
+	<!-- 수강자 수정 -->
+	<update id="APU_Update">
+		UPDATE t_application_user 
+		SET		APU_NAME				=	#{APU_NAME}
+			  , APU_RELATION			=	#{APU_RELATION}
+			  , APU_PHONE				=	#{APU_PHONE}
+			  , APU_BIRTH				=	#{APU_BIRTH}
+			  , APU_GENDER				=	#{APU_GENDER}
+			  , APU_REGDT				=	SYSDATE
+			  
+		WHERE	APU_KEYNO			=	#{APU_KEYNO}
+	
+	</update>
+	<!-- 수강자 삭제 -->
+	<update id="APU_Delete">
+		UPDATE t_application_user
+		SET		APU_DELYN		=	'Y'
+		WHERE	APU_KEYNO	=	#{APU_KEYNO}
+	</update>
+	
+	<!-- 수강자 리스트 -->
+	<select id="APU_getList" resultType="Hashmap">
+	    SELECT *
+		FROM t_application_user
+		WHERE	 APU_UI_KEYNO = #{APU_UI_KEYNO}
+		AND		 APU_DELYN = 'N'
+		<if test='App_type.equals("SC_0000000342")'>
+			<![CDATA[
+		AND	     APU_SELFYN = 'Y'
+			]]>
+		</if>
+	</select>
+	
+	<!-- 예약좌석 등록 -->
+	     <insert id="APS_Insert" parameterType="ApplicationDTO">
+        INSERT INTO t_application_participate_seat (
+                 
+              	 APS_APP_KEYNO
+                , APS_SEATNAME
+                , APS_APP_ST_DATE
+                , APS_APP_ST_TIME
+                , APS_AP_KEYNO
+        )
+        VALUES (
+               
+                 #{APS_APP_KEYNO}
+                , #{APS_SEATNAME}
+                , #{APS_APP_ST_DATE}
+                , #{APS_APP_ST_TIME}
+                , #{APS_AP_KEYNO}
+            
+        )
+    </insert>
+
+    
+        <!-- 해당 날짜 시간에 예약된 좌석 보기 -->
+    <select id="APS_List" parameterType="ApplicationDTO" resultType="String">
+        SELECT APS_SEATNAME 
+        FROM t_application_participate_seat
+        WHERE APS_AP_KEYNO = #{APS_AP_KEYNO}
+        AND APS_APP_ST_DATE = #{APS_APP_ST_DATE}
+        AND APS_APP_ST_TIME = #{APS_APP_ST_TIME}
+    </select>
+    
+     <!-- 좌석 배경 File 가져오기  -->
+     <select id="AP_getPlaceSeatFile" parameterType="ApplicationDTO" resultType="hashmap">
+    
+        SELECT    FS.FS_KEYNO FS_KEYNO1
+                , FS.FS_ORINM FS_ORINM1
+                , (FS_FOLDER||FS_CHANGENM||'.'||FS_EXT) SEATBACKGROUND_PATH
+                , FS.FS_PUBLIC_PATH  SEATBACKGROUND_PUBLIC_PATH
+        FROM t_place_manager P
+        LEFT JOIN s_common_file_sub FS
+        ON            P.PM_SEAT_FS_KEYNO = FS.FS_KEYNO 
+        WHERE P.PM_KEYNO = #{AP_PLACE}
+    </select>
+    
+    
+    
+	
+</mapper>
+ 

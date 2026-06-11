@@ -1,0 +1,563 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="hometax">
+
+    <!-- ========== ht_bill_user ========== -->
+    <resultMap id="BillUserResult" type="com.tx.hometax.dto.BillUserDTO">
+        <id property="id" column="id"/>
+        <result property="loginId" column="login_id"/>
+        <result property="loginPw" column="login_pw"/>
+        <result property="name" column="name"/>
+        <result property="department" column="department"/>
+        <result property="phone" column="phone"/>
+        <result property="extensionNo" column="extension_no"/>
+        <result property="email" column="email"/>
+        <result property="useYn" column="use_yn"/>
+        <result property="role" column="role"/>
+        <result property="defaultProviderId" column="default_provider_id"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+    <select id="selectBillUserByLoginId" resultMap="BillUserResult">
+        SELECT id, login_id, login_pw, name, department, phone, extension_no, email,
+               use_yn, role, default_provider_id, created_at, updated_at
+        FROM ht_bill_user WHERE login_id = #{loginId}
+    </select>
+    <select id="selectBillUserById" resultMap="BillUserResult">
+        SELECT id, login_id, login_pw, name, department, phone, extension_no, email,
+               use_yn, role, default_provider_id, created_at, updated_at
+        FROM ht_bill_user WHERE id = #{id}
+    </select>
+    <select id="countBillUserByLoginId" resultType="int">
+        SELECT COUNT(*) FROM ht_bill_user WHERE login_id = #{loginId}
+    </select>
+    <insert id="insertBillUser" parameterType="com.tx.hometax.dto.BillUserDTO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ht_bill_user (login_id, login_pw, name, department, phone, extension_no, email, use_yn, role, default_provider_id)
+        VALUES (#{loginId}, #{loginPw}, #{name}, #{department}, #{phone}, #{extensionNo}, #{email},
+                IFNULL(#{useYn}, 'Y'), IFNULL(#{role}, 'USER'), #{defaultProviderId})
+    </insert>
+    <update id="updateBillUserProfile" parameterType="com.tx.hometax.dto.BillUserDTO">
+        UPDATE ht_bill_user
+        SET department = #{department},
+            phone = #{phone},
+            email = #{email},
+            default_provider_id = #{defaultProviderId},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- ========== ht_bill_schedule ========== -->
+    <resultMap id="BillScheduleResult" type="com.tx.hometax.dto.BillScheduleDTO">
+        <id property="id" column="id"/>
+        <result property="scheduleDate" column="schedule_date"/>
+        <result property="title" column="title"/>
+        <result property="memo" column="memo"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+    <select id="selectScheduleByDate" resultMap="BillScheduleResult">
+        SELECT id, schedule_date, title, memo, created_by, created_at, updated_at
+        FROM ht_bill_schedule WHERE schedule_date = #{scheduleDate} ORDER BY id
+    </select>
+    <select id="selectScheduleByMonth" resultMap="BillScheduleResult">
+        SELECT id, schedule_date, title, memo, created_by, created_at, updated_at
+        FROM ht_bill_schedule
+        WHERE schedule_date BETWEEN #{startDate} AND #{endDate} ORDER BY schedule_date, id
+    </select>
+    <select id="selectScheduleOne" resultMap="BillScheduleResult">
+        SELECT id, schedule_date, title, memo, created_by, created_at, updated_at
+        FROM ht_bill_schedule WHERE id = #{id}
+    </select>
+    <insert id="insertSchedule" parameterType="com.tx.hometax.dto.BillScheduleDTO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ht_bill_schedule (schedule_date, title, memo, created_by)
+        VALUES (#{scheduleDate}, #{title}, #{memo}, #{createdBy})
+    </insert>
+    <update id="updateSchedule" parameterType="com.tx.hometax.dto.BillScheduleDTO">
+        UPDATE ht_bill_schedule SET title = #{title}, memo = #{memo}, updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+    <delete id="deleteSchedule">
+        DELETE FROM ht_bill_schedule WHERE id = #{id}
+    </delete>
+
+    <!-- ========== ht_bill_provider ========== -->
+    <resultMap id="BillProviderResult" type="com.tx.hometax.dto.BillProviderDTO">
+        <id property="id" column="id"/>
+        <result property="corpNum" column="corp_num"/>
+        <result property="bizType" column="biz_type"/>
+        <result property="bizClassification" column="biz_classification"/>
+        <result property="corpName" column="corp_name"/>
+        <result property="ceoName" column="ceo_name"/>
+        <result property="contactName" column="contact_name"/>
+        <result property="contactPhone" column="contact_phone"/>
+        <result property="email" column="email"/>
+        <result property="address" column="address"/>
+        <result property="lastDocumentNo" column="last_document_no"/>
+        <result property="useYn" column="use_yn"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+    <select id="selectProviderList" resultMap="BillProviderResult">
+        SELECT id, corp_num, biz_type, biz_classification, corp_name, ceo_name,
+               contact_name, contact_phone, email, address, last_document_no, use_yn, created_at, updated_at
+        FROM ht_bill_provider WHERE use_yn = 'Y' ORDER BY id
+    </select>
+    <select id="selectProviderOne" resultMap="BillProviderResult">
+        SELECT id, corp_num, biz_type, biz_classification, corp_name, ceo_name,
+               contact_name, contact_phone, email, address, last_document_no, use_yn, created_at, updated_at
+        FROM ht_bill_provider WHERE id = #{id}
+    </select>
+    <insert id="insertProvider" parameterType="com.tx.hometax.dto.BillProviderDTO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ht_bill_provider (corp_num, biz_type, biz_classification, corp_name, ceo_name,
+            contact_name, contact_phone, email, address, use_yn)
+        VALUES (#{corpNum}, #{bizType}, #{bizClassification}, #{corpName}, #{ceoName},
+            #{contactName}, #{contactPhone}, #{email}, #{address}, IFNULL(#{useYn}, 'Y'))
+    </insert>
+    <update id="updateProvider" parameterType="com.tx.hometax.dto.BillProviderDTO">
+        UPDATE ht_bill_provider SET corp_num=#{corpNum}, biz_type=#{bizType}, biz_classification=#{bizClassification},
+            corp_name=#{corpName}, ceo_name=#{ceoName}, contact_name=#{contactName}, contact_phone=#{contactPhone},
+            email=#{email}, address=#{address}, use_yn=#{useYn}, updated_at=NOW() WHERE id = #{id}
+    </update>
+    <delete id="deleteProvider">
+        DELETE FROM ht_bill_provider WHERE id = #{id}
+    </delete>
+    <delete id="deleteProviders">
+        DELETE FROM ht_bill_provider
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- ========== ht_bill_recipient ========== -->
+    <resultMap id="BillRecipientResult" type="com.tx.hometax.dto.BillRecipientDTO">
+        <id property="id" column="id"/>
+        <result property="providerId" column="provider_id"/>
+        <result property="recipientType" column="recipient_type"/>
+        <result property="corpNum" column="corp_num"/>
+        <result property="taxNum" column="tax_num"/>
+        <result property="bizType" column="biz_type"/>
+        <result property="bizClassification" column="biz_classification"/>
+        <result property="corpName" column="corp_name"/>
+        <result property="ceoName" column="ceo_name"/>
+        <result property="idNum" column="id_num"/>
+        <result property="contactName" column="contact_name"/>
+        <result property="contactPhone" column="contact_phone"/>
+        <result property="contactEmail" column="contact_email"/>
+        <result property="email" column="email"/>
+        <result property="address" column="address"/>
+        <result property="useYn" column="use_yn"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+    <select id="selectRecipientList" resultMap="BillRecipientResult">
+        SELECT id, provider_id, recipient_type, corp_num, tax_num, biz_type, biz_classification,
+               corp_name, ceo_name, id_num, contact_name, contact_phone, contact_email, email, address, use_yn, created_at, updated_at
+        FROM ht_bill_recipient ORDER BY use_yn DESC, id DESC
+    </select>
+    <select id="selectRecipientOne" resultMap="BillRecipientResult">
+        SELECT id, provider_id, recipient_type, corp_num, tax_num, biz_type, biz_classification,
+               corp_name, ceo_name, id_num, contact_name, contact_phone, contact_email, email, address, use_yn, created_at, updated_at
+        FROM ht_bill_recipient WHERE id = #{id}
+    </select>
+    <select id="selectRecipientByProviderAndNameAddress" resultMap="BillRecipientResult">
+        SELECT id, provider_id, recipient_type, corp_num, tax_num, biz_type, biz_classification,
+               corp_name, ceo_name, id_num, contact_name, contact_phone, contact_email, email, address, use_yn, created_at, updated_at
+        FROM ht_bill_recipient
+        WHERE provider_id = #{providerId}
+          AND IFNULL(corp_name, '') = IFNULL(#{corpName}, '')
+          AND IFNULL(address, '') = IFNULL(#{address}, '')
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+    <select id="selectRecipientByProviderAndIdentity" resultMap="BillRecipientResult">
+        SELECT id, provider_id, recipient_type, corp_num, tax_num, biz_type, biz_classification,
+               corp_name, ceo_name, id_num, contact_name, contact_phone, contact_email, email, address, use_yn, created_at, updated_at
+        FROM ht_bill_recipient
+        WHERE provider_id = #{providerId}
+          AND recipient_type = #{recipientType}
+        <choose>
+            <when test="recipientType == '01'">
+              AND IFNULL(corp_num, '') = IFNULL(#{corpNum}, '')
+            </when>
+            <otherwise>
+              AND IFNULL(id_num, '') = IFNULL(#{idNum}, '')
+            </otherwise>
+        </choose>
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+    <select id="selectRecipientByPowerPlantLatest" resultMap="BillRecipientResult">
+        SELECT r.id, r.provider_id, r.recipient_type, r.corp_num, r.tax_num, r.biz_type, r.biz_classification,
+               r.corp_name, r.ceo_name, r.id_num, r.contact_name, r.contact_phone, r.contact_email, r.email, r.address, r.use_yn, r.created_at, r.updated_at
+        FROM ht_bill_power_plant_recipient_contract c
+        JOIN ht_bill_recipient r ON r.id = c.recipient_id
+        WHERE c.power_plant_id = #{powerPlantId}
+          AND c.use_yn = 'Y'
+          AND r.use_yn = 'Y'
+        ORDER BY c.updated_at DESC, c.id DESC
+        LIMIT 1
+    </select>
+    <insert id="insertRecipient" parameterType="com.tx.hometax.dto.BillRecipientDTO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ht_bill_recipient (provider_id, recipient_type, corp_num, tax_num, biz_type, biz_classification,
+            corp_name, ceo_name, id_num, contact_name, contact_phone, contact_email, email, address, use_yn)
+        VALUES (#{providerId}, #{recipientType}, #{corpNum}, #{taxNum}, #{bizType}, #{bizClassification},
+            #{corpName}, #{ceoName}, #{idNum}, #{contactName}, #{contactPhone}, #{contactEmail}, #{email}, #{address}, IFNULL(#{useYn}, 'Y'))
+    </insert>
+    <update id="updateRecipient" parameterType="com.tx.hometax.dto.BillRecipientDTO">
+        UPDATE ht_bill_recipient SET provider_id=#{providerId}, recipient_type=#{recipientType},
+            corp_num=#{corpNum}, tax_num=#{taxNum}, biz_type=#{bizType}, biz_classification=#{bizClassification},
+            corp_name=#{corpName}, ceo_name=#{ceoName}, id_num=#{idNum}, contact_name=#{contactName},
+            contact_phone=#{contactPhone}, contact_email=#{contactEmail}, email=#{email}, address=#{address}, use_yn=#{useYn}, updated_at=NOW() WHERE id = #{id}
+    </update>
+    <delete id="deleteRecipient">
+        DELETE FROM ht_bill_recipient WHERE id = #{id}
+    </delete>
+
+    <!-- ========== ht_bill_power_plant (발전소 마스터) ========== -->
+    <resultMap id="BillPowerPlantResult" type="com.tx.hometax.dto.BillPowerPlantDTO">
+        <id property="id" column="id"/>
+        <result property="memberType" column="member_type"/>
+        <result property="partyType" column="party_type"/>
+        <result property="bizOwnerType" column="biz_owner_type"/>
+        <result property="corpName" column="corp_name"/>
+        <result property="ceoName" column="ceo_name"/>
+        <result property="corpNum" column="corp_num"/>
+        <result property="bizType" column="biz_type"/>
+        <result property="bizClassification" column="biz_classification"/>
+        <result property="idNum" column="id_num"/>
+        <result property="mobilePhone" column="mobile_phone"/>
+        <result property="address" column="address"/>
+        <result property="email" column="email"/>
+        <result property="paymentMethod" column="payment_method"/>
+        <result property="bizLicenseFile" column="biz_license_file"/>
+        <result property="contractInfo" column="contract_info"/>
+        <result property="contractDetail" column="contract_detail"/>
+        <result property="monitoring" column="monitoring"/>
+        <result property="memo" column="memo"/>
+        <result property="useYn" column="use_yn"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+    <select id="selectPowerPlantList" resultMap="BillPowerPlantResult">
+        SELECT id, member_type, party_type, biz_owner_type, corp_name, ceo_name, corp_num,
+               biz_type, biz_classification, id_num,
+               mobile_phone, address, email, payment_method, biz_license_file, contract_info, contract_detail,
+               monitoring, memo, use_yn, created_at, updated_at
+        FROM ht_bill_power_plant
+        ORDER BY CASE WHEN use_yn = 'Y' THEN 0 ELSE 1 END, id DESC
+    </select>
+    <select id="selectPowerPlantOne" resultMap="BillPowerPlantResult">
+        SELECT id, member_type, party_type, biz_owner_type, corp_name, ceo_name, corp_num,
+               biz_type, biz_classification, id_num,
+               mobile_phone, address, email, payment_method, biz_license_file, contract_info, contract_detail,
+               monitoring, memo, use_yn, created_at, updated_at
+        FROM ht_bill_power_plant
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <!-- 엑셀 업로드 시 중복 판단용: 상호명 + 주소가 모두 동일할 때 동일 계약자 -->
+    <select id="selectPowerPlantByImportKey" resultMap="BillPowerPlantResult">
+        SELECT id, member_type, party_type, biz_owner_type, corp_name, ceo_name, corp_num,
+               biz_type, biz_classification, id_num,
+               mobile_phone, address, email, payment_method, biz_license_file, contract_info, contract_detail,
+               monitoring, memo, use_yn, created_at, updated_at
+        FROM ht_bill_power_plant
+        WHERE use_yn = 'Y'
+          AND IFNULL(corp_name, '') = IFNULL(#{corpName}, '')
+          AND IFNULL(address, '') = IFNULL(#{address}, '')
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+    <insert id="insertPowerPlant" parameterType="com.tx.hometax.dto.BillPowerPlantDTO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ht_bill_power_plant (
+            member_type, party_type, biz_owner_type, corp_name, ceo_name, corp_num, biz_type, biz_classification, id_num,
+            mobile_phone, address, email,
+            payment_method, biz_license_file, contract_info, contract_detail, monitoring, memo,
+            use_yn
+        ) VALUES (
+            #{memberType}, #{partyType}, #{bizOwnerType}, #{corpName}, #{ceoName}, #{corpNum}, #{bizType}, #{bizClassification}, #{idNum},
+            #{mobilePhone}, #{address}, #{email},
+            #{paymentMethod}, #{bizLicenseFile}, #{contractInfo}, #{contractDetail}, #{monitoring}, #{memo},
+            IFNULL(#{useYn}, 'Y')
+        )
+    </insert>
+
+    <update id="updatePowerPlant" parameterType="com.tx.hometax.dto.BillPowerPlantDTO">
+        UPDATE ht_bill_power_plant
+        SET member_type = #{memberType},
+            party_type = #{partyType},
+            biz_owner_type = #{bizOwnerType},
+            corp_name = #{corpName},
+            ceo_name = #{ceoName},
+            corp_num = #{corpNum},
+            biz_type = #{bizType},
+            biz_classification = #{bizClassification},
+            id_num = #{idNum},
+            mobile_phone = #{mobilePhone},
+            address = #{address},
+            email = #{email},
+            payment_method = #{paymentMethod},
+            biz_license_file = #{bizLicenseFile},
+            contract_info = #{contractInfo},
+            contract_detail = #{contractDetail},
+            monitoring = #{monitoring},
+            memo = #{memo},
+            use_yn = IFNULL(#{useYn}, 'Y'),
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deletePowerPlantContractsByIds">
+        DELETE FROM ht_bill_power_plant_recipient_contract
+        WHERE power_plant_id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <delete id="deletePowerPlants">
+        DELETE FROM ht_bill_power_plant
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- ========== ht_bill_power_plant_recipient_contract: 엑셀/일괄 등록용 insert ========== -->
+    <insert id="insertPowerPlantRecipientContract" parameterType="com.tx.hometax.dto.BillPowerPlantRecipientContractDTO">
+        INSERT INTO ht_bill_power_plant_recipient_contract (
+            power_plant_id,
+            recipient_id,
+            contract_year,
+            item_no,
+            supply_total,
+            tax_total,
+            grand_total,
+            item_name,
+            use_yn,
+            memo
+        ) VALUES (
+            #{powerPlantId},
+            #{recipientId},
+            #{contractYear},
+            IFNULL(#{itemNo}, 1),
+            IFNULL(#{supplyTotal}, 0),
+            IFNULL(#{taxTotal}, 0),
+            IFNULL(#{grandTotal}, 0),
+            #{itemName},
+            IFNULL(#{useYn}, 'Y'),
+            #{memo}
+        )
+        ON DUPLICATE KEY UPDATE
+            supply_total = VALUES(supply_total),
+            tax_total = VALUES(tax_total),
+            grand_total = VALUES(grand_total),
+            item_name = VALUES(item_name),
+            use_yn = VALUES(use_yn),
+            memo = VALUES(memo),
+            updated_at = NOW()
+    </insert>
+    <delete id="deletePowerPlantRecipientContractItems">
+        DELETE FROM ht_bill_power_plant_recipient_contract
+        WHERE power_plant_id = #{powerPlantId}
+          AND recipient_id = #{recipientId}
+          AND contract_year = #{contractYear}
+    </delete>
+
+    <!-- ========== ht_bill_power_plant_recipient_contract (계약금액 연도별) ========== -->
+    <resultMap id="BillPowerPlantRecipientContractGridResult" type="com.tx.hometax.dto.BillPowerPlantRecipientContractDTO">
+        <id property="id" column="contract_id"/>
+        <result property="powerPlantId" column="power_plant_id"/>
+        <result property="powerPlantName" column="power_plant_name"/>
+        <result property="recipientId" column="recipient_id"/>
+        <result property="contractYear" column="contract_year"/>
+        <result property="itemNo" column="item_no"/>
+        <result property="supplyTotal" column="supply_total"/>
+        <result property="taxTotal" column="tax_total"/>
+        <result property="grandTotal" column="grand_total"/>
+        <result property="useYn" column="use_yn"/>
+        <result property="itemName" column="item_name"/>
+        <result property="memo" column="memo"/>
+
+        <!-- recipient info -->
+        <result property="recipientType" column="recipient_type"/>
+        <result property="corpName" column="corp_name"/>
+        <result property="corpNum" column="corp_num"/>
+        <result property="taxNum" column="tax_num"/>
+        <result property="bizType" column="biz_type"/>
+        <result property="bizClassification" column="biz_classification"/>
+        <result property="ceoName" column="ceo_name"/>
+        <result property="idNum" column="id_num"/>
+        <result property="contactName" column="contact_name"/>
+        <result property="contactPhone" column="contact_phone"/>
+        <result property="contactEmail" column="contact_email"/>
+        <result property="address" column="address"/>
+        <result property="email" column="email"/>
+    </resultMap>
+
+    <select id="selectPowerPlantRecipientContractGrid" resultMap="BillPowerPlantRecipientContractGridResult">
+        SELECT
+            c.id AS contract_id,
+            c.power_plant_id,
+            p.corp_name AS power_plant_name,
+            c.recipient_id,
+            c.contract_year,
+            c.item_no,
+            c.supply_total,
+            c.tax_total,
+            c.grand_total,
+            c.use_yn,
+            c.item_name,
+            c.memo,
+            r.recipient_type,
+            r.corp_name,
+            r.corp_num,
+            r.tax_num,
+            r.biz_type,
+            r.biz_classification,
+            r.ceo_name,
+            r.id_num,
+            r.contact_name,
+            r.contact_phone,
+            r.contact_email,
+            r.address,
+            r.email
+        FROM ht_bill_power_plant_recipient_contract c
+        JOIN ht_bill_power_plant p ON p.id = c.power_plant_id
+        JOIN ht_bill_recipient r ON r.id = c.recipient_id
+        WHERE c.power_plant_id = #{powerPlantId}
+          AND c.contract_year = #{contractYear}
+          AND c.use_yn = 'Y'
+          AND r.use_yn = 'Y'
+        ORDER BY r.id DESC, c.item_no ASC
+    </select>
+
+    <select id="selectPowerPlantRecipientContractGridAll" resultMap="BillPowerPlantRecipientContractGridResult">
+        SELECT
+            c.id AS contract_id,
+            c.power_plant_id,
+            p.corp_name AS power_plant_name,
+            c.recipient_id,
+            c.contract_year,
+            c.item_no,
+            c.supply_total,
+            c.tax_total,
+            c.grand_total,
+            c.use_yn,
+            c.item_name,
+            c.memo,
+            r.recipient_type,
+            r.corp_name,
+            r.corp_num,
+            r.tax_num,
+            r.biz_type,
+            r.biz_classification,
+            r.ceo_name,
+            r.id_num,
+            r.contact_name,
+            r.contact_phone,
+            r.contact_email,
+            r.address,
+            r.email
+        FROM ht_bill_power_plant_recipient_contract c
+        JOIN ht_bill_power_plant p ON p.id = c.power_plant_id
+        JOIN ht_bill_recipient r ON r.id = c.recipient_id
+        WHERE c.contract_year = #{contractYear}
+          AND c.use_yn = 'Y'
+          AND p.use_yn = 'Y'
+          AND r.use_yn = 'Y'
+        ORDER BY c.power_plant_id DESC, r.id DESC, c.item_no ASC
+    </select>
+
+    <!-- ========== ht_bill_invoice_log (발행내역) ========== -->
+    <resultMap id="BillInvoiceLogResult" type="com.tx.hometax.dto.BillInvoiceLogDTO">
+        <id property="id" column="id"/>
+        <result property="powerPlantId" column="power_plant_id"/>
+        <result property="providerId" column="provider_id"/>
+        <result property="recipientId" column="recipient_id"/>
+        <result property="templateId" column="template_id"/>
+        <result property="subject" column="subject"/>
+        <result property="documentNo" column="document_no"/>
+        <result property="approvalNo" column="approval_no"/>
+        <result property="issueDate" column="issue_date"/>
+        <result property="supplyTotal" column="supply_total"/>
+        <result property="taxTotal" column="tax_total"/>
+        <result property="grandTotal" column="grand_total"/>
+        <result property="cash" column="cash"/>
+        <result property="scheck" column="scheck"/>
+        <result property="draft" column="draft"/>
+        <result property="uncollected" column="uncollected"/>
+        <result property="unit" column="unit"/>
+        <result property="quantity" column="quantity"/>
+        <result property="unitPrice" column="unit_price"/>
+        <result property="supplyPrice" column="supply_price"/>
+        <result property="taxAmount" column="tax_amount"/>
+        <result property="description" column="description"/>
+        <result property="purposeType" column="purpose_type"/>
+        <result property="partyTypeCode" column="party_type_code"/>
+        <result property="typeCode1" column="type_code1"/>
+        <result property="typeCode2" column="type_code2"/>
+        <result property="subKeyno" column="sub_keyno"/>
+        <result property="sendYn" column="send_yn"/>
+        <result property="status" column="status"/>
+        <result property="errorMsg" column="error_msg"/>
+        <result property="sentAt" column="sent_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+    <select id="selectInvoiceLogList" resultMap="BillInvoiceLogResult">
+        SELECT id, power_plant_id, provider_id, recipient_id, subject, document_no, issue_date, grand_total, send_yn, status, error_msg, created_at
+        FROM ht_bill_invoice_log ORDER BY created_at DESC
+    </select>
+    <select id="selectInvoiceLogListByPowerPlantYear" resultMap="BillInvoiceLogResult">
+        SELECT id, power_plant_id, provider_id, recipient_id, subject, document_no, issue_date,
+               grand_total, send_yn, status, error_msg, created_at
+        FROM ht_bill_invoice_log
+        WHERE power_plant_id = #{powerPlantId}
+          AND issue_date &gt;= CONCAT(#{contractYear}, '0101')
+          AND issue_date &lt;= CONCAT(#{contractYear}, '1231')
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="selectInvoiceLogListByYear" resultMap="BillInvoiceLogResult">
+        SELECT id, power_plant_id, provider_id, recipient_id, subject, document_no, issue_date,
+               grand_total, send_yn, status, error_msg, created_at
+        FROM ht_bill_invoice_log
+        WHERE issue_date &gt;= CONCAT(#{contractYear}, '0101')
+          AND issue_date &lt;= CONCAT(#{contractYear}, '1231')
+        ORDER BY created_at DESC
+    </select>
+    <select id="selectInvoiceLogOne" resultMap="BillInvoiceLogResult">
+        SELECT * FROM ht_bill_invoice_log WHERE id = #{id}
+    </select>
+
+    <!-- 해당 연도·발전소·공급받는자 기준 최근 발행 건의 국세청 승인번호 -->
+    <select id="selectLatestInvoiceApprovalNo" resultType="java.lang.String">
+        SELECT approval_no
+        FROM ht_bill_invoice_log
+        WHERE power_plant_id = #{powerPlantId}
+          AND recipient_id = #{recipientId}
+          AND issue_date &gt;= CONCAT(#{contractYear}, '0101')
+          AND issue_date &lt;= CONCAT(#{contractYear}, '1231')
+          AND approval_no IS NOT NULL
+          AND TRIM(approval_no) != ''
+        ORDER BY IFNULL(sent_at, created_at) DESC, id DESC
+        LIMIT 1
+    </select>
+    <!-- 이번달 발행 건수: 총 건수 -->
+    <select id="countInvoiceLogByMonth" resultType="int">
+        SELECT COUNT(*) FROM ht_bill_invoice_log
+        WHERE issue_date &gt;= #{startDate} AND issue_date &lt;= #{endDate}
+    </select>
+    <!-- 이번달 발행 건수: 실제 발행완료 건수 (send_yn='Y' 또는 status='COMPLETE') -->
+    <select id="countInvoiceLogCompletedByMonth" resultType="int">
+        SELECT COUNT(*) FROM ht_bill_invoice_log
+        WHERE issue_date &gt;= #{startDate} AND issue_date &lt;= #{endDate}
+          AND (send_yn = 'Y' OR status = 'COMPLETE')
+    </select>
+
+</mapper>

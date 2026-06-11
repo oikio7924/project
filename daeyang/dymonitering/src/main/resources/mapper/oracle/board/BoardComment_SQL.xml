@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BoardComment"> 
+  	
+  	
+  	<sql id="BC_getDataListBody">
+		FROM (
+			SELECT	AB.*
+					, ROW_NUMBER() OVER (
+		    		<choose>
+				 		<when test="orderBy == 1">
+				 		ORDER BY	COUNT ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 2">
+				 		ORDER BY	BC_CONTENTS ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 3">
+				 		ORDER BY	UI_NAME ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 4">
+				 		ORDER BY	BC_REGDT ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 5">
+				 		ORDER BY	BC_UP_CNT ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 6">
+				 		ORDER BY	BC_DOWN_CNT ${sortDirect}
+				 		</when>
+				 		<otherwise>
+				 		ORDER BY 	COUNT DESC
+				 		</otherwise>
+			 		</choose>
+			 		) RNUM
+			FROM (
+				SELECT 		ROWNUM AS COUNT
+							, C.BC_KEYNO
+							, C.BC_CONTENTS
+							, U.UI_REP_NAME UI_NAME
+							, TO_CHAR(C.BC_REGDT,'YYYY-MM-dd HH24:mi:ss') BC_REGDT
+							, C.BC_UP_CNT
+							, C.BC_DOWN_CNT
+							, CASE C.BC_DEL_YN
+								WHEN 'Y' THEN '삭제됨'
+								ELSE ''
+							END BC_DEL
+							, BC_DEL_YN
+				FROM b_board_comment C
+				LEFT JOIN u_userinfo U
+				ON			C.BC_REGNM = U.UI_KEYNO
+				WHERE 		C.BC_BN_KEYNO = #{BC_BN_KEYNO}
+				ORDER BY 	C.BC_ROOTKEY, C.BC_REGDT
+			) AB
+		WHERE 1=1
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT 				LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		BC_CONTENTS			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		UI_NAME 			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		BC_REGDT			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		BC_UP_CNT 			LIKE '%' || #{item.searchKeyword} || '%'						
+	 			</when>
+	 			<when test='item.searchIndex.equals("6")'>
+ 		AND		BC_DOWN_CNT 		LIKE '%' || #{item.searchKeyword} || '%'						
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT 				LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				BC_CONTENTS			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				UI_NAME 			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				BC_REGDT			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				BC_UP_CNT 			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				BC_DOWN_CNT 		LIKE '%' || #{item.searchKeyword} || '%' 	
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+		)AA
+	
+	</sql>
+  	
+    <select id="BC_getDataListCnt" resultType="int">
+		SELECT	COUNT(*)
+		<include  refid="BC_getDataListBody"/>
+    </select>
+    
+    <select id="BC_getDataList" resultType="hashmap">
+    	SELECT	* 
+		<include  refid="BC_getDataListBody"/>
+		<if test=" recordCountPerPage != 0">
+		WHERE 1=1
+		AND 	RNUM BETWEEN  #{firstIndex}+1 AND #{lastIndex} 
+		</if>  
+    </select>
+  	
+  	
+  	<select id="BC_getListCnt" resultType="int" parameterType="BoardComment">
+		SELECT 		COUNT(*)
+		FROM b_board_comment C
+		WHERE 		C.BC_BN_KEYNO = #{BC_BN_KEYNO}
+		<if test='DEL_COMMENT_YN == "N"'>
+		AND			C.BC_DEL_YN		=  #{DEL_COMMENT_YN}
+		</if>
+    </select>
+  	
+	<select id="BC_getList" resultType="HashMap">
+		SELECT AA.* FROM(
+			(SELECT   BB.*
+					,(SELECT 'BEST' COMMENTTYPE FROM b_board_comment WHERE BC_KEYNO = BB.BC_KEYNO AND BB.UP_CNT-BB.DOWN_CNT >= #{bestCount}) BESTUP	
+			 FROM (	SELECT 	'BEST' COMMENTTYPE
+				    , (SELECT COUNT(*) FROM b_board_comment_like WHERE C.BC_KEYNO = BCS_BC_KEYNO AND BCS_TYPE = 'Y') UP_CNT
+	 			    , (SELECT COUNT(*) FROM b_board_comment_like WHERE C.BC_KEYNO = BCS_BC_KEYNO AND BCS_TYPE = 'N') DOWN_CNT
+	 			    , (SELECT 'SELETED' FROM b_board_comment_like WHERE C.BC_KEYNO = BCS_BC_KEYNO AND BCS_UI_KEYNO = #{UI_KEYNO}) SELETED
+	 			    , (SELECT BCS_TYPE FROM b_board_comment_like WHERE C.BC_KEYNO = BCS_BC_KEYNO AND BCS_UI_KEYNO = #{UI_KEYNO}) BCS_TYPE
+	 			    , C.*
+					, U.UI_REP_NAME UI_NAME
+					, CASE WHEN C2.BC_KEYNO != C2.BC_MAINKEY THEN U2.UI_REP_NAME ELSE '' END UI_MAIN_NAME
+					, ROWNUM AS RN
+					
+					FROM b_board_comment C
+					LEFT JOIN u_userinfo U
+					ON			C.BC_REGNM = U.UI_KEYNO
+					LEFT JOIN b_board_comment C2
+					ON			C.BC_MAINKEY = C2.BC_KEYNO
+					LEFT JOIN u_userinfo U2
+					ON			C2.BC_REGNM = U2.UI_KEYNO
+					WHERE 		C.BC_BN_KEYNO = #{BC_BN_KEYNO}
+					<if test='DEL_COMMENT_YN == "N"'>
+					AND			C.BC_DEL_YN		=  #{DEL_COMMENT_YN}
+					</if>
+					ORDER BY 		C.BC_ROOTKEY, C.BC_REGDT
+					) BB
+			<![CDATA[
+				WHERE 		BB.UP_CNT-BB.DOWN_CNT >= #{bestCount}
+			]]>
+			) AA
+		)
+		UNION ALL
+		
+		( SELECT   DD.*
+					, (SELECT 'BEST' COMMENTTYPE FROM b_board_comment WHERE BC_KEYNO = DD.BC_KEYNO AND DD.UP_CNT-DD.DOWN_CNT >= #{bestCount}) BESTUP
+		  	FROM(SELECT  'COMMON' COMMENTTYPE
+						,(SELECT COUNT(*) FROM b_board_comment_like WHERE C.BC_KEYNO = BCS_BC_KEYNO AND BCS_TYPE = 'Y') UP_CNT
+			 			,(SELECT COUNT(*) FROM b_board_comment_like WHERE C.BC_KEYNO = BCS_BC_KEYNO AND BCS_TYPE = 'N') DOWN_CNT
+			 			,(SELECT 'SELETED' FROM b_board_comment_like WHERE C.BC_KEYNO = BCS_BC_KEYNO AND BCS_UI_KEYNO = #{UI_KEYNO}) SELETED
+			 			,(SELECT BCS_TYPE FROM b_board_comment_like WHERE C.BC_KEYNO = BCS_BC_KEYNO AND BCS_UI_KEYNO = #{UI_KEYNO}) BCS_TYPE
+						, C.*
+						, U.UI_REP_NAME UI_NAME
+						, CASE WHEN C2.BC_KEYNO != C2.BC_MAINKEY THEN U2.UI_REP_NAME ELSE '' END UI_MAIN_NAME
+						, ROWNUM AS RN
+			FROM b_board_comment C
+			LEFT JOIN u_userinfo U
+			ON			C.BC_REGNM = U.UI_KEYNO
+			LEFT JOIN b_board_comment C2
+			ON			C.BC_MAINKEY = C2.BC_KEYNO
+			LEFT JOIN u_userinfo U2
+			ON			C2.BC_REGNM = U2.UI_KEYNO
+			WHERE 		C.BC_BN_KEYNO = #{BC_BN_KEYNO}
+			<if test='DEL_COMMENT_YN == "N"'>
+			AND			C.BC_DEL_YN		=  #{DEL_COMMENT_YN}
+			</if>
+			ORDER BY 	C.BC_ROOTKEY, C.BC_REGDT
+			) DD
+			<if test="recordCountPerPage != 0">
+			WHERE RN BETWEEN (#{pageIndex} - 1) * #{recordCountPerPage} + 1
+	        AND #{pageIndex} * #{recordCountPerPage} 
+			</if>
+		)
+    </select>
+  	
+  	<select id="BC_getData" resultType="BoardComment" parameterType="String">
+		SELECT * FROM b_board_comment
+		WHERE BC_KEYNO = #{BC_KEYNO}
+    </select> 
+    
+    <insert id="BC_insert" parameterType="BoardComment">
+   <selectKey resultType="String" keyProperty="BC_KEYNO" order="BEFORE">
+        SELECT NVL(MAX(BC_KEYNO),0)+1
+        FROM b_board_comment
+    </selectKey>
+		INSERT INTO b_board_comment(
+				BC_KEYNO,
+				BC_MAINKEY,
+				BC_ROOTKEY,
+				BC_BN_KEYNO,
+				BC_CONTENTS,
+				BC_REGNM,
+				BC_REGDT,
+				BC_DEL_YN,
+				BC_SECRET_YN
+				)
+		VALUES(
+               #{BC_KEYNO},
+               <choose>
+                    <when test='BC_MAINKEY != null and BC_MAINKEY != ""'>
+                        #{BC_MAINKEY},
+                        #{BC_ROOTKEY},
+                    </when>
+                    <otherwise>
+                        #{BC_KEYNO},
+                        #{BC_KEYNO},
+                    </otherwise>
+                </choose>
+				#{BC_BN_KEYNO},
+				#{BC_CONTENTS},
+				#{BC_REGNM},
+				SYSDATE,
+				'N',
+				#{BC_SECRET_YN}
+				)
+	</insert>
+	
+	<update id="BC_update" parameterType="BoardComment">
+	<![CDATA[
+		UPDATE b_board_comment 
+		SET		BC_CONTENTS		= #{BC_CONTENTS},
+				BC_MODDT		= SYSDATE,
+				BC_SECRET_YN	= #{BC_SECRET_YN}
+		WHERE   BC_KEYNO		= #{BC_KEYNO}
+		]]>
+	</update>
+	
+	<update id="BC_delete" parameterType="BoardComment">
+	<![CDATA[
+		UPDATE b_board_comment 
+		SET		BC_DEL_YN		= 'Y',
+				BC_DELDT		= SYSDATE
+		WHERE   BC_KEYNO		= #{BC_KEYNO}
+		]]>
+	</update>
+	
+	<update id="BC_likeUp" parameterType="String">
+	<![CDATA[
+		UPDATE b_board_comment 
+		SET		BC_UP_CNT		= BC_UP_CNT+1
+		WHERE   BC_KEYNO		= #{BC_KEYNO}
+		]]>
+	</update>
+	
+	<update id="BC_dislikeUp" parameterType="String">
+	<![CDATA[
+		UPDATE b_board_comment 
+		SET		BC_DOWN_CNT		= BC_DOWN_CNT+1
+		WHERE   BC_KEYNO		= #{BC_KEYNO}
+		]]>
+	</update>
+	
+	<select id="BCS_getCnt" resultType="HashMap">
+		SELECT   COUNT(*) NUM, NVL(BCS_TYPE,'') BCS_TYPE
+		FROM b_board_comment_like
+		WHERE 	 BCS_BC_KEYNO = #{BCS_BC_KEYNO}
+		AND   	 BCS_UI_KEYNO = #{BCS_UI_KEYNO}
+		GROUP BY BCS_TYPE
+		UNION ALL
+		SELECT 0, '' FROM dual
+		WHERE NOT EXISTS (SELECT 	'' 
+						  FROM b_board_comment_like 
+						  WHERE 	BCS_BC_KEYNO = #{BCS_BC_KEYNO}
+						  AND   	BCS_UI_KEYNO = #{BCS_UI_KEYNO}
+						  )
+	</select>
+	
+	<select id="BCS_delete">
+		DELETE  FROM b_board_comment_like
+		WHERE 	BCS_BC_KEYNO = #{BCS_BC_KEYNO}
+		AND   	BCS_UI_KEYNO = #{BCS_UI_KEYNO}
+	</select>
+	
+	<select id="BCS_getCnt2" resultType="String">
+		SELECT 	COUNT(*)
+		FROM b_board_comment_like
+		WHERE 	BCS_BC_KEYNO = #{BCS_BC_KEYNO}
+		AND     BCS_TYPE = #{BCS_TYPE}
+	</select>
+	
+	<insert id="BCS_insert">
+		INSERT INTO b_board_comment_like
+				(
+				 BCS_UI_KEYNO
+				,BCS_BC_KEYNO
+				,BCS_REGDT
+				,BCS_TYPE
+				)
+		VALUES(
+				 #{BCS_UI_KEYNO}
+				,#{BCS_BC_KEYNO}
+				,SYSDATE
+				,#{BCS_TYPE}
+				)
+	</insert>
+</mapper>
+ 

@@ -1,0 +1,1557 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="main">
+
+	<!-- 메인 기본 Sql (메인에서 최신 데이터 추출) -->
+	<!-- <sql id="main_setting"> FROM( SELECT A.* FROM dy_inverter_data_main 
+		A INNER JOIN ( SELECT DDM_DPP_KEYNO, MAX(DDM_DATE) AS MaxDate FROM dy_inverter_data_main 
+		WHERE 1=1 <![CDATA[ AND DDM_DATE >= CURDATE() AND DDM_DATE < CURDATE() + 
+		INTERVAL 1 DAY ]]> GROUP BY DDM_DPP_KEYNO ) B ON A.DDM_DPP_KEYNO = B.DDM_DPP_KEYNO 
+		AND A.DDM_DATE = B.MaxDate )B LEFT JOIN dy_power_plant C ON B.DDM_DPP_KEYNO 
+		= C.DPP_KEYNO </sql> -->
+
+	<!-- 수정: 당일 메인 데이터 1건만 사용. 같은 발전소에 같은 MaxDate로 여러 건 있으면 한 건만 선택(중복 현장 리스트 방지) -->
+	<sql id="main_setting">
+		FROM(
+		SELECT A.*
+		FROM dy_inverter_data_main A
+		INNER JOIN (
+		SELECT DDM_DPP_KEYNO, MAX(DDM_DATE) AS MaxDate
+		FROM dy_inverter_data_main
+		WHERE 1=1
+				<![CDATA[
+				AND DDM_DATE >= CURDATE()
+				AND DDM_DATE <  CURDATE() + INTERVAL 1 DAY
+				]]>
+		GROUP BY DDM_DPP_KEYNO
+		) B ON A.DDM_DPP_KEYNO = B.DDM_DPP_KEYNO
+		AND A.DDM_DATE = B.MaxDate
+		GROUP BY A.DDM_DPP_KEYNO
+		)B
+		RIGHT JOIN dy_power_plant C
+		ON B.DDM_DPP_KEYNO
+		= C.DPP_KEYNO
+	</sql>
+
+	<!-- 종합현황 카운팅 -->
+	<select id="select_Main_cnt" resultType="int">
+		SELECT COUNT(*)
+		FROM(
+		SELECT * , IFNULL(B.DDM_STATUS,'미개통') as status
+		<include refid="main_setting" />
+		)D
+		WHERE status = #{value}
+		AND DPP_STATUS = 'Y'
+		<if test="UI_KEYNO.equals('UI_RTAKX') ">
+			AND D.DPP_ADMIN = #{UI_KEYNO}
+		</if>
+	</select>
+
+	<!-- 현장리스트 -->
+	<select id="select_MainData" resultType="hashmap"
+		parameterType="hashmap">
+		SELECT *
+		<include refid="main_setting" />
+		WHERE 1=1
+		AND DPP_STATUS = 'Y'
+		<if test="type != null and type != ' '">
+			AND C.DPP_KEYNO = #{type}
+		</if>
+		<if
+			test="region != null and region != '' and !region.equals('all')">
+			AND C.DPP_AREA = #{region}
+		</if>
+		<if
+			test="status != null and status != '' and !status.equals('status') ">
+			<choose>
+				<when test="status.equals('정상')">AND B.DDM_STATUS = '정상'</when>
+				<when test="status.equals('장애')">AND B.DDM_STATUS = '장애'</when>
+				<when test="status.equals('연결 끊김')">AND B.DDM_STATUS = '연결 끊김'</when>
+				<when test="status.equals('대기')">AND B.DDM_STATUS = '대기'</when>
+				<otherwise>AND B.DDM_STATUS IS NULL</otherwise>
+			</choose>
+		</if>
+		<if test="UI_KEYNO != null and UI_KEYNO != ''">
+			<if
+				test="!UIA_NAME.equals('안전관리자') and !UIA_NAME.equals('유지관리자') and !UIA_NAME.equals('개발자') and !UIA_NAME.equals('홈페이지 관리자') and !UIA_NAME.equals('경영관리자')">
+				AND DPP_USER = #{UI_KEYNO}
+			</if>
+		</if>
+		ORDER BY DPP_DATE ASC
+	</select>
+
+	<!-- 전체 발전량 데이터 추출 -->
+	<select id="select_MainSum" resultType="hashmap">
+		SELECT SUM(B.DDM_ACTIVE_P) AS ACTIVE , SUM(B.DDM_D_DATA) AS DALIY,
+		SUM(B.DDM_P_DATA) AS PREDATA , SUM(C.DPP_VOLUM) AS VOLUM,
+		SUM(B.DDM_CUL_DATA) AS CUMULATIVE
+		<include refid="main_setting" />
+		WHERE 1=1
+		<if test="UI_KEYNO.equals('UI_RTAKX') ">
+			AND C.DPP_ADMIN = #{UI_KEYNO}
+		</if>
+	</select>
+
+	<select id="select_Sum_MY" resultType="float"
+		parameterType="hashmap">
+		SELECT IFNULL(SUM(B.Cumulative_Generation),0) AS DATA
+		FROM(
+		SELECT A.*
+		FROM (
+		SELECT *
+		FROM dy_inverter_data
+		WHERE DP_KEYNO = #{type}
+		<choose>
+			<when test="date.equals('Premonth')">
+						<![CDATA[
+							AND Conn_date >= DATE_FORMAT(DATE_SUB(NOW(),INTERVAL 1 MONTH),'%Y-%m-01')
+						AND Conn_date < DATE_FORMAT(NOW(),'%Y-%m-01')
+							ORDER BY Conn_date DESC
+							LIMIT 2000
+						]]>
+			</when>
+			<when test="date.equals('month')">
+						<![CDATA[
+							AND Conn_date >= DATE_FORMAT(NOW(),'%Y-%m-01')
+						AND Conn_date < DATE_ADD(DATE_FORMAT(NOW(),'%Y-%m-01'), INTERVAL 1 MONTH)
+							ORDER BY Conn_date DESC
+							LIMIT 2000
+						]]>
+			</when>
+			<when test="date.equals('year')">
+				AND YEAR(Conn_date) = YEAR(NOW())
+			</when>
+		</choose>
+		)A
+		GROUP BY A.DI_NAME
+		)B
+	</select>
+
+
+
+	<!-- 전월 등 날짜 조정 하여 데이터 뽑을때 사용하기 -->
+	<select id="select_MainSum_Pre_M" resultType="hashmap"
+		parameterType="hashmap">
+		SELECT SUM(C.DDM_D_DATA) AS DATA , COUNT(*) AS CNT
+		FROM(
+		SELECT *
+		FROM dy_inverter_data_main A
+		RIGHT JOIN dy_power_plant B
+		ON A.DDM_DPP_KEYNO = B.DPP_KEYNO
+			<![CDATA[
+				WHERE DATE(DDM_DATE) < CURDATE()
+			]]>
+		AND A.DDM_DPP_KEYNO = #{type}
+		ORDER BY DDM_DATE DESC
+		)C
+		WHERE 1=1
+		<choose>
+			<when test="date.equals('Premonth')">
+				AND DATE_FORMAT(C.DDM_DATE,'%Y-%m') =
+				DATE_FORMAT(date_sub(now(),interval 1 month),'%Y-%m')
+			</when>
+		</choose>
+	</select>
+
+
+	<!-- 에러 알림 테이블 -->
+	<select id="select_errorData" resultType="hashmap"
+		parameterType="string">
+		SELECT C.*
+		FROM (
+		SELECT * FROM dy_inverter_error A
+		LEFT JOIN dy_power_plant B
+		ON A.DIE_DPP_KEYNO = B.DPP_KEYNO
+		WHERE A.DIE_DPP_KEYNO = #{keyno}
+		ORDER BY DIE_DATE DESC
+		LIMIT 1000
+		)C
+		GROUP BY C.DIE_DSP_ERROR, C.DIE_DSP_S_ERROR
+		ORDER BY DIE_DATE DESC
+	</select>
+
+	<!-- 인버터 개별데이터 한개 하랑인버터 2호의 시간 초기화 문제로 인해 당일 발전량 계산을 위한 sql 추가 -->
+	<select id="inverter_date" resultType="hashmap"
+		parameterType="hashmap">
+		SELECT MIN(Conn_date) as mind , MAX(Conn_date) as maxd
+		FROM dy_inverter_data
+		WHERE DP_KEYNO = #{type}
+		AND DI_NAME = #{name}
+		AND
+		DATE(Conn_date) = CURDATE()
+	</select>
+
+	<select id="inverter_Cumulative_Generation" resultType="hashmap"
+		parameterType="hashmap">
+		SELECT *
+		FROM dy_inverter_data
+		WHERE DP_KEYNO = #{type}
+		AND DI_NAME = #{name}
+		AND Conn_date = #{date}
+	</select>
+
+	<!-- 인버터별 금일 발전량 한번에 조회 (최적화) - 발전현황 페이지용 -->
+	<select id="select_inverterData_daily_optimized"
+		resultType="hashmap" parameterType="String">
+		SELECT
+		A.DI_NAME,
+		-- 각 인버터별 최신 데이터의 저장된 Daily_Generation 값 사용
+		A.Daily_Generation,
+		A.Cumulative_Generation,
+		A.Active_Power,
+		A.Work_Mode,
+		A.Conn_date
+		FROM dy_inverter_data A
+		INNER JOIN (
+			SELECT DI_NAME, MAX(Conn_date) AS MaxConnDate
+			FROM dy_inverter_data
+			WHERE DP_KEYNO = #{type}
+			AND Conn_date <![CDATA[ >= ]]>
+			CURDATE()
+			AND Conn_date <![CDATA[ < ]]>
+			DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+			GROUP BY DI_NAME
+		) B ON A.DI_NAME = B.DI_NAME AND A.Conn_date = B.MaxConnDate
+		WHERE A.DP_KEYNO = #{type}
+		ORDER BY A.DI_NAME
+		LIMIT 25
+	</select>
+
+	<!-- 당일 전체 시간대 데이터 조회 - 통계분석 페이지용 -->
+	<select id="select_inverterData_daily_all" resultType="hashmap"
+		parameterType="String">
+		SELECT
+		A.DI_NAME,
+		-- 저장된 Daily_Generation 값 사용 (더 정확함)
+		-- 만약 Daily_Generation이 NULL이거나 0이면 계산식 사용
+		CASE 
+			WHEN A.Daily_Generation IS NOT NULL AND A.Daily_Generation > 0 
+			THEN A.Daily_Generation
+			ELSE ROUND(A.Cumulative_Generation - M.min_gen, 2)
+		END AS Daily_Generation,
+		A.Cumulative_Generation,
+		A.Active_Power,
+		A.Work_Mode,
+		A.Conn_date
+		FROM dy_inverter_data A
+		<![CDATA[ 
+		JOIN (
+		  SELECT DI_NAME, MIN(Cumulative_Generation) AS min_gen
+		  FROM dy_inverter_data
+		  WHERE DP_KEYNO = #{type}
+		  AND Conn_date >= CURDATE()
+		  AND Conn_date <  CURDATE() + INTERVAL 1 DAY
+		  GROUP BY DI_NAME
+		) M
+		  ON M.DI_NAME = A.DI_NAME
+		  WHERE A.DP_KEYNO = #{type}
+		  AND A.Conn_date >= CURDATE()
+		  AND A.Conn_date <  CURDATE() + INTERVAL 1 DAY
+		  ORDER BY A.Conn_date DESC, A.DI_NAME
+		]]>
+	</select>
+
+	<!-- 251029 수정 - 상세보기 데이터 조회: 설정 기간의 모든 상세 데이터 표시 + 스크롤 지원 -->
+	<!-- [기존 코드] - main.select_inverterData_daily_optimized 사용 (집계된 데이터만 조회) -->
+	<!-- [수정 코드] - 모든 상세 필드 포함, 기간 필터 적용, LIMIT/OFFSET으로 페이징 처리 -->
+	<!-- 기존 : dy_inverter_data 기준 상세 데이터 조회 -->
+	<!--
+	<select id="select_inverterData_daily_detail_optimized" resultType="hashmap" parameterType="hashmap">
+		SELECT
+		DP_KEYNO, DI_NAME,
+		Vpv1, Ipv1, Vpv2, Ipv2, Vpv3, Ipv3, Vpv4, Ipv4, Vpv5, Ipv5,
+		Vpv6, Ipv6, Vpv7, Ipv7, Vpv8, Ipv8, Vpv9, Ipv9, Vpv10, Ipv10,
+		Vpv11, Ipv11, Vpv12, Ipv12, Vpv13, Ipv13, Vpv14, Ipv14, Vpv15, Ipv15,
+		Vpv16, Ipv16, Vpv17, Ipv17, Vpv18, Ipv18, Vpv19, Ipv19, Vpv20, Ipv20,
+		Vpv21, Ipv21, Vpv22, Ipv22, Vpv23, Ipv23, Vpv24, Ipv24,
+		voltage_of_phase_A_to_B, voltage_of_phase_B_to_C, voltage_of_phase_C_to_A,
+		Phase_voltage_of_phase_A, Phase_voltage_of_phase_B, Phase_voltage_of_phase_C,
+		Current_of_phase_A, Current_of_phase_B, Current_of_phase_C,
+		Active_Power, Grid_Frequency, Internal_temperature,
+		Cumulative_Generation, Daily_Generation, Cabinet_Temperature_2,
+		DSP_Error_Code, DSP_Alarm_Code, PV_String_Fault_Bit,
+		Temperature_Fault_Bit, Slave_DSP_ErrorCode, Total_Generation_Hour,
+		Safety_Code, Work_Mode, Conn_date
+		FROM dy_inverter_data
+		WHERE DP_KEYNO = #{type}
+		<if test="searchBeginDate != null and searchBeginDate != ''">
+			<![CDATA[
+			AND Conn_date >= #{searchBeginDate}
+			]]>
+		</if>
+		<if test="searchEndDate != null and searchEndDate != ''">
+			<![CDATA[
+			AND Conn_date <= CONCAT(#{searchEndDate}, ' 23:59:59')
+			]]>
+		</if>
+		<if test="InverterType != null and InverterType != '' and !InverterType.equals('0') and InverterType != 0">
+			AND DI_NAME = '인버터 ${InverterType}호'
+		</if>
+		ORDER BY Conn_date DESC, DI_NAME
+		<choose>
+			<when test="pageSize != null and offset != null">
+				LIMIT #{pageSize} OFFSET #{offset}
+			</when>
+			<otherwise>
+				LIMIT 1000
+			</otherwise>
+		</choose>
+	</select>
+	-->
+
+	<!-- 25/11/11 변경 : 당일은 dy_inverter_data, 그 외 기간은 dy_detail_data에서 상세 데이터 조회 -->
+	<!-- 251120 수정 - 당일일 때 날짜 조건 및 Daily_Generation 필드 처리 -->
+	<select id="select_inverterData_daily_detail_optimized" resultType="hashmap" parameterType="hashmap">
+		SELECT
+		DP_KEYNO, DI_NAME,
+		Vpv1, Ipv1, Vpv2, Ipv2, Vpv3, Ipv3, Vpv4, Ipv4, Vpv5, Ipv5,
+		Vpv6, Ipv6, Vpv7, Ipv7, Vpv8, Ipv8, Vpv9, Ipv9, Vpv10, Ipv10,
+		Vpv11, Ipv11, Vpv12, Ipv12, Vpv13, Ipv13, Vpv14, Ipv14, Vpv15, Ipv15,
+		Vpv16, Ipv16, Vpv17, Ipv17, Vpv18, Ipv18, Vpv19, Ipv19, Vpv20, Ipv20,
+		Vpv21, Ipv21, Vpv22, Ipv22, Vpv23, Ipv23, Vpv24, Ipv24,
+		voltage_of_phase_A_to_B, voltage_of_phase_B_to_C, voltage_of_phase_C_to_A,
+		Phase_voltage_of_phase_A, Phase_voltage_of_phase_B, Phase_voltage_of_phase_C,
+		Current_of_phase_A, Current_of_phase_B, Current_of_phase_C,
+		Active_Power, Grid_Frequency, Internal_temperature,
+		Cumulative_Generation, Daily_Generation, Cabinet_Temperature_2,
+		DSP_Error_Code, DSP_Alarm_Code, PV_String_Fault_Bit,
+		Temperature_Fault_Bit, Slave_DSP_ErrorCode, Total_Generation_Hour,
+		Safety_Code, Work_Mode, Conn_date
+		FROM
+		<choose>
+			<when test="DaliyType != null and (DaliyType.equals('1') or DaliyType == 1)">
+				dy_inverter_data
+			</when>
+			<otherwise>
+				dy_detail_data
+			</otherwise>
+		</choose>
+		WHERE DP_KEYNO = #{type}
+		<choose>
+			<when test="DaliyType != null and (DaliyType.equals('1') or DaliyType == 1)">
+				AND DATE(Conn_date) = CURDATE()
+			</when>
+			<otherwise>
+				<if test="searchBeginDate != null and searchBeginDate != ''">
+					<![CDATA[
+					AND Conn_date >= #{searchBeginDate}
+					]]>
+				</if>
+				<if test="searchEndDate != null and searchEndDate != ''">
+					<![CDATA[
+					AND Conn_date <= CONCAT(#{searchEndDate}, ' 23:59:59')
+					]]>
+				</if>
+			</otherwise>
+		</choose>
+		<if test="InverterType != null and InverterType != '' and !InverterType.equals('0') and InverterType != 0">
+			AND DI_NAME = '인버터 ${InverterType}호'
+		</if>
+		ORDER BY Conn_date DESC, DI_NAME
+		<choose>
+			<when test="pageSize != null and offset != null">
+				LIMIT #{pageSize} OFFSET #{offset}
+			</when>
+			<otherwise>
+				LIMIT 1000
+			</otherwise>
+		</choose>
+	</select>
+
+
+	<!-- 인버터 개별데이터 -->
+	<select id="select_inverterData" resultType="hashmap"
+		parameterType="hashmap">
+		SELECT *
+		FROM(
+		SELECT *
+		FROM dy_inverter_data
+		WHERE DP_KEYNO = #{type}
+		<if test="searchBeginDate != null and searchBeginDate != ''">
+	 		<![CDATA[
+	 			AND			DATE(Conn_date) 	>=	#{searchBeginDate}
+	 		]]>
+		</if>
+		<if test="searchEndDate != null and searchEndDate != ''">
+		 	<![CDATA[
+	 		AND			DATE(Conn_date) 	<=	#{searchEndDate}
+	 		]]>
+		</if>
+		ORDER BY Conn_date DESC
+		LIMIT 2000
+		)A
+		WHERE 1=1
+		<if
+			test="InverterType != null and InverterType != '' and !InverterType.equals('0') and InverterType != 0">
+			AND A.DI_NAME = '인버터 ${InverterType}호'
+		</if>
+		<if test="group != null and group != '' ">
+			GROUP BY A.DI_NAME
+			ORDER BY A.Conn_date ASC
+		</if>
+	</select>
+	<!-- 당일 통계 -->
+	<select id="daily_statistics_MinMax" resultType="hashmap"
+		parameterType="hashmap">
+		SELECT *
+		FROM dy_inverter_data
+		WHERE DP_KEYNO = #{type}
+		AND DATE(Conn_date) = DATE(now())
+		AND Active_Power = (
+		SELECT
+		<if test="minmax.equals('min')">
+			MIN(Active_Power)
+		</if>
+		<if test="minmax.equals('max')">
+			MAX(Active_Power)
+		</if>
+		FROM dy_inverter_data
+		WHERE DP_KEYNO = #{type}
+		AND Active_Power > 0
+		AND DATE(Conn_date) = DATE(now())
+		ORDER BY Conn_date DESC
+		)
+		LIMIT 1
+	</select>
+
+	<select id="error_data" resultType="hashmap"
+		parameterType="hashmap">
+		SELECT *
+		FROM dy_inverter_error
+		WHERE DIE_DPP_KEYNO = #{type}
+		ORDER BY DIE_DATE desc
+		limit 500
+	</select>
+
+
+	<!-- 당일 통계를 위한 인버터 별 전력 출력 (그래프를위함) -->
+	<!-- <select id="select_inverterData_active" resultType="String" parameterType="hashmap"> -->
+	<!-- SELECT IFNULL(A.Active_Power,0) -->
+	<!-- FROM( -->
+	<!-- SELECT * -->
+	<!-- FROM dy_inverter_data -->
+	<!-- WHERE DP_KEYNO = #{type} -->
+	<!-- <if test="searchBeginDate != null and searchBeginDate != ''"> -->
+	<!-- <![CDATA[ -->
+	<!-- AND DATE_FORMAT(Conn_date,'%Y-%m-%d') >= #{searchBeginDate} -->
+	<!-- ]]> -->
+	<!-- </if> -->
+	<!-- <if test="searchEndDate != null and searchEndDate != ''"> -->
+	<!-- <![CDATA[ -->
+	<!-- AND DATE_FORMAT(Conn_date,'%Y-%m-%d') <= #{searchEndDate} -->
+	<!-- ]]> -->
+	<!-- </if> -->
+	<!-- ORDER BY Conn_date DESC -->
+	<!-- LIMIT 1000 -->
+	<!-- )A -->
+	<!-- WHERE 1=1 -->
+	<!-- <if test="inverterNum != null and inverterNum != '' "> -->
+	<!-- <if test="inverterNum == 1"> -->
+	<!-- AND A.DI_NAME = '인버터 1호' -->
+	<!-- </if> -->
+	<!-- <if test="inverterNum == 2"> -->
+	<!-- AND A.DI_NAME = '인버터 2호' -->
+	<!-- </if> -->
+	<!-- <if test="inverterNum == 3"> -->
+	<!-- AND A.DI_NAME = '인버터 3호' -->
+	<!-- </if> -->
+	<!-- <if test="inverterNum == 4"> -->
+	<!-- AND A.DI_NAME = '인버터 4호' -->
+	<!-- </if> -->
+	<!-- <if test="inverterNum == 5"> -->
+	<!-- AND A.DI_NAME = '인버터 5호' -->
+	<!-- </if> -->
+	<!-- <if test="inverterNum == 6"> -->
+	<!-- AND A.DI_NAME = '인버터 6호' -->
+	<!-- </if> -->
+	<!-- <if test="inverterNum == 7"> -->
+	<!-- AND A.DI_NAME = '인버터 7호' -->
+	<!-- </if> -->
+	<!-- </if> -->
+	<!-- LIMIT 10 -->
+	<!-- </select> -->
+
+	<!-- 당일 통계를 위한 인버터 별 전력 출력 (그래프를위함) -->
+	<select id="select_inverterData_active" resultType="String"
+		parameterType="hashmap">
+		select IFNULL(K.power,0)
+		FROM(
+		SELECT *
+		FROM(
+		SELECT IFNULL(ROUND(AA.Active_Power,2),0) as power ,
+            <![CDATA[
+               case when substr(AA.DATETIEMS,4,2) >='00' and substr(AA.DATETIEMS,4,2)<'30' then concat(substr(AA.DATETIEMS,1,2),':00')
+                    when substr(AA.DATETIEMS,4,2) >='30' and substr(AA.DATETIEMS,4,2)<'60' then concat(substr(AA.DATETIEMS,1,2),':30')
+                   ]]>
+		END as hhmm
+		FROM (
+		SELECT DP_KEYNO, DI_NAME , Active_Power, date_format(Conn_date,'%H:%i') as
+		DATETIEMS
+		FROM dy_inverter_data
+		WHERE 1=1
+		AND DP_KEYNO = ${type}
+		<if test="inverterNum != null and inverterNum != '' ">
+			<if test="inverterNum == 1">
+				AND DI_NAME = '인버터 1호'
+			</if>
+			<if test="inverterNum == 2">
+				AND DI_NAME = '인버터 2호'
+			</if>
+			<if test="inverterNum == 3">
+				AND DI_NAME = '인버터 3호'
+			</if>
+			<if test="inverterNum == 4">
+				AND DI_NAME = '인버터 4호'
+			</if>
+			<if test="inverterNum == 5">
+				AND DI_NAME = '인버터 5호'
+			</if>
+			<if test="inverterNum == 6">
+				AND DI_NAME = '인버터 6호'
+			</if>
+			<if test="inverterNum == 7">
+				AND DI_NAME = '인버터 7호'
+			</if>
+			<if test="inverterNum == 8">
+				AND DI_NAME = '인버터 8호'
+			</if>
+			<if test="inverterNum == 9">
+				AND DI_NAME = '인버터 9호'
+			</if>
+			<if test="inverterNum == 10">
+				AND DI_NAME = '인버터 10호'
+			</if>
+			<if test="inverterNum == 11">
+				AND DI_NAME = '인버터 11호'
+			</if>
+			<if test="inverterNum == 12">
+				AND DI_NAME = '인버터 12호'
+			</if>
+			<if test="inverterNum == 13">
+				AND DI_NAME = '인버터 13호'
+			</if>
+			<if test="inverterNum == 15">
+				AND DI_NAME = '인버터 15호'
+			</if>
+			<if test="inverterNum == 16">
+				AND DI_NAME = '인버터 16호'
+			</if>
+			<if test="inverterNum == 17">
+				AND DI_NAME = '인버터 17호'
+			</if>
+			<if test="inverterNum == 18">
+				AND DI_NAME = '인버터 18호'
+			</if>
+			<if test="inverterNum == 19">
+				AND DI_NAME = '인버터 19호'
+			</if>
+			<if test="inverterNum == 20">
+				AND DI_NAME = '인버터 20호'
+			</if>
+		</if>
+		AND DATE(Conn_date) = CURDATE()
+		AND Active_Power > 0
+		ORDER BY DI_NAME , DATETIEMS DESC
+		LIMIT 100
+		)AA
+		GROUP BY hhmm
+		)B
+		right join (
+		WITH RECURSIVE A AS
+		(
+            	<![CDATA[
+               SELECT STR_TO_DATE(date_format(now(),'%Y%m%d06'),'%Y%m%d%H%') AS YMDHM
+               UNION ALL
+               SELECT DATE_ADD(A.YMDHM, INTERVAL 30 minute) AS YMDHM FROM A
+                WHERE A.YMDHM < STR_TO_DATE(date_format(now(),'%Y%m%d19'), '%Y%m%d%H')
+                ]]>
+		)
+		SELECT DATE_FORMAT(YMDHM, '%H:%i') AS YMDHM FROM A
+		)C
+		on B.hhmm = C.YMDHM
+		)K
+	</select>
+
+	<!-- 인버터별 Active Power를 한 번에 조회 (통계 페이지 최적화) -->
+	<select id="select_inverterData_active_optimized"
+		resultType="hashmap" parameterType="hashmap">
+		SELECT
+		AA.DI_NAME,
+		C.YMDHM AS time_slot,
+		IFNULL(ROUND(MAX(AA.Active_Power), 2), 0) AS power
+		FROM (
+		SELECT DP_KEYNO, DI_NAME, Active_Power,
+		CASE
+		WHEN MINUTE(Conn_date) >= 0 AND MINUTE(Conn_date) &lt; 30 THEN
+		CONCAT(DATE_FORMAT(Conn_date, '%H'), ':00')
+		WHEN MINUTE(Conn_date) >= 30 AND MINUTE(Conn_date) &lt; 60 THEN
+		CONCAT(DATE_FORMAT(Conn_date, '%H'), ':30')
+		END AS hhmm
+		FROM dy_inverter_data
+		WHERE DP_KEYNO = ${type}
+		AND Conn_date <![CDATA[ >= ]]>
+		CURDATE()
+		AND Conn_date <![CDATA[ < ]]>
+		DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+		AND Active_Power > 0
+		LIMIT 10000
+		) AA
+		RIGHT JOIN (
+		WITH RECURSIVE A AS (
+				<![CDATA[
+				SELECT STR_TO_DATE(DATE_FORMAT(NOW(),'%Y%m%d06'),'%Y%m%d%H%') AS YMDHM
+				UNION ALL
+				SELECT DATE_ADD(A.YMDHM, INTERVAL 30 MINUTE) AS YMDHM 
+				FROM A
+				WHERE A.YMDHM < STR_TO_DATE(DATE_FORMAT(NOW(),'%Y%m%d19'), '%Y%m%d%H')
+				]]>
+		)
+		SELECT DATE_FORMAT(YMDHM, '%H:%i') AS YMDHM FROM A
+		) C ON AA.hhmm = C.YMDHM
+		GROUP BY AA.DI_NAME, C.YMDHM
+		ORDER BY AA.DI_NAME, C.YMDHM
+	</select>
+
+	<!-- <select id="select_inverterData_date" resultType="String" parameterType="hashmap"> -->
+	<!-- SELECT date_format(A.Conn_date, '%H:%i') as dates -->
+	<!-- FROM( -->
+	<!-- SELECT * -->
+	<!-- FROM dy_inverter_data -->
+	<!-- WHERE DP_KEYNO = #{type} -->
+	<!-- <if test="searchBeginDate != null and searchBeginDate != ''"> -->
+	<!-- <![CDATA[ -->
+	<!-- AND DATE_FORMAT(Conn_date,'%Y-%m-%d') >= #{searchBeginDate} -->
+	<!-- ]]> -->
+	<!-- </if> -->
+	<!-- <if test="searchEndDate != null and searchEndDate != ''"> -->
+	<!-- <![CDATA[ -->
+	<!-- AND DATE_FORMAT(Conn_date,'%Y-%m-%d') <= #{searchEndDate} -->
+	<!-- ]]> -->
+	<!-- </if> -->
+	<!-- ORDER BY Conn_date DESC -->
+	<!-- LIMIT 1000 -->
+	<!-- )A -->
+	<!-- WHERE 1=1 -->
+	<!-- AND A.DI_NAME = '인버터 1호' -->
+	<!-- LIMIT 10 -->
+	<!-- </select> -->
+
+	<select id="select_inverterData_date" resultType="String"
+		parameterType="hashmap">
+		select DISTINCT K.YMDHM
+		FROM(
+		SELECT *
+		FROM(
+		SELECT IFNULL(AA.Active_Power,0) as power ,
+            <![CDATA[
+               case when substr(AA.DATETIEMS,4,2) >='00' and substr(AA.DATETIEMS,4,2)<'30' then concat(substr(AA.DATETIEMS,1,2),':00')
+                    when substr(AA.DATETIEMS,4,2) >='30' and substr(AA.DATETIEMS,4,2)<'60' then concat(substr(AA.DATETIEMS,1,2),':30')
+              ]]>
+		END as hhmm
+		FROM (
+		SELECT DP_KEYNO, DI_NAME , Active_Power, date_format(Conn_date,'%H:%i') as
+		DATETIEMS
+		FROM dy_inverter_data
+		WHERE 1=1
+		AND DP_KEYNO = ${type}
+		AND date_format(Conn_date, '%Y-%m-%d') = date_format(now(), '%Y-%m-%d')
+		ORDER BY DI_NAME , Conn_date DESC
+		LIMIT 100000
+		)AA
+		GROUP BY hhmm
+		)B
+		right join (
+		WITH RECURSIVE A AS
+		(
+            <![CDATA[
+               SELECT STR_TO_DATE(date_format(now(),'%Y%m%d06'),'%Y%m%d%H%') AS YMDHM
+               UNION ALL
+               SELECT DATE_ADD(A.YMDHM, INTERVAL 30 minute) AS YMDHM FROM A
+                WHERE A.YMDHM < STR_TO_DATE(date_format(now(),'%Y%m%d19'), '%Y%m%d%H')
+            ]]>
+		)
+		SELECT DATE_FORMAT(YMDHM, '%H:%i') AS YMDHM FROM A
+		)C
+		on B.hhmm = C.YMDHM
+		)K
+
+	</select>
+
+	<select id="select_inverterData_graph" resultType="String"
+		parameterType="hashmap">
+		select DISTINCT
+		<![CDATA[
+   	 case 
+    	 when substr(Conn_date,15,2) <'10' then concat(substr(Conn_date,12,2),':00')
+    	 when substr(Conn_date,15,2) >='10' and substr(Conn_date,15,2)<'20' then concat(substr(Conn_date,12,2),':10')
+         when substr(Conn_date,15,2) >='20' and substr(Conn_date,15,2)<'30' then concat(substr(Conn_date,12,2),':20')
+         when substr(Conn_date,15,2) >='30' and substr(Conn_date,15,2)<'40' then concat(substr(Conn_date,12,2),':30')
+         when substr(Conn_date,15,2) >='40' and substr(Conn_date,15,2)<'50' then concat(substr(Conn_date,12,2),':40')
+         when substr(Conn_date,15,2) >='50' and substr(Conn_date,15,2)<'60' then concat(substr(Conn_date,12,2),':50')
+         ]]>
+		end as hhmm
+		FROM dy_inverter_data
+		where 1=1
+		AND date_format(Conn_date, '%Y-%m-%d') = date_format(now(), '%Y-%m-%d')
+		and DP_KEYNO = #{type}
+		<if
+			test="InverterType != null and InverterType != '' and !InverterType.equals('0') and InverterType != 0">
+			-->
+			<!-- and DI_NAME = '인버터 1호' -->
+			and DI_NAME = '인버터 ${InverterType}호'
+		</if>
+		order by hhmm DESC
+		limit 7
+	</select>
+
+
+	<!-- 인버터 당일제외 데이터 출력 -->
+	 <!-- 251029 수정 - 주석 해제 함 (통계분석 기간설정 부분) -->
+	<select id="select_inverterData_other_MINMAX"
+		resultType="hashmap" parameterType="hashmap">
+		SELECT * FROM( 
+			SELECT * FROM( 
+				SELECT * FROM dy_inverter_data_main 
+				WHERE DDM_DPP_KEYNO = #{type} 
+				<if test="searchBeginDate != null and searchBeginDate != ''"> 
+					<![CDATA[ AND DATE(DDM_DATE) >= #{searchBeginDate} ]]> 
+				</if> 
+				<if test="searchEndDate != null and searchEndDate != ''"> 
+					<![CDATA[ AND DATE(DDM_DATE) <= #{searchEndDate} ]]> 
+				</if> 
+				ORDER BY DDM_DATE DESC LIMIT 3000 
+			)A 
+			GROUP BY DATE(DDM_DATE) 
+		)B 
+		WHERE 1=1 
+		AND CAST(B.DDM_D_DATA as DECIMAL(10,6)) = ( 
+			SELECT 
+				<if test="minmax.equals('min')"> MIN(D.DDM_D_DATA) </if> 
+				<if test="minmax.equals('max')"> MAX(CAST(D.DDM_D_DATA as DECIMAL(10,6))) </if> 
+			FROM( 
+				SELECT * FROM( 
+					SELECT * FROM dy_inverter_data_main 
+					WHERE DDM_DPP_KEYNO = #{type} 
+					<if test="searchBeginDate != null and searchBeginDate != ''"> 
+						<![CDATA[ AND DATE(DDM_DATE) >= #{searchBeginDate} ]]> 
+					</if> 
+					<if test="searchEndDate != null and searchEndDate != ''"> 
+						<![CDATA[ AND DATE(DDM_DATE) <= #{searchEndDate} ]]> 
+					</if> 
+					ORDER BY DDM_DATE DESC LIMIT 1000 
+				)C 
+				GROUP BY DATE(DDM_DATE) 
+			)D 
+		) 
+		LIMIT 1
+	</select>
+
+	<select id="select_inverterData_other" resultType="hashmap"
+		parameterType="hashmap">
+
+		SELECT * ,DATE(DDM_DATE) AS FORMATDATE
+		FROM(
+		SELECT *
+		FROM(
+		SELECT *
+		FROM dy_inverter_data_main
+		WHERE DDM_DPP_KEYNO = #{type}
+		<if test="searchBeginDate != null and searchBeginDate != ''">
+			 		<![CDATA[
+			 		AND			DATE(DDM_DATE) 	>=	#{searchBeginDate}
+			 		]]>
+		</if>
+		<if test="searchEndDate != null and searchEndDate != ''">
+				 	<![CDATA[
+			 		AND			DATE(DDM_DATE) 	<=	#{searchEndDate}
+				 	]]>
+		</if>
+		ORDER BY DDM_DATE DESC
+		LIMIT 100000
+		)A
+		GROUP BY DATE(DDM_DATE)
+		ORDER BY DDM_DATE DESC
+		)B
+		LEFT JOIN dy_power_plant C
+		ON B.DDM_DPP_KEYNO = C.DPP_KEYNO
+	</select>
+
+	<!-- 누적치에서 차감하여 당일발전량을 구해서 excel 추출함 -->
+	<select id="select_inverterData_other_excelType2_orType4"
+		resultType="hashmap" parameterType="hashmap">
+		<choose>
+			<!-- 당일 검색인 경우: 모든 10분 데이터를 시간별로 표시 (전일 비교 없음) -->
+			<when test="DaliyType != null and DaliyType == '1'">
+				SELECT
+				Conn_date as ddtt,
+				Cumulative_Generation as DDM_CUL_DATA,
+				0 as sdata
+				FROM dy_inverter_data
+				WHERE DP_KEYNO = #{type}
+				<![CDATA[
+				AND DATE(Conn_date) = CURDATE()
+				]]>
+				ORDER BY Conn_date ASC
+				LIMIT 2000
+			</when>
+			<!-- 기간 검색인 경우: 기존 로직 유지 -->
+			<otherwise>
+				SELECT A.DDM_DATE as ddtt, A.DDM_CUL_DATA , A.DDM_CUL_DATA -
+				B.PREVIOUS_D_DATA AS sdata
+				FROM (
+				SELECT DATE_FORMAT(AA.DDM_DATE,'%Y-%m-%d') as DDM_DATE , AA.DDM_CUL_DATA
+				FROM(
+				SELECT DM.DDM_DATE , DM.DDM_CUL_DATA
+				FROM dy_inverter_data_main DM
+				INNER JOIN (
+				SELECT DDM_DPP_KEYNO, DATE(DDM_DATE) as DDM_DAY, MAX(DDM_DATE) AS MaxDate
+				FROM dy_inverter_data_main
+				WHERE DDM_DPP_KEYNO = #{type}
+									<![CDATA[
+							 		AND			DATE(DDM_DATE) 	>=	#{searchBeginDate}
+							 		AND			DATE(DDM_DATE) 	<=	#{searchEndDate}
+							 		]]>
+				GROUP BY DDM_DPP_KEYNO, DATE(DDM_DATE)
+				) MD ON DM.DDM_DPP_KEYNO = MD.DDM_DPP_KEYNO
+				AND DM.DDM_DATE = MD.MaxDate
+				ORDER BY DM.DDM_DATE DESC
+				LIMIT 10000
+				)AA
+				GROUP BY
+				<choose>
+					<when test="excelType == 2 || DaliyType == 4">DATE_FORMAT(DDM_DATE,'%Y-%m')</when>
+					<otherwise>DATE(DDM_DATE)</otherwise>
+				</choose>
+				ORDER BY DDM_DATE desc
+				) A
+				JOIN (
+				SELECT DATE_FORMAT(BB.DDM_DATE,'%Y-%m-%d') as DDM_DATE ,
+				BB.PREVIOUS_D_DATA
+				FROM(
+				select DDM_DATE , DDM_CUL_DATA as PREVIOUS_D_DATA
+				FROM dy_inverter_data_main
+				WHERE DDM_DPP_KEYNO = #{type}
+								<![CDATA[
+							 		AND			DATE(DDM_DATE) 	>=	DATE_SUB(#{searchBeginDate}, INTERVAL 1 MONTH)
+							 		AND			DATE(DDM_DATE) 	<=	#{searchEndDate}
+							 	]]>
+				ORDER BY DDM_DATE DESC
+				LIMIT 10000
+				)BB
+				GROUP BY
+				<choose>
+					<when test="excelType == 2 || DaliyType == 4">DATE_FORMAT(DDM_DATE,'%Y-%m')</when>
+					<otherwise>DATE(DDM_DATE)</otherwise>
+				</choose>
+				ORDER BY DDM_DATE desc
+				) B ON
+				<choose>
+					<when test="excelType == 2 || DaliyType == 4">DATE_FORMAT(A.DDM_DATE,'%Y-%m') =
+						DATE_FORMAT(DATE_ADD( DATE_FORMAT(B.DDM_DATE,'%Y-%m-%d'), INTERVAL
+						1 MONTH),'%Y-%m')</when>
+					<otherwise>DATE_FORMAT(A.DDM_DATE,'%Y-%m-%d') = DATE_ADD(
+						DATE_FORMAT(B.DDM_DATE,'%Y-%m-%d'), INTERVAL 1 DAY)</otherwise>
+				</choose>
+				GROUP BY DATE_FORMAT(A.DDM_DATE, '%Y-%m-%d')
+				ORDER BY A.DDM_DATE DESC
+			</otherwise>
+		</choose>
+	</select>
+
+
+
+	<select id="select_inverterData_other_AVGSUM"
+		resultType="hashmap" parameterType="hashmap">
+		SELECT AVG(B.DDM_D_DATA) AS avgData, SUM(B.DDM_D_DATA) AS sumData
+		FROM(
+		SELECT *
+		FROM(
+		SELECT *
+		FROM dy_inverter_data_main
+		WHERE DDM_DPP_KEYNO = #{type}
+		<if test="searchBeginDate != null and searchBeginDate != ''">
+			 		<![CDATA[
+			 		AND			DATE(DDM_DATE) 	>=	#{searchBeginDate}
+			 		]]>
+		</if>
+		<if test="searchEndDate != null and searchEndDate != ''">
+				 	<![CDATA[
+			 		AND			DATE(DDM_DATE) 	<=	#{searchEndDate}
+				 	]]>
+		</if>
+		ORDER BY DDM_DATE DESC
+		LIMIT 3000
+		)A
+		GROUP BY DATE(DDM_DATE)
+		)B
+	</select>
+
+	<select id="Power_SelectKEY" resultType="String">
+		SELECT DPP_KEYNO
+		FROM dy_power_plant
+		WHERE 1=1
+		AND DPP_STATUS = 'Y'
+		<if
+			test="!UIA_NAME.equals('안전관리자') and !UIA_NAME.equals('유지관리자') and !UIA_NAME.equals('개발자') and !UIA_NAME.equals('홈페이지 관리자') and !UIA_NAME.equals('경영관리자')">
+			AND DPP_USER = #{UI_KEYNO}
+		</if>
+		ORDER BY CAST(DPP_KEYNO AS UNSIGNED) ASC
+		limit 1
+	</select>
+
+	<select id="Power_SelectKEYs" resultType="hashmap">
+		SELECT DPP_KEYNO, DPP_NAME
+		FROM dy_power_plant
+		WHERE 1=1
+		AND DPP_STATUS = 'Y'
+		<if
+			test="!UIA_NAME.equals('안전관리자') and !UIA_NAME.equals('유지관리자') and !UIA_NAME.equals('개발자') and !UIA_NAME.equals('홈페이지 관리자') and !UIA_NAME.equals('경영관리자')">
+			AND DPP_USER = #{UI_KEYNO}
+		</if>
+		ORDER BY CAST(DPP_KEYNO AS UNSIGNED) ASC
+	</select>
+
+	<select id="PowerBoard_select" resultType="hashmap">
+		SELECT
+		@rownum:=@rownum+1 as COUNT, BN_KEYNO , BN_REGDT ,BN_TITLE
+		FROM b_board_notice
+		,(SELECT @rownum:=0)TMP
+		WHERE BN_PLANT_NAME = #{type}
+		AND BN_DEL_YN ='N'
+		AND BN_CATEGORY_NAME = #{category}
+		LIMIT 6
+	</select>
+
+	<update id="SettingUpdate" parameterType="USER">
+		UPDATE u_userinfo
+		SET UI_NAME = #{UI_NAME}
+		<if test='UI_PASSWORD != null and UI_PASSWORD != ""'>
+			,UI_PASSWORD = #{UI_PASSWORD}
+		</if>
+		<if test='UI_EMAIL != null and UI_EMAIL != ""'>
+			,UI_EMAIL = #{UI_EMAIL}
+		</if>
+		<if test='UI_PHONE != null and UI_PHONE != ""'>
+			,UI_PHONE = #{UI_PHONE}
+		</if>
+		WHERE UI_KEYNO = #{UI_KEYNO}
+	</update>
+
+	<!-- 발전소 정보 확인 -->
+	<select id="PowerOneSelect" parameterType="String"
+		resultType="HashMap">
+		SELECT *
+		FROM dy_power_plant
+		WHERE DPP_KEYNO = #{DPP_KEYNO}
+	</select>
+
+	<!-- 게시물 등록알림 (개발자, 알림전송, 사업주 번호 추출) -->
+	<select id="NotUserData" resultType="USER"
+		parameterType="HashMap">
+		SELECT *
+		FROM u_userinfo A
+		LEFT JOIN u_userinfo_member_authority B
+		ON
+		A.UI_KEYNO = B.UI_KEYNO
+		LEFT JOIN u_userinfo_authority C
+		ON C.UIA_KEYNO
+		= B.UIA_KEYNO
+		WHERE C.UIA_KEYNO = 'UIA_ASDFG'
+		OR C.UIA_KEYNO = 'UIA_CQNSZ'
+		<if test="DPP_USER != NULL and DPP_USER != ''">
+			OR B.UI_KEYNO = #{DPP_USER}
+		</if>
+	</select>
+
+	<!-- 슈퍼개발자만 -->
+	<select id="NotUserData_Admin" resultType="USER"
+		parameterType="HashMap">
+		SELECT *
+		FROM u_userinfo A
+		LEFT JOIN
+		u_userinfo_member_authority B
+		ON A.UI_KEYNO = B.UI_KEYNO
+		LEFT JOIN
+		u_userinfo_authority C
+		ON C.UIA_KEYNO = B.UIA_KEYNO
+		WHERE C.UIA_KEYNO = 'UIA_ASDFG'
+	</select>
+	<select id="Kakaotalk" resultType="USER" parameterType="HashMap">
+		SELECT *
+		FROM u_userinfo A
+		LEFT JOIN u_userinfo_member_authority B
+		ON
+		A.UI_KEYNO = B.UI_KEYNO
+		LEFT JOIN u_userinfo_authority C
+		ON C.UIA_KEYNO
+		= B.UIA_KEYNO
+		WHERE C.UIA_KEYNO = 'UIA_LHAPK'
+	</select>
+
+	<select id="Kakaotalk_ad" resultType="USER"
+		parameterType="hashmap">
+		SELECT A.UIA_KEYNO,C.UI_NAME, C.UI_PHONE
+		FROM u_userinfo_authority A
+		LEFT JOIN u_userinfo_member_authority B
+		ON A.UIA_KEYNO = B.UIA_KEYNO
+		LEFT JOIN u_userinfo C
+		ON C.UI_KEYNO = B.UI_KEYNO
+		WHERE
+		<foreach item="l" index="index" collection="userlist" open="("
+			close=")" separator="or">
+			C.UI_KEYNO = #{l}
+		</foreach>
+	</select>
+
+	<select id="Message_ad" resultType="USER"
+		parameterType="hashmap">
+		SELECT *
+		FROM u_userinfo A
+		LEFT JOIN dy_power_plant B
+		ON
+		A.UI_KEYNO = B.DPP_USER
+		where B.DPP_USER = #{DPP_USER}
+	</select>
+
+	<select id="Group_select" resultType="USER"
+		parameterType="String">
+		SELECT B.UI_KEYNO, UI_NAME
+		FROM u_userinfo A
+		LEFT JOIN u_userinfo_member_authority B
+		ON A.UI_KEYNO = B.UI_KEYNO
+		LEFT
+		JOIN u_userinfo_authority C
+		ON C.UIA_KEYNO = B.UIA_KEYNO
+		WHERE C.UIA_KEYNO = #{l}
+	</select>
+
+	<select id="Group_select_all" resultType="USER"
+		parameterType="String">
+		SELECT B.UI_KEYNO, UI_NAME
+		FROM u_userinfo A
+		LEFT JOIN u_userinfo_member_authority B
+		ON A.UI_KEYNO = B.UI_KEYNO
+		LEFT
+		JOIN u_userinfo_authority C
+		ON C.UIA_KEYNO = B.UIA_KEYNO
+	</select>
+
+	<!-- 카카오 알림전송전 권한키 확인 -->
+	<select id="SendUserCheck" parameterType="String"
+		resultType="hashmap">
+		SELECT A.UIA_KEYNO,C.UI_NAME
+		FROM u_userinfo_authority A
+		LEFT JOIN u_userinfo_member_authority B
+		ON A.UIA_KEYNO = B.UIA_KEYNO
+		LEFT JOIN u_userinfo C
+		ON C.UI_KEYNO = B.UI_KEYNO
+		WHERE C.UI_KEYNO =
+		#{userKey}
+	</select>
+
+	<!-- 현재 발전소 사업주 정보 출력 -->
+	<select id="PlantOwnerCnt" parameterType="hashmap"
+		resultType="int">
+		SELECT COUNT(B.UI_KEYNO)
+		FROM dy_power_plant A
+		LEFT JOIN
+		u_userinfo B
+		ON A.DPP_USER = B.UI_KEYNO
+		WHERE DPP_KEYNO =
+		#{BN_PLANT_NAME}
+		AND DPP_USER = #{UI_KEYNO}
+	</select>
+
+	<!-- 알림톡 전송 이후 bn check update -->
+	<update id="UpdateBNcheck" parameterType="String">
+		UPDATE b_board_notice
+		SET BN_SEND_CHECK = 'Y'
+		WHERE BN_KEYNO = #{BN_KEYNO}
+	</update>
+
+	<!-- 8시30분 데이터 안들어온거 알림 확인 -->
+	<select id="PowerConCheck" resultType="hashmap">
+		SELECT A.DPP_NAME ,
+		A.DPP_KEYNO , IFNULL(B.Daily_Generation,'N') AS checking
+		FROM
+		dy_power_plant A
+		LEFT JOIN (
+		SELECT *
+		FROM dy_inverter_data B
+		WHERE DATE(B.Conn_date) = CURDATE()
+		) B
+		ON A.DPP_KEYNO = B.DP_KEYNO
+		WHERE A.DPP_STATUS = 'Y'
+		GROUP BY
+		A.DPP_NAME
+	</select>
+
+	<select id="DataInputCheck" resultType="hashmap">
+		SELECT A.DPP_NAME ,
+		A.DPP_KEYNO , IFNULL(B.Conn_date ,'N') AS checked
+		FROM dy_power_plant A
+		LEFT JOIN (
+		SELECT *
+		FROM dy_inverter_data B
+		WHERE date_format(B.Conn_date, '%m-%d-%h') = date_format(now(),'%m-%d-%h')
+		) B
+		ON A.DPP_KEYNO = B.DP_KEYNO
+		WHERE A.DPP_STATUS = 'Y'
+		GROUP BY
+		A.DPP_NAME
+	</select>
+
+	<!-- 안전관리자 확인 부분 -->
+	<select id="Statics_Two" resultType="hashmap"
+		parameterType="String">
+		SELECT *
+		FROM(
+		SELECT DI_NAME, Daily_Generation, Conn_date ,
+		date_format(Conn_date,'%H:00:00') as subDate
+		FROM dy_inverter_data
+		WHERE DP_KEYNO = #{type}
+		AND DATE(Conn_date) =
+		CURDATE()
+		ORDER BY Conn_date DESC
+		LIMIT 2000
+		)A
+		GROUP BY A.DI_NAME , A.subDate
+	</select>
+
+	<!-- 안전관리자 확인 부분 -->
+	<select id="Statics_Two2" resultType="hashmap"
+		parameterType="String">
+		SELECT * , IFNULL(d.Daily_Generation,0)
+		FROM chartdate C
+		LEFT JOIN (
+		SELECT *
+		FROM(
+		SELECT DI_NAME, Daily_Generation, Conn_date ,
+		date_format(Conn_date,'%H:00:00') as subDate
+		FROM dy_inverter_data
+		WHERE DP_KEYNO = #{type}
+		AND DATE(Conn_date) = CURDATE()
+		ORDER BY Conn_date DESC
+		LIMIT 2000
+		)A
+		GROUP BY A.subDate, A.DI_NAME
+		) D
+		ON C.date = D.subDate
+	</select>
+
+
+	<select id="Statics_date" resultType="String">
+		SELECT date
+		FROM chartdate
+	</select>
+
+	<select id="recent_sum" resultType="float">
+		SELECT IFNULL(SUM(A.Cumulative_Generation), 0)
+		FROM (
+		SELECT DI_NAME, MAX(Conn_date) AS MaxConnDate
+		FROM dy_inverter_data
+		WHERE DP_KEYNO = #{type}
+		<choose>
+			<when test="date.equals('year')">
+				AND YEAR(Conn_date) = #{Conn_date}
+			</when>
+			<otherwise>
+						<![CDATA[
+						AND Conn_date >= CONCAT(#{Conn_date}, '-01 00:00:00')
+						AND Conn_date < DATE_ADD(CONCAT(#{Conn_date}, '-01 00:00:00'), INTERVAL 1 MONTH)
+						]]>
+			</otherwise>
+		</choose>
+		GROUP BY DI_NAME
+		) AS B
+		JOIN dy_inverter_data A
+		ON A.DI_NAME = B.DI_NAME
+		AND A.Conn_date = B.MaxConnDate
+		WHERE DP_KEYNO = #{type}
+	</select>
+
+	<!-- 오남매 1호 전용: 인버터 1호, 2호만 포함한 누적 발전량 조회 (25.08 분리 대응) -->
+	<select id="recent_sum_onam1" resultType="float">
+		SELECT IFNULL(SUM(A.Cumulative_Generation), 0)
+		FROM (
+		SELECT DI_NAME, MAX(Conn_date) AS MaxConnDate
+		FROM dy_inverter_data
+		WHERE DP_KEYNO = #{type}
+		AND (
+		DI_NAME LIKE '%인버터 1%' OR DI_NAME LIKE '%인버터 2%' OR
+		DI_NAME LIKE '%1번%' OR DI_NAME LIKE '%2번%'
+		)
+		<choose>
+			<when test="date.equals('year')">
+				AND YEAR(Conn_date) = #{Conn_date}
+			</when>
+			<otherwise>
+						<![CDATA[
+						AND Conn_date >= CONCAT(#{Conn_date}, '-01 00:00:00')
+						AND Conn_date < DATE_ADD(CONCAT(#{Conn_date}, '-01 00:00:00'), INTERVAL 1 MONTH)
+						]]>
+			</otherwise>
+		</choose>
+		GROUP BY DI_NAME
+		) AS B
+		JOIN dy_inverter_data A
+		ON A.DI_NAME = B.DI_NAME
+		AND A.Conn_date = B.MaxConnDate
+		WHERE A.DP_KEYNO = #{type}
+	</select>
+
+	<!-- dy_inverter_data_main 테이블 기반 누적 발전량 조회 (중복 제거) -->
+	<select id="recent_sum_main" resultType="float">
+		SELECT IFNULL(MAX(A.DDM_CUL_DATA), 0)
+		FROM (
+		SELECT DDM_DPP_KEYNO, MAX(DDM_DATE) AS MaxDate
+		FROM dy_inverter_data_main
+		WHERE DDM_DPP_KEYNO = #{type}
+		<choose>
+			<when test="date.equals('year')">
+				AND YEAR(DDM_DATE) = #{Conn_date}
+			</when>
+			<otherwise>
+					<![CDATA[
+					AND DDM_DATE >= CONCAT(#{Conn_date}, '-01 00:00:00')
+					AND DDM_DATE < DATE_ADD(CONCAT(#{Conn_date}, '-01 00:00:00'), INTERVAL 1 MONTH)
+					]]>
+			</otherwise>
+		</choose>
+		GROUP BY DDM_DPP_KEYNO
+		) AS B
+		JOIN dy_inverter_data_main A
+		ON
+		A.DDM_DPP_KEYNO = B.DDM_DPP_KEYNO
+		AND A.DDM_DATE = B.MaxDate
+		WHERE
+		A.DDM_DPP_KEYNO = #{type}
+	</select>
+
+
+	<select id="select_MainData_Ad" resultType="hashmap"
+		parameterType="hashmap">
+		SELECT *
+		<include refid="main_setting" />
+		WHERE 1=1
+		AND DPP_STATUS = 'Y'
+		<if test="type != null and type != ' '">
+			AND C.DPP_KEYNO = #{type}
+		</if>
+		<if
+			test="region != null and region != '' and !region.equals('all')">
+			AND C.DPP_AREA = #{region}
+		</if>
+		<if
+			test="status != null and status != '' and !status.equals('status') ">
+			<choose>
+				<when test="status.equals('정상')">AND B.DDM_STATUS = '정상'</when>
+				<when test="status.equals('장애')">AND B.DDM_STATUS = '장애'</when>
+				<otherwise>AND B.DDM_STATUS IS NULL</otherwise>
+			</choose>
+		</if>
+		<if test="UI_KEYNO != null and UI_KEYNO != ''">
+			AND DPP_ADMIN = #{UI_KEYNO}
+		</if>
+		ORDER BY DPP_DATE ASC
+	</select>
+
+	<select id="Power_SelectKEY_Ad" resultType="String">
+		SELECT DPP_KEYNO
+		FROM
+		dy_power_plant
+		WHERE DPP_ADMIN = #{UI_KEYNO}
+		AND DPP_STATUS = 'Y'
+		ORDER BY CAST(DPP_KEYNO AS UNSIGNED) ASC
+		limit 1
+	</select>
+
+	<select id="Power_SelectKEYs_Ad" resultType="hashmap">
+		SELECT DPP_KEYNO,
+		DPP_NAME
+		FROM dy_power_plant
+		WHERE DPP_ADMIN = #{UI_KEYNO}
+		AND DPP_STATUS = 'Y'
+		ORDER BY CAST(DPP_KEYNO AS UNSIGNED) ASC
+	</select>
+
+
+
+
+	<!-- 발전소 키값 추출 -->
+	<select id="selectPower" resultType="hashmap">
+		SELECT DPP_KEYNO FROM
+		dy_power_plant
+		WHERE DPP_STATUS = 'Y'
+	</select>
+
+	<select id="select_fault_keyno" resultType="String"
+		parameterType="String">
+		select DP_KEYNO
+		from dy_inverter_data
+		where
+		DATE(Conn_date) = CURDATE()
+		and HOUR(Conn_date) = HOUR(now())
+		and HOUR(Conn_date) > 8
+		and (Work_Mode = 'Fault' or Work_Mode = 'Wait')
+		and DP_KEYNO = #{l}
+		group by DP_KEYNO
+	</select>
+
+	<!-- 모든 발전소의 장애 상태를 한 번에 조회 (최적화) -->
+	<select id="select_fault_keyno_all" resultType="String">
+		<!-- select DISTINCT DP_KEYNO from dy_inverter_data where DATE(Conn_date) 
+			= CURDATE() and HOUR(Conn_date) = HOUR(now()) and HOUR(Conn_date) > 8 and 
+			(Work_Mode = 'Fault' or Work_Mode = 'Wait') group by DP_KEYNO -->
+		SELECT DISTINCT DP_KEYNO
+		FROM dy_inverter_data
+		WHERE Work_Mode IN ('Fault','Wait')
+		AND HOUR(NOW()) > 8 
+  			<![CDATA[
+  			AND Conn_date >= NOW() - INTERVAL MINUTE(NOW()) MINUTE - INTERVAL SECOND(NOW()) SECOND
+  			AND Conn_date <  (NOW() - INTERVAL MINUTE(NOW()) MINUTE - INTERVAL SECOND(NOW()) SECOND) + INTERVAL 1 HOUR;
+  			]]>
+	</select>
+
+	<update id="update_maindb_fault" parameterType="String">
+		update
+		dy_inverter_data_main
+		set DDM_STATUS = '장애'
+		where DDM_DPP_KEYNO = #{l}
+		and DATE(DDM_DATE) = CURDATE() AND HOUR(DDM_DATE) BETWEEN 8 AND 18
+		order by DDM_DATE desc
+		limit 1
+	</update>
+
+	<!-- 최신 날짜 조회 -->
+	<select id="recent_date" resultType="String">
+		<!-- SELECT Conn_date FROM( SELECT * FROM dy_inverter_data WHERE DATE(Conn_date) 
+			= CURDATE() and DP_KEYNO = #{keyno} and Daily_Generation != '0' <![CDATA[ 
+			AND TIME(Conn_date) <= '20:30:00' ]]> ORDER BY Conn_date DESC LIMIT 100 )A 
+			GROUP BY A.DI_NAME -->
+		<![CDATA[
+			WITH last100 AS (
+	  		SELECT DP_KEYNO, DI_NAME, Conn_date
+	  		FROM dy_inverter_data
+	  		WHERE DP_KEYNO = #{keyno}
+	    	AND Conn_date >= CURDATE()
+	    	AND Conn_date <  TIMESTAMP(CURDATE(), '20:30:00')
+	    	AND Daily_Generation <> 0
+	  		ORDER BY Conn_date DESC
+	  		LIMIT 100
+			)
+			SELECT MAX(l.Conn_date) AS Conn_date
+			FROM last100 l
+			GROUP BY l.DI_NAME
+			ORDER BY Conn_date DESC;
+		]]>
+	</select>
+
+
+	<!-- 일일 삭제 -->
+	<delete id="deleteToday">
+		DELETE
+		FROM dy_inverter_data
+		WHERE Conn_date not in
+		<foreach item="l" index="index" collection="list" open="("
+			separator="," close=")">
+			#{l}
+		</foreach>
+		AND DATE(Conn_date) = CURDATE()
+		AND DP_KEYNO = #{keyno}
+	</delete>
+
+	<!-- 메인삭제 -->
+	<delete id="deleteMain">
+		<![CDATA[
+			DELETE m
+			FROM dy_inverter_data_main m
+			LEFT JOIN (
+			  SELECT DDM_DATE 
+			  FROM dy_inverter_data_main 
+			  WHERE DDM_DATE >= CURDATE() 
+			    AND DDM_DATE < CURDATE() + INTERVAL 1 DAY
+			    AND DDM_DPP_KEYNO = #{keyno}
+			    AND DDM_D_DATA != '0'
+			  ORDER BY DDM_DATE DESC
+			  LIMIT 1
+			) s
+			ON m.DDM_DATE = s.DDM_DATE
+			WHERE s.DDM_DATE IS NULL
+			  AND m.DDM_DATE >= CURDATE()
+			  AND m.DDM_DATE < CURDATE() + INTERVAL 1 DAY
+			  AND m.DDM_DPP_KEYNO = #{keyno};
+		]]>
+	</delete>
+
+
+	<!-- 예측을 위한 데이터 정리 -->
+	<select id="selectHourData" resultType="hashmap">
+		SELECT *
+		FROM (
+		SELECT DP_KEYNO, DI_NAME , Daily_Generation, date_format(Conn_date,'%Y-%m-%d
+		%H:00:00') as DATETIEMS
+		FROM dy_inverter_data
+		WHERE DP_KEYNO = #{keyno}
+		AND date_format(Conn_date, '%Y-%m-%d') = date_format(now(), '%Y-%m-%d')
+		ORDER BY DI_NAME , Conn_date DESC
+		LIMIT 100000
+		)A
+		GROUP BY DI_NAME, DATETIEMS
+	</select>
+
+	<!-- 데이터 등록 -->
+	<insert id="insertHourData">
+
+		INSERT INTO dy_predict_dataset
+		(
+		keyno,
+		name,
+		power,
+		dateTimes
+		) VALUES
+		<foreach item="l" collection="list" separator=",">
+			(
+			#{l.DP_KEYNO},
+			#{l.DI_NAME},
+			#{l.Daily_Generation},
+			#{l.DATETIEMS}
+			)
+		</foreach>
+	</insert>
+
+	<!-- errorInsert: dy_inverter_error 저장, DIE_DPP_NAME은 dy_power_plant에서 DP_KEYNO로 조회 -->
+	<insert id="insertInverterError" parameterType="com.tx.dyUser.dto.SerialDTO">
+		INSERT INTO dy_inverter_error (
+			DIE_DPP_KEYNO,
+			DIE_DPP_NAME,
+			DIE_INVERTER_NAME,
+			DIE_DSP_ERROR,
+			DIE_DSP_S_ERROR
+		) VALUES (
+			#{DP_KEYNO},
+			(SELECT DPP_NAME FROM dy_power_plant WHERE DPP_KEYNO = #{DP_KEYNO} LIMIT 1),
+			#{DI_NAME},
+			#{DSP_Error_Code},
+			#{Slave_DSP_ErrorCode}
+		)
+	</insert>
+
+
+	<!-- 예측 부분 출력 -->
+	<select id="PrecSelect" resultType="hashmap">
+		SELECT B.* , C.Dday , ABS(((B.typeA-C.Dday)/Dday)*100) as perA,
+		ABS(((B.typeB-C.Dday)/Dday)*100) as perB
+		FROM (
+		SELECT IFNULL(avg(pt_power_next),0) as typeA, IFNULL(avg(pt_heazoom),0) as
+		typeB , date_format(pt_date + interval 1 day,'%Y-%m-%d') as formatd,
+		pt_area,pt_volum
+		FROM predict_table
+		group by formatd
+		order by formatd DESC
+		)B
+		LEFT JOIN (
+		SELECT *
+		FROM(
+		SELECT date_format(Conn_date,'%Y-%m-%d') as formatd , (Daily_Generation*2)
+		as Dday ,DP_KEYNO , DI_NAME
+		FROM dy_inverter_data
+		WHERE DP_KEYNO = #{keyno}
+		AND DI_NAME = '인버터 1호'
+		ORDER BY Conn_date desc
+		LIMIT 10000
+		)A
+		group by formatd
+		order by formatd DESC
+		)C
+		on B.formatd = C.formatd
+		where pt_area = #{area}
+		and pt_volum = #{volum}
+		limit 5
+	</select>
+
+	<!-- 온습도 센서값 -->
+	<select id="sensorData" resultType="hashmap">
+		SELECT * , date_format(insert_date,'%Y-%m-%d %H:00') as datetimes
+		FROM sensortable
+		order by insert_date desc
+	</select>
+
+
+	<!-- <select id="pospump_data" resultType="hashmap"> -->
+	<!-- SELECT * FROM korea_pospump_data -->
+	<!-- ORDER BY kpd_conn DESC -->
+	<!-- LIMIT 5 -->
+	<!-- </select> -->
+
+	<select id="pospump_data_main" resultType="hashmap">
+		<![CDATA[
+			SELECT 
+				g.kpd_Date,
+				ROUND(g.발전량_kWh - IFNULL(e.잉여전력_kWh, 0), 3) AS a4,
+				IFNULL(e.잉여전력_kWh, 0) AS a5
+			FROM
+			(
+				/* 발전량(kWh): 일 마지막 누적 - 전일 마지막 누적 */
+				SELECT
+					ymd AS kpd_Date,
+					ROUND(gen_end - LAG(gen_end) OVER (ORDER BY ymd), 3) AS 발전량_kWh
+				FROM (
+					SELECT
+						ymd,
+						MAX(gen_kwh) AS gen_end
+					FROM (
+						/* 과거 */
+						SELECT
+							DATE(STR_TO_DATE(Conn_date, '%Y-%m-%d %H:%i:%s')) AS ymd,
+							CAST(Cumulative_Generation AS DECIMAL(18,3)) AS gen_kwh
+						FROM monitering.dy_detail_data
+						WHERE DP_KEYNO = '63'
+							AND Conn_date IS NOT NULL
+							AND Cumulative_Generation IS NOT NULL
+							AND STR_TO_DATE(Conn_date, '%Y-%m-%d %H:%i:%s') >= DATE_SUB(CURDATE(), INTERVAL 10 DAY)
+
+						UNION ALL
+
+						/* 오늘 */
+						SELECT
+							DATE(Conn_date) AS ymd,
+							CAST(Cumulative_Generation AS DECIMAL(18,3)) AS gen_kwh
+						FROM monitering.dy_inverter_data
+						WHERE DP_KEYNO = '63'
+							AND Conn_date IS NOT NULL
+							AND Cumulative_Generation IS NOT NULL
+							AND Conn_date >= CURDATE()
+					) u
+					GROUP BY ymd
+				) d
+			) g
+			LEFT JOIN
+			(
+				/* 잉여전력(kWh): 음수 W만 → (-W)*60/3600*0.001 */
+				SELECT
+					DATE(kpd_conn) AS kpd_Date,
+					ROUND(
+						SUM(
+							CASE WHEN CAST(kpd_data4 AS SIGNED) < 0
+								 THEN (-CAST(kpd_data4 AS SIGNED)) * 60 / 3600 * 0.001
+								 ELSE 0
+							END
+						)
+					, 3) AS 잉여전력_kWh
+				FROM monitering.korea_pospump_data
+				WHERE kpd_conn >= DATE_SUB(CURDATE(), INTERVAL 10 DAY)
+					AND kpd_conn IS NOT NULL
+					AND kpd_data4 IS NOT NULL
+				GROUP BY DATE(kpd_conn)
+			) e
+			ON e.kpd_Date = g.kpd_Date
+			WHERE g.kpd_Date >= DATE_SUB(CURDATE(), INTERVAL 5 DAY)
+			ORDER BY g.kpd_Date DESC
+			LIMIT 5
+		]]>
+	</select>
+	
+
+
+</mapper>

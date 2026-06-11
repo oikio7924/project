@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="sub2"> 
+	
+	<select id="select_inverterData_date_1" resultType="hashmap">
+		SELECT DP_KEYNO ,DI_NAME ,Active_Power ,Conn_date 
+	   	FROM dy_inverter_data where DP_KEYNO = #{type}
+	   	AND date_format(Conn_date, '%Y-%m-%d') = date_format(now(), '%Y-%m-%d')
+	</select>
+	
+	<delete id="deleteMain">
+		<![CDATA[
+			DELETE  FROM dy_inverter_data_main 
+				WHERE DDM_DATE < (SELECT DDM_DATE FROM dy_inverter_data_main WHERE date_format(DDM_DATE,'%Y-%m-%d') =  date_format(now() - interval #{day} day,'%Y-%m-%d') 
+				AND DDM_DPP_KEYNO = #{keyno} 
+				ORDER BY DDM_DATE DESC LIMIT 1 ) 
+			AND date_format(DDM_DATE,'%Y-%m-%d') =  date_format(now() - interval #{day} day ,'%Y-%m-%d') 
+			AND DDM_DPP_KEYNO = #{keyno} 
+		]]>
+	</delete>
+	
+	<select id="recent_date" resultType="String"> 
+		<!-- SELECT Conn_date FROM( 
+			SELECT * FROM dy_inverter_data 
+			WHERE DATE(Conn_date) = DATE(now() - interval #{day} day) 
+			and DP_KEYNO = #{keyno} 
+			ORDER BY Conn_date DESC LIMIT 100
+			SELECT *
+			FROM dy_inverter_data
+			WHERE DP_KEYNO = #{keyno}
+			<![CDATA[  
+			  AND Conn_date >= (CURDATE() - INTERVAL #{day} DAY)
+			  AND Conn_date <  ((CURDATE() - INTERVAL #{day} DAY)+ INTERVAL 1 DAY) 
+			]]>
+			ORDER BY Conn_date DESC
+			LIMIT 100
+		)A
+		GROUP BY A.DI_NAME -->
+		
+		SELECT  MAX(t.Conn_date) AS Conn_date
+		FROM dy_inverter_data t
+		WHERE t.DP_KEYNO = #{keyno}
+		<![CDATA[  
+			  AND Conn_date >= (CURDATE() - INTERVAL #{day} DAY)
+			  AND Conn_date <  ((CURDATE() - INTERVAL #{day} DAY)+ INTERVAL 1 DAY) 
+		]]>
+		GROUP BY t.DI_NAME
+		ORDER BY Conn_date DESC
+	</select>
+	
+	<delete id="deleteToday">
+		DELETE
+ 		FROM dy_inverter_data
+	    WHERE Conn_date not in 
+	    <foreach item="l" index="index" collection="list" open="(" separator="," close=")">
+			#{l}	    
+	    </foreach>
+	    AND DATE(Conn_date) = DATE(now() - interval #{day} day)
+	    AND DP_KEYNO = #{keyno}
+	</delete>
+	
+	
+	<!-- 25/11/06 dy_detail_data 에서 전날 데이터 조회 -->
+	<select id="detailselect" resultType="hashmap">
+		WITH detailselect AS 
+		(
+			SELECT * FROM dy_detail_data WHERE DP_KEYNO =#{keyno} ORDER BY Conn_date DESC LIMIT 100
+		 )
+		 SELECT * FROM detailselect 
+		 <![CDATA[
+		 WHERE Conn_date >= NOW() - interval 2 day
+		 AND   Conn_date < NOW() -  interval 1 day
+		 ]]>
+		 GROUP BY DI_NAME
+	</select>
+	
+	
+	
+	<insert id="insertInverterData" parameterType="Serial">
+		INSERT INTO dy_inverter_data
+		(
+			DP_KEYNO, DI_NAME,
+			Vpv1, Ipv1, Vpv2, Ipv2, Vpv3, Ipv3, Vpv4, Ipv4, Vpv5, Ipv5,
+			Vpv6, Ipv6, Vpv7, Ipv7, Vpv8, Ipv8, Vpv9, Ipv9, Vpv10, Ipv10,
+			Vpv11, Ipv11, Vpv12, Ipv12, Vpv13, Ipv13, Vpv14, Ipv14, Vpv15, Ipv15,
+			Vpv16, Ipv16, Vpv17, Ipv17, Vpv18, Ipv18, Vpv19, Ipv19, Vpv20, Ipv20,
+			Vpv21, Ipv21, Vpv22, Ipv22, Vpv23, Ipv23, Vpv24, Ipv24,
+			voltage_of_phase_A_to_B, voltage_of_phase_B_to_C, voltage_of_phase_C_to_A,
+			Phase_voltage_of_phase_A, Phase_voltage_of_phase_B, Phase_voltage_of_phase_C,
+			Current_of_phase_A, Current_of_phase_B, Current_of_phase_C,
+			Active_Power, Grid_Frequency, Internal_temperature,
+			Cumulative_Generation, Daily_Generation, Cabinet_Temperature_2,
+			DSP_Error_Code, DSP_Alarm_Code, PV_String_Fault_Bit,
+			Temperature_Fault_Bit, Slave_DSP_ErrorCode, Slave_DSP_AlarmCode, Total_Generation_Hour,
+			Safety_Code, Work_Mode,
+			Frequency_of_phase_A, Frequency_of_phase_B, Frequency_of_phase_C,
+			Ppv1, Ppv2, Ppv3, Ppv4, Ppv5, Ppv6, Ppv7, Ppv8, Ppv9, Ppv10, Ppv11, Ppv12,
+			Phase, PowerCapacity, RatedLineVoltage,
+			Istr1, Istr2, Istr3, Istr4, Istr5, Istr6, Istr7, Istr8, Istr9, Istr10,
+			Istr11, Istr12, Istr13, Istr14, Istr15, Istr16, Istr17, Istr18, Istr19, Istr20,
+			Istr21, Istr22, Istr23, Istr24,
+			Conn_date
+		) 
+		VALUES
+		(
+			#{DP_KEYNO}, #{DI_NAME},
+			#{Vpv1}, #{Ipv1}, #{Vpv2}, #{Ipv2}, #{Vpv3}, #{Ipv3}, #{Vpv4}, #{Ipv4}, #{Vpv5}, #{Ipv5},
+			#{Vpv6}, #{Ipv6}, #{Vpv7}, #{Ipv7}, #{Vpv8}, #{Ipv8}, #{Vpv9}, #{Ipv9}, #{Vpv10}, #{Ipv10},
+			#{Vpv11}, #{Ipv11}, #{Vpv12}, #{Ipv12}, #{Vpv13}, #{Ipv13}, #{Vpv14}, #{Ipv14}, #{Vpv15}, #{Ipv15},
+			#{Vpv16}, #{Ipv16}, #{Vpv17}, #{Ipv17}, #{Vpv18}, #{Ipv18}, #{Vpv19}, #{Ipv19}, #{Vpv20}, #{Ipv20},
+			#{Vpv21}, #{Ipv21}, #{Vpv22}, #{Ipv22}, #{Vpv23}, #{Ipv23}, #{Vpv24}, #{Ipv24},
+			#{voltage_of_phase_A_to_B}, #{voltage_of_phase_B_to_C}, #{voltage_of_phase_C_to_A},
+			#{Phase_voltage_of_phase_A}, #{Phase_voltage_of_phase_B}, #{Phase_voltage_of_phase_C},
+			#{Current_of_phase_A}, #{Current_of_phase_B}, #{Current_of_phase_C},
+			#{Active_Power}, #{Grid_Frequency}, #{Internal_temperature},
+			#{Cumulative_Generation}, #{Daily_Generation}, #{Cabinet_Temperature_2},
+			#{DSP_Error_Code}, #{DSP_Alarm_Code}, #{PV_String_Fault_Bit},
+			#{Temperature_Fault_Bit}, #{Slave_DSP_ErrorCode}, #{Slave_DSP_AlarmCode}, #{Total_Generation_Hour},
+			#{Safety_Code}, #{Work_Mode},
+			#{Frequency_of_phase_A}, #{Frequency_of_phase_B}, #{Frequency_of_phase_C},
+			#{Ppv1}, #{Ppv2}, #{Ppv3}, #{Ppv4}, #{Ppv5}, #{Ppv6}, #{Ppv7}, #{Ppv8}, #{Ppv9}, #{Ppv10}, #{Ppv11}, #{Ppv12},
+			#{Phase}, #{PowerCapacity}, #{RatedLineVoltage},
+			#{Istr1}, #{Istr2}, #{Istr3}, #{Istr4}, #{Istr5}, #{Istr6}, #{Istr7}, #{Istr8}, #{Istr9}, #{Istr10},
+			#{Istr11}, #{Istr12}, #{Istr13}, #{Istr14}, #{Istr15}, #{Istr16}, #{Istr17}, #{Istr18}, #{Istr19}, #{Istr20},
+			#{Istr21}, #{Istr22}, #{Istr23}, #{Istr24},
+			NOW()
+		)
+	</insert>
+	
+	<!-- noData 저장: 데이터 부족 시 5개 필드만 저장 -->
+	<insert id="insertNoData" parameterType="Serial">
+		INSERT INTO dy_inverter_data
+		(
+			DP_KEYNO,
+			DI_NAME,
+			Cumulative_Generation,
+			Daily_Generation,
+			Work_Mode,
+			Conn_date
+		)
+		VALUES
+		(
+			#{DP_KEYNO},
+			#{DI_NAME},
+			#{Cumulative_Generation},
+			#{Daily_Generation},
+			#{Work_Mode},
+			NOW()
+		)
+	</insert>
+	
+	
+	<select id="inverterSelect" parameterType="Serial"  resultType="hashmap">
+		SELECT * FROM dy_power_plant WHERE DPP_KEYNO = #{DP_KEYNO}
+	</select>
+	
+	<!-- 어제 최신 누적값 조회 (Daily Generation 검증용). RTU 일일검증에서 Conn_date로 전일 여부 확인 -->
+	<select id="previousCumulative" parameterType="Serial" resultType="hashmap">
+		SELECT Cumulative_Generation, Conn_date
+		FROM dy_inverter_data
+		WHERE DP_KEYNO = #{DP_KEYNO}
+		AND DI_NAME = #{DI_NAME}
+		AND DATE(Conn_date) = DATE(NOW() - INTERVAL 1 DAY)
+		ORDER BY Conn_date DESC
+		LIMIT 1
+	</select>
+	
+	<!-- dy_inverter_data_main 저장 -->
+	<insert id="insertMainData" parameterType="Serial">
+		INSERT INTO dy_inverter_data_main
+		(
+			DDM_DPP_KEYNO,
+			DDM_P_DATA,
+			DDM_D_DATA,
+			DDM_T_HOUR,
+			DDM_STATUS,
+			DDM_ACTIVE_P,
+			DDM_CUL_DATA,
+			DDM_DATE
+		)
+		VALUES
+		(
+			#{DDM_DPP_KEYNO},
+			#{DDM_P_DATA},
+			#{DDM_D_DATA},
+			#{DDM_T_HOUR},
+			#{DDM_STATUS},
+			#{DDM_ACTIVE_P},
+			#{DDM_CUL_DATA},
+			NOW()
+		)
+	</insert>
+	
+	<!-- 어제 발전량 조회 -->
+	<select id="select_prePower" resultType="hashmap">
+		SELECT 
+			IFNULL(SUM(C.dpower), 0) as dPower, 
+			IFNULL(MAX(C.Total_Generation_Hour), 0) as Total_Generation_Hour
+		FROM (
+			SELECT 
+				sum(Daily_Generation) as dpower, 
+				DI_NAME, 
+				Conn_date, 
+				Total_Generation_Hour
+			FROM dy_inverter_data 
+			WHERE DP_KEYNO = #{keyno}
+			AND DATE_FORMAT(Conn_date, '%Y-%m-%d') = DATE_FORMAT(now() - interval 1 DAY, '%Y-%m-%d')
+			GROUP BY DI_NAME
+		) C
+	</select>
+	
+	<!-- 당일 발전량, 누적 발전량, 현재 발전량 조회 -->
+	<select id="select_Power" resultType="hashmap">
+		SELECT 
+			IFNULL(sum(B.Daily_Generation), 0) as today_power,
+			IFNULL(sum(B.Cumulative_generation), 0) as cumulative_power,
+			IFNULL(sum(B.Active_Power), 0) as active_power
+		FROM (
+			SELECT * 
+			FROM (
+				SELECT * 
+				FROM dy_inverter_data 
+				WHERE DP_KEYNO = #{keyno}
+				AND date_format(Conn_date, '%Y-%m-%d') = date_format(now(), '%Y-%m-%d')
+				ORDER BY Conn_date desc 
+				LIMIT 100
+			) A
+			GROUP BY A.DI_NAME
+		) B
+	</select>
+	
+	<!-- Orange Pi LCD API: 당일 발전소 전체 인버터 최신 데이터 (인버터별 1건, 전체 컬럼) -->
+	<select id="Lcd_inverter_data" resultType="hashmap">
+		SELECT A.DI_NAME, A.Active_Power, A.Daily_Generation, A.Cumulative_Generation, A.Work_Mode,
+			A.Vpv1, A.Ipv1, A.Vpv2, A.Ipv2, A.Vpv3, A.Ipv3, A.Vpv4, A.Ipv4, A.Vpv5, A.Ipv5,
+			A.Vpv6, A.Ipv6, A.Vpv7, A.Ipv7, A.Vpv8, A.Ipv8, A.Vpv9, A.Ipv9, A.Vpv10, A.Ipv10,
+			A.Vpv11, A.Ipv11, A.Vpv12, A.Ipv12, A.Vpv13, A.Ipv13, A.Vpv14, A.Ipv14, A.Vpv15, A.Ipv15,
+			A.Vpv16, A.Ipv16, A.Vpv17, A.Ipv17, A.Vpv18, A.Ipv18, A.Vpv19, A.Ipv19, A.Vpv20, A.Ipv20, A.Vpv21, A.Ipv21,
+			A.voltage_of_phase_A_to_B, A.voltage_of_phase_B_to_C, A.voltage_of_phase_C_to_A,
+			A.Phase_voltage_of_phase_A, A.Phase_voltage_of_phase_B, A.Phase_voltage_of_phase_C,
+			A.Current_of_phase_A, A.Current_of_phase_B, A.Current_of_phase_C, A.Grid_Frequency, A.Conn_date
+		FROM dy_inverter_data A
+		INNER JOIN (
+			SELECT DI_NAME, MAX(Conn_date) AS MaxConn
+			FROM dy_inverter_data
+			WHERE DP_KEYNO = #{keyno}
+			AND DATE(Conn_date) = CURDATE()
+			GROUP BY DI_NAME
+		) B ON A.DI_NAME = B.DI_NAME AND A.Conn_date = B.MaxConn
+		WHERE A.DP_KEYNO = #{keyno}
+		AND DATE(A.Conn_date) = CURDATE()
+		ORDER BY A.DI_NAME
+	</select>
+	
+	<!-- Orange Pi API: 당일 해당 인버터 최신 1건 (checkData) -->
+	<select id="Check_data" parameterType="Serial" resultType="hashmap">
+		SELECT Cumulative_Generation, Daily_Generation, Conn_date
+		FROM dy_inverter_data
+		WHERE DP_KEYNO = #{DP_KEYNO}
+		AND DI_NAME = #{DI_NAME}
+		AND DATE(Conn_date) = CURDATE()
+		ORDER BY Conn_date DESC
+		LIMIT 1
+	</select>
+	
+	<!-- Orange Pi API: 전일 해당 인버터 누적 1건 (preAllData) -->
+	<select id="PreAll_data" parameterType="Serial" resultType="hashmap">
+		SELECT Cumulative_Generation
+		FROM dy_inverter_data
+		WHERE DP_KEYNO = #{DP_KEYNO}
+		AND DI_NAME = #{DI_NAME}
+		AND DATE(Conn_date) = DATE(NOW() - INTERVAL 1 DAY)
+		ORDER BY Conn_date DESC
+		LIMIT 1
+	</select>
+	
+	<!-- Orange Pi 일일검증: 오늘 첫 Normal 기록의 Daily_Generation (Work_Mode가 Normal인 당일 최초 1건) -->
+	<select id="todayFirstNormalDailyGeneration" parameterType="Serial" resultType="hashmap">
+		SELECT Daily_Generation
+		FROM dy_inverter_data
+		WHERE DP_KEYNO = #{DP_KEYNO}
+		AND DI_NAME = #{DI_NAME}
+		AND DATE(Conn_date) = CURDATE()
+		AND LOWER(TRIM(IFNULL(Work_Mode,''))) = 'normal'
+		ORDER BY Conn_date ASC
+		LIMIT 1
+	</select>
+	
+	<!-- Orange Pi 일일검증: 오늘 첫 Normal 기록의 Cumulative_Generation -->
+	<select id="todayFirstNormalCumulative" parameterType="Serial" resultType="hashmap">
+		SELECT Cumulative_Generation
+		FROM dy_inverter_data
+		WHERE DP_KEYNO = #{DP_KEYNO}
+		AND DI_NAME = #{DI_NAME}
+		AND DATE(Conn_date) = CURDATE()
+		AND LOWER(TRIM(IFNULL(Work_Mode,''))) = 'normal'
+		ORDER BY Conn_date ASC
+		LIMIT 1
+	</select>
+	
+	<!-- Orange Pi 일일검증: 오늘 첫 기록의 Cumulative_Generation (상태 무관) -->
+	<select id="todayFirstCumulative" parameterType="Serial" resultType="hashmap">
+		SELECT Cumulative_Generation
+		FROM dy_inverter_data
+		WHERE DP_KEYNO = #{DP_KEYNO}
+		AND DI_NAME = #{DI_NAME}
+		AND DATE(Conn_date) = CURDATE()
+		ORDER BY Conn_date ASC
+		LIMIT 1
+	</select>
+	
+	<!-- 최신 Work_Mode 조회: 인버터별 최신 1건만 보고, 하나라도 normal이 아니면 그에 맞게 표시 (우선순위: Fault > Wait > noData > 정상) -->
+	<select id="select_WorkMode" resultType="hashmap">
+		SELECT
+			CASE
+				WHEN SUM(CASE WHEN LOWER(TRIM(IFNULL(A.Work_Mode,''))) IN ('fault') THEN 1 ELSE 0 END) > 0 THEN 'Fault'
+				WHEN SUM(CASE WHEN LOWER(TRIM(IFNULL(A.Work_Mode,''))) IN ('wait') THEN 1 ELSE 0 END) > 0 THEN 'Wait'
+				WHEN SUM(CASE WHEN LOWER(TRIM(IFNULL(A.Work_Mode,''))) IN ('nodata','no data') THEN 1 ELSE 0 END) > 0 THEN 'noData'
+				ELSE 'normal'
+			END as work_mode
+		FROM dy_inverter_data A
+		INNER JOIN (
+			SELECT DP_KEYNO, DI_NAME, MAX(Conn_date) as MaxConn
+			FROM dy_inverter_data
+			WHERE DP_KEYNO = #{keyno}
+			AND date_format(Conn_date, '%Y-%m-%d') = date_format(now(), '%Y-%m-%d')
+			GROUP BY DP_KEYNO, DI_NAME
+		) B ON A.DP_KEYNO = B.DP_KEYNO AND A.DI_NAME = B.DI_NAME AND A.Conn_date = B.MaxConn
+		WHERE date_format(A.Conn_date, '%Y-%m-%d') = date_format(now(), '%Y-%m-%d')
+	</select>
+	
+	<!-- 오늘 날짜의 dy_inverter_data_main 데이터 삭제 -->
+	<delete id="deleteMainToday">
+		DELETE FROM dy_inverter_data_main 
+		WHERE DDM_DPP_KEYNO = #{keyno}
+		AND date_format(DDM_DATE, '%Y-%m-%d') = date_format(now(), '%Y-%m-%d')
+	</delete>
+	
+	<!-- 10년 넘은 dy_inverter_data 데이터 완전 삭제 -->
+	<delete id="deleteOver2Years" parameterType="String">
+		DELETE FROM dy_inverter_data 
+		<![CDATA[
+		WHERE Date(Conn_date) < date_sub(DATE(now()), interval 10 year)
+		]]>
+		AND DP_KEYNO = #{keyno}
+	</delete>
+	
+	<!-- 10년 넘은 dy_inverter_data_main 데이터 완전 삭제 -->
+	<delete id="deleteMainOver2Years" parameterType="String">
+		DELETE FROM dy_inverter_data_main 
+		<![CDATA[
+		WHERE Date(DDM_DATE) < date_sub(DATE(now()), interval 10 year)
+		]]>
+		AND DDM_DPP_KEYNO = #{keyno}
+	</delete>
+	
+	<!-- dy_inverter_data 중복 데이터 삭제 (같은 날짜, 같은 발전소, 같은 인버터 중 최신값만 남김) -->
+	<delete id="deleteDuplicateInverterData" parameterType="String">
+		DELETE t1 FROM dy_inverter_data t1
+		INNER JOIN (
+			SELECT DP_KEYNO, DI_NAME, DATE(Conn_date) as conn_date, MAX(Conn_date) as max_conn_date
+			FROM dy_inverter_data
+			WHERE DP_KEYNO = #{keyno}
+			GROUP BY DP_KEYNO, DI_NAME, DATE(Conn_date)
+			HAVING COUNT(*) > 1
+		) t2
+		ON t1.DP_KEYNO = t2.DP_KEYNO
+		AND t1.DI_NAME = t2.DI_NAME
+		AND DATE(t1.Conn_date) = t2.conn_date
+		AND t1.Conn_date &lt; t2.max_conn_date
+	</delete>
+	
+	<!-- dy_inverter_data_main 중복 데이터 삭제 (같은 날짜, 같은 발전소 중 최신값만 남김) -->
+	<delete id="deleteDuplicateMainData" parameterType="String">
+		DELETE t1 FROM dy_inverter_data_main t1
+		INNER JOIN (
+			SELECT DDM_DPP_KEYNO, DATE(DDM_DATE) as ddm_date, MAX(DDM_DATE) as max_ddm_date
+			FROM dy_inverter_data_main
+			WHERE DDM_DPP_KEYNO = #{keyno}
+			GROUP BY DDM_DPP_KEYNO, DATE(DDM_DATE)
+			HAVING COUNT(*) > 1
+		) t2
+		ON t1.DDM_DPP_KEYNO = t2.DDM_DPP_KEYNO
+		AND DATE(t1.DDM_DATE) = t2.ddm_date
+		AND t1.DDM_DATE &lt; t2.max_ddm_date
+	</delete>
+</mapper>

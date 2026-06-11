@@ -1,0 +1,58 @@
+@CHARSET "UTF-8";
+
+@import url(https://fonts.googleapis.com/earlyaccess/notosanskr.css);
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, font, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td, img {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-weight: inherit;
+	font-style: inherit;
+	font-family: inherit;
+	vertical-align: baseline;
+	font-family:  'Noto Sans KR', sans-serif;
+	box-sizing:border-box; -webkit-box-sizing:border-box; -moz-box-sizing:border-box; 
+}
+
+img {border:0;font-size:0}   
+html {font-size:14px; width:100%; height:100%;}
+html, body {position: relative}
+ul {margin: 0; padding: 0;}
+ul li {list-style: none;}
+
+table { border-collapse:collapse; word-break:break-all;}
+
+button::-moz-focus-inner,
+input::-moz-focus-inner {
+    border: 0;
+    padding: 0;
+}
+
+
+.btn {margin-left:3px;}
+.pointer {cursor:pointer;}
+.clear {clear:both;}
+.col-12 {width:100%}
+
+.textL {text-align:left !important;}
+.textR {text-align:right !important;}
+.textC {text-align:center !important;}
+
+label {display: block;word-break: keep-all;}
+
+
+/* 로딩박스 */
+.loading_box{width:100%; height:100%; position: fixed; top:0; left:0; z-index: 20000 ; display: none; }
+.loading_box .bg{width:100%; position: absolute; top:0; left: 0; height: 100%; background-color: #000; opacity : 0.5; }
+.loading_box img{position: absolute; top:50%; margin-top: -150px; left: 50%; margin-left: -150px; }
+
+
+.necessT{text-align: right;  margin: 10px 0;}
+.necessT .colorR, .control-label span, .nessSpan{color:red;}

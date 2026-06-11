@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Code"> 
+  
+		
+  	
+  	 <!-- 메인코드 리스트 호출 -->
+	<select id="MC_GetList" resultType="MainCode">
+    	<![CDATA[ 
+    		SELECT 	* 
+    		FROM s_common_code_main
+    		WHERE 	MC_SYS_YN	=	'N'
+    	]]>
+	</select> 
+	
+	<!-- 서브코드 리스트 호출 -->
+	<select id="SC_GetList" resultType="SubCode" parameterType="String">
+    	<![CDATA[ 
+    		SELECT * 
+    		FROM s_common_code_sub
+    		WHERE 	SC_MC_IN_C 	= 	#{MC_IN_C}
+    		AND		SC_USE_YN	=	'Y'
+    		ORDER 	BY 	SC_CODELV
+    	]]>
+	</select>
+	
+	<!-- 메인코드 상세정보 호출 -->
+	<select id="MC_Getdata" resultType="MainCode" parameterType="MainCode">
+    	<![CDATA[ 
+    		SELECT 	* 
+    		FROM s_common_code_main
+    		WHERE 	MC_IN_C = #{MC_IN_C}
+    	]]>
+	</select> 
+	
+	
+	<!-- 메인코드 내부코드 최대값 찾기 -->
+	<select id="MC_maxINC" resultType="String" parameterType="MainCode">
+    	<![CDATA[ 
+    		SELECT max(MC_IN_C)
+    		FROM s_common_code_main
+    	]]>
+	</select>
+	
+	<!-- 게시판 타입 삭제 -->	
+	<update id="MC_updatCode" parameterType="MainCode">
+	<![CDATA[
+		  UPDATE s_common_code_main 
+		  SET 		MC_CODENM 	=	 #{{MC_CODENM},
+	  				MC_USE_YN	=	#{{MC_USE_YN} ,
+	  				MC_MODDT	=	SYSDATE
+		  WHERE		MC_KEYNO 	= 	#{{MC_KEYNO}		
+	  	]]>
+	 </update>
+	 
+	 <update id="MC_updateDate">
+	<![CDATA[
+		  UPDATE s_common_code_main 
+		  SET 		MC_MODDT	=	SYSDATE
+		  WHERE		MC_IN_C 	= 	(
+		  	SELECT  SC_MC_IN_C FROM s_common_code_sub WHERE SC_KEYNO = #{SC_KEYNO}
+		  )
+	  	]]>
+	 </update>
+	
+	<!-- 메인코드 등록 -->
+	<insert id="MC_insertCode" parameterType="MainCode">
+	<![CDATA[
+		INSERT INTO s_common_code_main(
+			MC_KEYNO,
+			MC_CODENM,
+			MC_REGDT,
+			MC_IN_C,
+			MC_SYS_YN,
+			MC_USE_YN
+			)
+		VALUES(
+			#{{MC_KEYNO},
+			#{{MC_CODENM},
+			SYSDATE,
+			#{{MC_IN_C},
+			'N',
+			'Y'
+			)
+	]]>
+	</insert>
+	
+	<!-- 서브코드 상세보기 -->
+	<select id="SC_getDetail" resultType="SubCode" parameterType="SubCode">
+    	<![CDATA[ 
+    		SELECT 	*
+    		FROM s_common_code_sub
+    		WHERE 	SC_KEYNO	=	#{SC_KEYNO}
+    	]]>
+	</select>
+	
+	<!-- 서브코드 정렬순서 검사 -->
+	<select id="SC_countCODELV" resultType="int" parameterType="SubCode">
+    	<![CDATA[ 
+    		SELECT 	COUNT(*)
+    		FROM s_common_code_sub
+    		WHERE 	SC_CODELV	=	#{SC_CODELV}
+    		AND 	SC_MC_IN_C	=	#{SC_MC_IN_C}
+    	]]>
+	</select>
+	
+	<!-- 서브코드 논리 삭제 -->
+	<update id="SC_deleteCode" parameterType="SubCode">
+	<![CDATA[
+		  UPDATE s_common_code_sub
+		  SET 		SC_USE_YN	=	'N'
+		  WHERE		SC_KEYNO = #{SC_KEYNO}		
+	  	]]>
+	 </update>
+	
+	<!-- 서브코드 등록 -->
+	<insert id="SC_insertCode" parameterType="SubCode">
+	<![CDATA[
+		INSERT INTO s_common_code_sub(
+				SC_KEYNO,
+				SC_MC_IN_C,
+				SC_CODENM,
+				SC_CODEVAL01,
+				SC_CODEVAL02,
+				SC_CODELV,
+				SC_USE_YN
+			)
+		VALUES(
+				#{SC_KEYNO},
+				#{SC_MC_IN_C},
+				#{SC_CODENM},
+				#{SC_CODEVAL01},
+				#{SC_CODEVAL02},
+				#{SC_CODELV},
+				'Y'
+			)
+	]]>
+	</insert>
+	
+	
+	<!-- 서브코드 정렬 순서 재조정 -->
+	<update id="SC_ResetsubCodeLV" parameterType="SubCode">
+	<![CDATA[
+		  UPDATE s_common_code_sub
+		  SET 		SC_CODELV		=		SC_CODELV+1
+		  WHERE		SC_MC_IN_C 		= 		#{SC_MC_IN_C}
+		  AND		SC_CODELV		>=		#{SC_CODELV}		
+	  	]]>
+	 </update>
+	 
+	 <!-- 서브코드 수정 -->
+	<update id="SC_updateCode" parameterType="SubCode">
+	<![CDATA[
+		  UPDATE s_common_code_sub
+		  SET 		SC_CODENM			=		#{SC_CODENM},
+	  				SC_CODEVAL01		=		#{SC_CODEVAL01},
+	  				SC_CODEVAL02		=		#{SC_CODEVAL02},
+	  				SC_CODELV			=		#{SC_CODELV},
+	  				SC_USE_YN			=		#{SC_USE_YN}		
+		  WHERE		SC_KEYNO 			= 		#{SC_KEYNO}
+	  	]]>
+	 </update>
+  	
+  	<!-- 메인코드 리스트 호출 -->
+	<select id="AMC_GetList" resultType="MainCode">
+    	<![CDATA[ 
+    		SELECT * 
+    		FROM s_common_code_main
+    		WHERE MC_USE_YN = 'Y'
+    	]]>
+	</select> 
+	<!-- 서브코드 리스트 호출 -->
+	<select id="ASC_GetListAll" resultType="HashMap" parameterType="String">
+    	<![CDATA[ 
+    		SELECT * 
+    		FROM s_common_code_sub
+    		LEFT JOIN s_common_code_main MAIN
+    		ON SC_MC_IN_C = MAIN.MC_IN_C
+    		WHERE SC_MC_IN_C = #{MC_IN_C}
+    		AND	  MAIN.MC_USE_YN = 'Y'
+    		AND	  SC_USE_YN = 'Y'
+    		ORDER BY SC_CODELV
+    	]]>
+	</select>
+	
+	<!-- 서브코드 리스트 호출2 -->
+	<select id="ASC_GetListAll2" resultType="HashMap" >
+    	<![CDATA[ 
+    		SELECT *
+    		FROM s_common_code_sub
+    		LEFT JOIN s_common_code_main MAIN
+    		ON SC_MC_IN_C = MAIN.MC_IN_C
+    		ORDER BY SC_MC_IN_C,SC_CODELV
+    	]]>
+	</select>
+	
+	<select id="ASC_GetList" resultType="HashMap" parameterType="String">
+    	<![CDATA[ 
+    		SELECT * 
+    		FROM s_common_code_sub
+    		LEFT JOIN s_common_code_main MAIN
+    		ON SC_MC_IN_C = MAIN.MC_IN_C
+    		WHERE SC_MC_IN_C = #{MC_IN_C}
+    		AND		SC_USE_YN	=	'Y'
+    		ORDER BY SC_CODELV
+    	]]>
+	</select>
+		
+	
+	
+	<!-- 메인코드 상세정보 호출 -->
+	<select id="AMC_Getdata" resultType="MainCode" parameterType="MainCode">
+    	<![CDATA[ 
+    		SELECT * 
+    		FROM s_common_code_main
+    		WHERE MC_IN_C = #{MC_IN_C}
+    	]]>
+	</select> 
+	
+	<!-- 메인코드 내부코드 최대값 찾기 -->
+	<select id="AMC_maxINC" resultType="String" parameterType="MainCode">
+		<!-- 값이 없을때 A 이전값인 @를 넣어서 A@ -->
+    	<![CDATA[ 
+    		SELECT NVL(max(MC_IN_C),'A@')
+    		FROM s_common_code_main
+    	]]>
+	</select>
+	
+	
+	
+	<!-- 게시판 타입 삭제 -->	
+	<update id="AMC_updatCode" parameterType="MainCode">
+	<![CDATA[
+		  UPDATE s_common_code_main 
+		  SET 		MC_CODENM 	=	 	#{MC_CODENM},
+		  				MC_MODDT		=		SYSDATE
+		  WHERE		MC_KEYNO = #{MC_KEYNO}		
+	  	]]>
+	 </update>
+	
+	<!-- 메인코드 등록 -->
+	<insert id="AMC_insertCode" parameterType="MainCode">
+	<![CDATA[
+		INSERT INTO s_common_code_main(
+			MC_KEYNO,
+			MC_CODENM,
+			MC_REGDT,
+			MC_IN_C,
+			MC_SYS_YN,
+			MC_USE_YN
+			)
+		VALUES(
+			#{MC_KEYNO},
+			#{MC_CODENM},
+			SYSDATE,
+			#{MC_IN_C},
+			'N',
+			'Y'
+			)
+	]]>
+	</insert>
+	
+	<!-- 서브코드 상세보기 -->
+	<select id="ASC_getDetail" resultType="SubCode" parameterType="SubCode">
+    	<![CDATA[ 
+    		SELECT *
+    		FROM s_common_code_sub
+    		WHERE SC_KEYNO	=	#{SC_KEYNO}
+    	]]>
+	</select>
+	
+	<!-- 서브코드 정렬순서 검사 -->
+	<select id="ASC_countCODELV" resultType="int" parameterType="SubCode">
+    	<![CDATA[ 
+    		SELECT count(*)
+    		FROM s_common_code_sub
+    		WHERE SC_CODELV	=	#{SC_CODELV}
+    		AND SC_MC_IN_C	=	#{SC_MC_IN_C}
+    	]]>
+	</select>
+	
+	<!-- 서브코드 삭제 -->
+	<delete id="ASC_deleteCode" parameterType="SubCode">
+	<![CDATA[
+		  DELETE FROM s_common_code_sub
+		  WHERE		SC_KEYNO = #{SC_KEYNO}	
+	  	]]>
+	 </delete>
+	
+	<!-- 서브코드 등록 -->
+	<insert id="ASC_insertCode" parameterType="SubCode">
+	<![CDATA[
+		INSERT INTO s_common_code_sub(
+			SC_KEYNO,
+			SC_MC_IN_C,
+			SC_CODENM,
+			SC_CODEVAL01,
+			SC_CODEVAL02,
+			SC_CODELV,
+			SC_USE_YN
+			)
+		VALUES(
+			#{SC_KEYNO},
+			#{SC_MC_IN_C},
+			#{SC_CODENM},
+			#{SC_CODEVAL01},
+			#{SC_CODEVAL02},
+			#{SC_CODELV},
+			'Y'
+			)
+	]]>
+	</insert>
+	
+	
+	<!-- 서브코드 정렬 순서 재조정 -->
+	<update id="ASC_ResetsubCodeLV" parameterType="SubCode">
+	<![CDATA[
+		  UPDATE s_common_code_sub
+		  SET 		SC_CODELV		=		SC_CODELV+1
+		  WHERE		SC_MC_IN_C = #{SC_MC_IN_C}
+		  AND		SC_CODELV		>=		#{SC_CODELV}		
+	  	]]>
+	 </update>
+	 
+	 <!-- 서브코드 수정 -->
+	<update id="ASC_updateCode" parameterType="SubCode">
+	<![CDATA[
+		  UPDATE s_common_code_sub
+		  SET 		SC_CODENM			=		#{SC_CODENM},
+		  				SC_CODEVAL01		=		#{SC_CODEVAL01},
+		  				SC_CODEVAL02		=		#{SC_CODEVAL02},
+		  				SC_CODELV				=		#{SC_CODELV},
+		  				SC_USE_YN				=		#{SC_USE_YN}		
+		  WHERE		SC_KEYNO = #{SC_KEYNO}
+	  	]]>
+	 </update>
+	
+	
+
+	
+	<!-- 메인코드 삭제 -->
+	<update id="MC_delete" parameterType="MainCode">
+		UPDATE s_common_code_main
+		SET MC_USE_YN = 'N'
+		WHERE MC_KEYNO = #{MC_KEYNO} 
+	</update>
+  	 
+  	 <!-- 서브코드 키로 이름들 겟 -->
+  	 <select id="SC_getNameList" resultType="String" parameterType="hashmap">
+  	 	SELECT	LISTAGG(SC_CODENM,'|')  WITHIN GROUP (ORDER BY SC_KEYNO)
+  	 	FROM s_common_code_sub
+  	 	WHERE	SC_KEYNO IN
+  	 	<foreach collection="typeArray" item="type" open="(" close=")" separator=",">
+  	 		#{type}
+  	 	</foreach>
+  	 </select>
+  	 
+  
+  	 
+  	 
+</mapper>
+ 

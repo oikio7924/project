@@ -1,0 +1,4 @@
+/* 로딩박스 */
+.loading_box{width:100%; height:100%; position: fixed; top:0; left:0; z-index: 20000 ; display: none; }
+.loading_box .bg{width:100%; position: absolute; top:0; left: 0; height: 100%; background-color: #000; opacity : 0.5; }
+.loading_box img{position: absolute; top:50%; margin-top: -150px; left: 50%; margin-left: -150px; }

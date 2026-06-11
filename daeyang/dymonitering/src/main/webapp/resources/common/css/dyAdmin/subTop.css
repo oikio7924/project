@@ -1,0 +1,82 @@
+@charset "utf-8";
+/* CSS Document */
+
+
+
+/*********** 헤더 ***********/
+#top-hd {width: 100%; padding: 10px 40px 20px; background-color: #49acc6;}
+#top-hd:after { visibility: hidden;display:block;font-size: 0;content:".";clear: both;height: 0;*zoom:1;}
+#top-hd .logo-box {}
+#top-hd .logo-box .img-b {display: inline-block; vertical-align: middle;}
+#top-hd .logo-box .txt {display: inline-block; vertical-align: middle; padding-left: 10px; font-size: 25px; color: #fff; letter-spacing: 0;}
+#top-hd .logo-box .txt b {font-size: 1.1em; font-weight: 600;}
+
+@media screen and (max-width:1000px){
+
+	/*********** 헤더 ***********/
+	#top-hd {padding: 10px 10px 15px;}
+	#top-hd .logo-box {}
+	#top-hd .logo-box .img-b {}
+	#top-hd .logo-box .img-b img {width: 100px;}
+	#top-hd .logo-box .txt {padding-left: 10px; font-size: 15px;}
+}
+
+
+
+
+
+/*********** 탑 정보 ***********/
+#top-sec-info {width: 100%; background-color: #f5f6f7; padding: 20px 40px;}
+#top-sec-info:after { visibility: hidden;display:block;font-size: 0;content:".";clear: both;height: 0;*zoom:1;}
+
+#top-sec-info .info-sec-box {float: left; width: 75%;}
+#top-sec-info .info-sec-box ul {margin-top: 8px;margin-bottom: 0;}
+#top-sec-info .info-sec-box ul:after { visibility: hidden;display:block;font-size: 0;content:".";clear: both;height: 0;*zoom:1;}
+#top-sec-info .info-sec-box ul li {float: left;position: relative;padding: 0 20px;}
+#top-sec-info .info-sec-box ul li:before {content: ""; width: 1px; height: 90%; background-color: #647b92; position: absolute; left: 0; top: 5%;}
+#top-sec-info .info-sec-box ul li:first-child {padding-left: 0;}
+#top-sec-info .info-sec-box ul li:first-child:before {width:0; height: 0;}
+#top-sec-info .info-sec-box ul li .sbj {padding-left: 5px;margin-bottom: 2px;}
+#top-sec-info .info-sec-box ul li .sbj .icon {margin-right: 5px;}
+#top-sec-info .info-sec-box ul li .sbj .txt {font-size: 15px; font-weight: 500; color: #333;}
+#top-sec-info .info-sec-box ul li .in-con {
+    margin-bottom: 5px;
+}
+#top-sec-info .info-sec-box ul li .in-con .num {font-size: 35px;font-weight: 600;color: #647b92;line-height: 1;}
+#top-sec-info .info-sec-box ul li .in-con .num.green {color: #17b99b;}
+#top-sec-info .info-sec-box ul li .in-con .sm-tx {font-size: 15px; font-weight: 500; color: #333; padding-left: 3px;}
+#top-sec-info .info-sec-box ul li .co-p {font-size: 16px;font-weight: 400;color: #333;display: none;}
+
+#top-sec-info .info-select-box {float: right;width: 20%;-webkit-appearance: none;-webkit-border-radius: 0;-webkit-appearance: none;-moz-appearance: none;appearance: none;}
+#top-sec-info .info-select-box::-ms-expand { display:none; }
+.selc-festi {width: 100%; background-color: #fff; /* border:1px solid #dadbdb;  *//* padding: 7px 40px 7px 20px;  *//* background-image: url('/resources/img/icon/icon_ma_select_arrow.png'); background-repeat: no-repeat; background-size: right 20px center; */}
+
+
+@media screen and (max-width:1400px){
+
+	#top-sec-info .info-sec-box {float: none; width: 100%;}
+	#top-sec-info .info-select-box {float: none; width: 100%;}
+}
+
+@media screen and (max-width:1000px){
+	/*********** 탑 정보 ***********/
+	#top-sec-info {padding: 15px 20px;}
+
+	#top-sec-info .info-sec-box {float: none; width: 100%;}
+	#top-sec-info .info-sec-box ul {width: 100%;}
+	#top-sec-info .info-sec-box ul li {width:50%; padding:10px 20px;}
+	#top-sec-info .info-sec-box ul li:before {background-color: #ddd;}
+	#top-sec-info .info-sec-box ul li:nth-of-type(2n+1) {padding-left: 0; clear: both;}
+	#top-sec-info .info-sec-box ul li:nth-of-type(2n+1):before {width:0; height: 0;}
+	#top-sec-info .info-sec-box ul li .sbj {padding-left: 5px;}
+	#top-sec-info .info-sec-box ul li .sbj .icon {margin-right: 5px;}
+	#top-sec-info .info-sec-box ul li .sbj .icon img {width: 15px;}
+	#top-sec-info .info-sec-box ul li .sbj .txt {font-size: 12px; vertical-align: top;}
+	#top-sec-info .info-sec-box ul li .in-con {}
+	#top-sec-info .info-sec-box ul li .in-con .num {font-size: 21px;}
+	#top-sec-info .info-sec-box ul li .in-con .sm-tx {font-size: 12px;}
+	#top-sec-info .info-sec-box ul li .co-p {font-size: 14px;}
+
+	#top-sec-info .info-select-box {float: none; width: 100%; padding-top: 20px;}
+}
+

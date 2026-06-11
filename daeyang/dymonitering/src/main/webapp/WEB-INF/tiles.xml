@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+
+<tiles-definitions>
+
+	<!-- 
+				ADMIN
+	 -->
+	<definition name="admin" template="/WEB-INF/jsp/layout/dyAdmin/layout.jsp">
+		<put-attribute name="script" value="/WEB-INF/jsp/layout/dyAdmin/script.jsp"/>
+		<put-attribute name="css" value="/WEB-INF/jsp/layout/dyAdmin/css.jsp"/>
+		<put-attribute name="header" value="/WEB-INF/jsp/layout/dyAdmin/header.jsp"/>
+		<put-attribute name="subTop" value="/WEB-INF/jsp/layout/dyAdmin/subTop.jsp"/>
+		<put-attribute name="leftmenu" value="/WEB-INF/jsp/layout/dyAdmin/leftmenu.jsp"/>
+		<put-attribute name="ribbon" value="/WEB-INF/jsp/layout/dyAdmin/ribbon.jsp"/>
+		<put-attribute name="body" />
+		<put-attribute name="footer" value="/WEB-INF/jsp/layout/dyAdmin/footer.jsp"/>
+	</definition>
+	
+	<definition name="/*.adm" extends="admin">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}.jsp"/>
+	</definition>
+	<definition name="/*/*.adm" extends="admin">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}.jsp"/>
+	</definition>
+	<definition name="/*/*/*.adm" extends="admin">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}.jsp"/>
+	</definition>
+	<definition name="/*/*/*/*.adm" extends="admin">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}.jsp"/>
+	</definition>
+	<definition name="/*/*/*/*/*.adm" extends="admin">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}/{5}.jsp"/>
+	</definition>
+	<definition name="/*/*/*/*/*/*.adm" extends="admin">
+		<put-attribute name="body" value="/WEB-INF/jsp/{1}/{2}/{3}/{4}/{5}/{6}.jsp"/>
+	</definition>
+	
+	<!-- USER -->
+	<definition name="user">
+		<put-attribute name="meta" value="/WEB-INF/jsp/layout/user/meta.jsp"/>
+		<put-attribute name="script" value="/WEB-INF/jsp/layout/user/script.jsp"/>
+		<put-attribute name="css" value="/WEB-INF/jsp/layout/user/css.jsp"/>
+		<put-attribute name="header" value="/WEB-INF/jsp/layout/user/header.jsp"/>
+		<put-attribute name="leftmenu" value="/WEB-INF/jsp/layout/user/leftmenu.jsp"/>
+		<put-attribute name="ribbon" value="/WEB-INF/jsp/layout/user/ribbon.jsp"/>
+		<put-attribute name="subTop" value="/WEB-INF/jsp/layout/user/subTop.jsp"/>
+		<put-attribute name="rightTop" value="/WEB-INF/jsp/layout/user/rightTop.jsp"/>
+		<put-attribute name="body" value="/WEB-INF/jsp/user/{1}/{2}.jsp"/>
+		<put-attribute name="footer" value="/WEB-INF/jsp/layout/user/footer.jsp"/>
+	</definition>
+	
+	<!-- COMMON -->
+	<definition name="/user/*/**.common" extends="user" templateExpression="${commonLayout}">
+		<put-attribute name="body" value="/WEB-INF/jsp/user/{1}/{2}.jsp"/>
+	</definition>
+	
+	<!-- USER -->
+	<definition name="/user/*/**.user" extends="user" template="/WEB-INF/jsp/layout/user/defaultlayout/{1}/layout.jsp">
+		<put-attribute name="body" value="/WEB-INF/jsp/user/{1}/{2}.jsp"/>
+	</definition>
+	
+	<!-- publish -->
+	<definition name="/publish/*/**.user" extends="user" template="/WEB-INF/jsp/layout/user/defaultlayout/{1}/layout.jsp">
+		<put-attribute name="body" value="/WEB-INF/jsp/publish/{1}/{2}.jsp"/>
+	</definition>
+	
+	
+	
+	<!-- <definition name="en" template="/WEB-INF/jsp/layout/user/layout.jsp">
+		<put-attribute name="meta" value="/WEB-INF/jsp/layout/user/meta.jsp"/>
+		<put-attribute name="script" value="/WEB-INF/jsp/layout/user/script.jsp"/>
+		<put-attribute name="css" value="/WEB-INF/jsp/layout/user/css.jsp"/>
+		<put-attribute name="header" value="/WEB-INF/jsp/layout/user/en/header.jsp"/>
+		<put-attribute name="leftmenu" value="/WEB-INF/jsp/layout/user/en/leftmenu.jsp"/>
+		<put-attribute name="ribbon" value="/WEB-INF/jsp/layout/user/ribbon.jsp"/>
+		<put-attribute name="subTop" value="/WEB-INF/jsp/layout/user/subTop.jsp"/>
+		<put-attribute name="rightTop" value="/WEB-INF/jsp/layout/user/rightTop.jsp"/>
+		<put-attribute name="body" value="/WEB-INF/jsp/user/{1}/{2}.jsp"/>
+		<put-attribute name="footer" value="/WEB-INF/jsp/layout/user/footer.jsp"/>
+	</definition>
+	
+	COMMON
+	<definition name="/user/*/**.en" extends="user" templateExpression="${commonLayout}">
+		<put-attribute name="body" value="/WEB-INF/jsp/user/{1}/{2}.jsp"/>
+	</definition>
+	
+	USER
+	<definition name="/user/*/**.en" extends="user" template="/WEB-INF/jsp/layout/user/defaultlayout/{1}/layout.jsp">
+		<put-attribute name="body" value="/WEB-INF/jsp/user/{1}/{2}.jsp"/>
+	</definition>
+	
+	publish
+	<definition name="/publish/*/**.en" extends="user" template="/WEB-INF/jsp/layout/user/defaultlayout/{1}/layout.jsp">
+		<put-attribute name="body" value="/WEB-INF/jsp/publish/{1}/{2}.jsp"/>
+	</definition> -->
+	
+	
+</tiles-definitions>

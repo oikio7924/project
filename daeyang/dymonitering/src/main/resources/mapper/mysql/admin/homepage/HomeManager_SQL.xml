@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="HomeManager">
+	
+	<sql id="HM_getAdminListBody">
+		FROM (
+			SELECT	B.*
+					, @ROWNUM:=@ROWNUM+1 as COUNT
+			FROM (
+				SELECT		A.HM_KEYNO
+							, CASE HM_MN_HOMEDIV_C
+								WHEN 	#{HOMEPAGE_REP}	THEN '대표 도메인'
+								WHEN 	#{HOMEPAGE_ADMIN}	THEN '관리자 도메인'
+								ELSE	''
+							END HOMEPAGE_REP
+							, B.MN_NAME
+							, C.SC_CODENM HM_LANG
+							, A.HM_MENU_DEPTH
+							, CASE A.HM_TILES
+								WHEN 'adm' 	THEN '/dyAdmin/index.do'
+								ELSE CONCAT('/',A.HM_TILES,'/index.do')
+							END HM_TILES
+							, A.HM_SITE_PATH
+							, B.MN_ORDER
+							, A.HM_USE_YN
+							, CASE HM_MN_HOMEDIV_C
+								WHEN 	#{HOMEPAGE_REP}		THEN 1
+								WHEN 	#{HOMEPAGE_ADMIN}	THEN 0
+								ELSE	MN_ORDER + 1
+							END HM_ORDER
+							, D.SC_CODENM HM_GROUP_NAME
+				FROM		s_home_manager A
+				LEFT JOIN	s_menu_manager B
+				ON			A.HM_MN_HOMEDIV_C = B.MN_KEYNO
+				LEFT JOIN	s_common_code_sub C
+				ON			A.HM_LANG	=	C.SC_CODEVAL01 AND C.SC_MC_IN_C = 'CP'
+				LEFT JOIN	s_common_code_sub D
+				ON			A.HM_GROUP	=	D.SC_KEYNO AND D.SC_MC_IN_C = 'BA'
+				WHERE		HM_USE_YN	!=	'D'
+				AND			(@ROWNUM:=0)=0
+				ORDER BY 	HM_ORDER
+			) B
+		)AA
+		WHERE 1=1
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT 				LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		HOMEPAGE_REP				LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		HM_GROUP_NAME				LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		MN_NAME 			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		HM_LANG			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("6")'>
+ 		AND		HM_MENU_DEPTH 			LIKE CONCAT( '%',#{item.searchKeyword},'%')						
+	 			</when>
+	 			<when test='item.searchIndex.equals("7")'>
+ 		AND		HM_TILES 		LIKE CONCAT( '%',#{item.searchKeyword},'%')						
+	 			</when>
+	 			<when test='item.searchIndex.equals("8")'>
+ 		AND		HM_SITE_PATH			LIKE CONCAT( '%',#{item.searchKeyword},'%')						
+	 			</when>
+	 			<when test='item.searchIndex.equals("9")'>
+ 		AND		MN_ORDER 				LIKE CONCAT( '%',#{item.searchKeyword},'%')						
+	 			</when>
+	 			<when test='item.searchIndex.equals("10")'>
+ 		AND		HM_USE_YN 				LIKE CONCAT( '%',#{item.searchKeyword},'%')						
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT 				LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				HOMEPAGE_REP		LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				HM_GROUP_NAME		LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				MN_NAME 			LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				HM_LANG				LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				HM_MENU_DEPTH 		LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				HM_TILES 			LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				HM_SITE_PATH		LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				MN_ORDER 			LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				HM_USE_YN 			LIKE CONCAT( '%',#{item.searchKeyword},'%') 	
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+	
+	</sql>
+  	
+    <select id="HM_getAdminListCnt" resultType="int">
+		SELECT	COUNT(*)
+		<include  refid="HM_getAdminListBody"/>
+    </select>
+    
+    <select id="HM_getAdminList" resultMap="ResultMap.rownumHashMap">
+    	SELECT	* 
+		<include  refid="HM_getAdminListBody"/>
+		<choose>
+	 		<when test="orderBy == 1">
+	 		ORDER BY	COUNT ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 2">
+	 		ORDER BY	HOMEPAGE_REP ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 3">
+	 		ORDER BY	HM_GROUP_NAME ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 4">
+	 		ORDER BY	MN_NAME ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 5">
+	 		ORDER BY	HM_LANG ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 6">
+	 		ORDER BY	HM_MENU_DEPTH ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 7">
+	 		ORDER BY	HM_TILES ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 8">
+	 		ORDER BY	HM_SITE_PATH ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 9">
+	 		ORDER BY	MN_ORDER ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 10">
+	 		ORDER BY	HM_USE_YN ${sortDirect}
+	 		</when>
+	 		<otherwise>
+	 		ORDER BY 	HM_ORDER 
+	 		</otherwise>
+ 		</choose>
+		<if test=" recordCountPerPage != 0">
+		LIMIT  	#{recordCountPerPage} OFFSET #{firstIndex} 
+		</if>  
+    </select>
+	
+	<select id="HM_getData" parameterType="String" resultType="hashmap">
+	 SELECT 	*
+	 FROM  		s_home_manager H
+	 LEFT JOIN	s_menu_manager M
+	 ON			H.HM_MN_HOMEDIV_C = M.MN_KEYNO
+	 WHERE 		HM_USE_YN != 'D'
+	 AND   		HM_KEYNO = #{HM_KEYNO}
+	</select>
+	
+	
+	<select id="HM_getList" parameterType="HomeManager" resultType="HomeManager">
+	 SELECT *
+	 FROM  s_home_manager
+	 WHERE HM_USE_YN != 'D'
+	</select>
+	
+	
+	<update id="HM_deleteData" parameterType="HomeManager">
+		UPDATE	s_home_manager
+		SET		HM_USE_YN	=	'D'
+		WHERE	HM_KEYNO	=	#{HM_KEYNO}
+	</update>
+	
+	<update id="MN_deleteDataWithHomeDiv" parameterType="HomeManager">
+		UPDATE	s_menu_manager
+		SET		MN_DEL_YN		=	'Y'
+			  , MN_DELDT		=	NOW()
+			  , MN_MODNM		=	#{MN_MODNM} 
+		WHERE	MN_HOMEDIV_C	=	#{MN_KEYNO}
+	</update>
+
+	<select id="HM_getDataByKey" parameterType="HomeManager" resultType="HomeManager">
+	 SELECT 	*
+	 FROM  		s_home_manager H
+	 LEFT JOIN	s_menu_manager M
+	 ON			H.HM_MN_HOMEDIV_C = M.MN_KEYNO
+	 WHERE 		HM_USE_YN != 'D'
+	 AND   		HM_KEYNO = #{HM_KEYNO}
+	</select>
+	
+	<select id="HM_getDataByHOMEDIV_C" parameterType="HomeManager" resultType="HomeManager">
+	 SELECT 	*
+	 FROM  		s_home_manager H
+	 LEFT JOIN	s_menu_manager M
+	 ON			H.HM_MN_HOMEDIV_C = M.MN_KEYNO
+	 WHERE 		HM_USE_YN != 'D'
+	 AND   		HM_MN_HOMEDIV_C = #{HM_MN_HOMEDIV_C}
+	</select>
+	
+	<insert id="HM_insertData" parameterType="HomeManager">
+	 INSERT  INTO  s_home_manager
+	 (
+          HM_KEYNO
+		, HM_TILES
+		, HM_MENU_DEPTH
+		, HM_MN_HOMEDIV_C
+		, HM_USE_YN
+		, HM_FAVICON
+		, HM_LANG
+		, HM_TITLE
+		, HM_LOGIN
+		, HM_RESEARCH_SKIN
+		, HM_POPUP_SKIN_W
+		, HM_POPUP_SKIN_B
+		, HM_SITE_PATH
+		, HM_META_DESC
+		, HM_META_KEYWORD
+		, HM_SESSION
+		, HM_GROUP
+		
+	 )
+	 VALUES
+	 (
+    	  #{HM_KEYNO}
+    	, #{HM_TILES}
+    	, #{HM_MENU_DEPTH}
+    	, #{HM_MN_HOMEDIV_C}
+    	, 'Y'
+    	, #{HM_FAVICON}
+    	, #{HM_LANG}
+    	, #{HM_TITLE}
+    	, #{HM_LOGIN}
+    	, #{HM_RESEARCH_SKIN}
+    	, #{HM_POPUP_SKIN_W}
+    	, #{HM_POPUP_SKIN_B}
+    	, #{HM_SITE_PATH}
+		, #{HM_META_DESC}
+		, #{HM_META_KEYWORD}
+		, #{HM_SESSION}
+		, #{HM_GROUP}
+	 )
+	</insert>
+	
+	<update id="HM_updateData" parameterType="HomeManager">
+		UPDATE 	  s_home_manager
+		SET		  HM_MENU_DEPTH	=	#{HM_MENU_DEPTH}
+				, HM_FAVICON   	=   #{HM_FAVICON}
+				, HM_LANG		=	#{HM_LANG}
+				, HM_TILES		=	#{HM_TILES}
+				, HM_TITLE		=	#{HM_TITLE}
+				, HM_USE_YN		=	#{HM_USE_YN}
+				, HM_LOGIN		=	#{HM_LOGIN}
+				, HM_RESEARCH_SKIN = #{HM_RESEARCH_SKIN}
+				, HM_POPUP_SKIN_W = #{HM_POPUP_SKIN_W}
+				, HM_POPUP_SKIN_B = #{HM_POPUP_SKIN_B}
+				, HM_META_DESC 	  = #{HM_META_DESC}
+				, HM_META_KEYWORD = #{HM_META_KEYWORD}
+				, HM_SESSION 	= #{HM_SESSION}
+				, HM_GROUP 		= #{HM_GROUP}
+		WHERE	  HM_KEYNO		=	#{HM_KEYNO}
+	
+	</update>
+	
+	<update id="MN_updateData" parameterType="hashmap">
+		UPDATE	s_menu_manager
+		SET		MN_NAME			=	#{MN_NAME}
+			  , MN_ORDER		=	#{MN_ORDER}
+			  , MN_CHANGE_FREQ	=	#{MN_CHANGE_FREQ}
+			  , MN_PRIORITY		=	#{MN_PRIORITY}			  
+		WHERE	MN_KEYNO		=	#{MN_KEYNO}
+	</update>
+	
+	<update id="MN_updateUrlData">
+		UPDATE	s_menu_manager
+		SET		MN_URL			=	CONCAT('/',#{HM_TILES},SUBSTRING(MN_URL,LENGTH(CONCAT('/',#{tilesBefore}))+1))
+		WHERE	MN_HOMEDIV_C	=	#{MN_KEYNO}
+	</update>
+	<update id="MN_updateForwadUrlData">
+		UPDATE	s_menu_manager
+		SET		MN_FORWARD_URL	=   CONCAT('/',#{HM_TILES},SUBSTRING(MN_FORWARD_URL,LENGTH(CONCAT('/',#{tilesBefore}))+1))	
+		WHERE	MN_HOMEDIV_C	=	#{MN_KEYNO}
+		AND   	MN_FORWARD_URL LIKE CONCAT('/',#{tilesBefore},'%')
+	</update>
+	
+	<delete id="HAM_deleteData">
+		DELETE FROM	s_home_authority_manager
+		WHERE	HM_KEYNO	=	#{HM_KEYNO}
+	
+	</delete>
+	
+	<insert id="HAM_insertData">
+		INSERT INTO s_home_authority_manager (
+			  HM_KEYNO
+			, UIA_KEYNO
+			, HAM_DEFAULT_URL
+		)
+		VALUES
+		<foreach collection="list" item="item" separator=",">
+		(
+			  #{HM_KEYNO}
+			, #{item.UIA_KEYNO}
+			, #{item.HAM_DEFAULT_URL}
+		)
+		</foreach>   
+	</insert>
+	
+	<select id="UIA_GetListWithHome" resultType="hashmap">
+    	SELECT		*
+		FROM		u_userinfo_authority A
+		LEFT JOIN	s_home_authority_manager B
+		ON			A.UIA_KEYNO = B.UIA_KEYNO AND B.HM_KEYNO = #{HM_KEYNO}
+		WHERE UIA_DIVISION = 'A'
+	</select>
+	
+	<select id="HAM_getTargetUrl" resultType="String">
+		SELECT		C.HAM_DEFAULT_URL
+		FROM		s_menu_manager A
+		LEFT JOIN 	s_home_manager B
+		ON			A.MN_KEYNO 	= 	B.HM_MN_HOMEDIV_C
+		LEFT JOIN	s_home_authority_manager C
+		ON			B.HM_KEYNO 	= 	C.HM_KEYNO
+		AND			C.UIA_KEYNO	=	#{UIA_KEYNO}
+		WHERE		MN_URL 		= 	#{URL}
+	
+	</select>
+	
+	<select id="HM_getTiles" resultType="String">
+		SELECT	HM_TILES
+		FROM	s_home_manager A, s_menu_manager B
+		WHERE	A.HM_MN_HOMEDIV_C 	=	 B.MN_KEYNO
+		AND		A.HM_USE_YN			=	'Y'
+		AND		B.MN_URL			=	CONCAT('/',#{tiles})
+	</select>
+	
+	
+	<select id="get_sitePath" resultType="String" parameterType="String">
+		SELECT 	HM_SITE_PATH
+		FROM 	s_home_manager
+		WHERE 	HM_MN_HOMEDIV_C = #{HM_MN_KEYNO}
+	</select>
+	
+	    
+    <select id="get_HomeKey" resultType="String">
+        SELECT HM_MN_HOMEDIV_C
+        FROM s_home_manager
+        WHERE HM_TILES = #{HM_TILES}
+    </select>
+    
+    <select id="get_siteTilesPathList" resultType="HomeManager">
+    	SELECT HM_TILES, HM_SITE_PATH
+		FROM s_home_manager
+		WHERE HM_USE_YN = 'Y'
+		AND   HM_MAIN_HOME != 'A'
+    </select>
+    
+</mapper>

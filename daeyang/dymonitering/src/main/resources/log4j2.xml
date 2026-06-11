@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d %5p [%c] %m%n" />
+        </Console>
+        <Console name="console-infolog" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d %5p %m%n" />
+        </Console>
+    </Appenders>
+    <Loggers>
+        
+        <Logger name="com" level="DEBUG" additivity="false">
+            <AppenderRef ref="console" />
+        </Logger>
+        
+          <!-- Query Loggers 실서버 업로드시 주석처리 -->
+        <Logger name="jdbc.sqlonly" level="INFO" additivity="false">
+            <AppenderRef ref="console-infolog" />
+        </Logger>
+        <Logger name="jdbc.sqltiming" level="INFO" additivity="false">
+            <AppenderRef ref="console-infolog" />
+        </Logger>
+        <Logger name="jdbc.resultsettable" level="INFO" additivity="false">
+            <AppenderRef ref="console-infolog" />
+        </Logger>
+
+        <Root level="off">
+            <AppenderRef ref="console" />
+        </Root>
+    </Loggers>
+</Configuration>

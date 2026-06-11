@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ipfilter"> 
+  
+		
+  	
+  	<!-- IPM 조회 -->
+	<select id="IPM_select" parameterType="String" resultType="IP">
+ 		SELECT 	A.*, B.SC_CODENM IPM_TYPE_NAME
+		FROM 		t_ipfilter_main A
+		LEFT JOIN	(
+		          SELECT *
+		          FROM s_common_code_sub
+		          WHERE	SC_MC_IN_C	=	'AD'	
+		) B
+		ON			A.IPM_TYPE	=	B.SC_KEYNO
+		<where>
+			<if test='_parameter != null and _parameter != ""'>
+			AND		A.IPM_USEYN	=	#{_parameter}		
+			</if>
+		</where>
+				
+    </select>
+  	
+  	
+  	<!-- IPS 조회 -->
+	<select id="IPS_select" parameterType="String" resultType="IP">
+ 		 SELECT 	*
+       	 FROM 		t_ipfilter_sub
+       	 WHERE		IPS_TYPE	=	#{IPS_TYPE}
+    </select>
+    
+    <!-- IPS 조회2 -->
+	<select id="IPS_select2" parameterType="IP" resultType="IP">
+ 		 SELECT 	*
+       	 FROM 		t_ipfilter_sub
+       	 WHERE		IPS_IPM_KEYNO	=	#{IPS_IPM_KEYNO}
+       	 AND		IPS_TYPE		=	#{IPS_TYPE}
+    </select>
+  	 
+  	<!-- IP 조회  -->
+	<select id="IP_selectOnlyIP" parameterType="IP" resultType="String">
+ 		 SELECT 	IPS_IPADDRESS
+       	 FROM 		t_ipfilter_sub
+       	 WHERE		IPS_IPM_KEYNO	=	#{IPS_IPM_KEYNO}
+       	 AND		IPS_TYPE		=	#{IPS_TYPE}
+    </select> 
+  	
+  	
+  	<!-- IPM 삭제 -->
+	<delete id="IPM_remove" parameterType="IP">
+		DELETE FROM t_ipfilter_main
+		WHERE	IPM_KEYNO	=	#{IPM_KEYNO}
+    </delete>
+  	 
+  	<!-- IPS 삭제 -->
+	<delete id="IPS_remove" parameterType="IP">
+		DELETE FROM t_ipfilter_sub
+		WHERE	IPS_KEYNO	=	#{IPS_KEYNO}
+    </delete>  
+  	
+  	<!-- IPM 등록 -->
+	<insert id="IPM_insert" parameterType="IP">
+       	INSERT INTO t_ipfilter_main
+		(
+				  IPM_KEYNO
+				, IPM_URL
+				, IPM_TYPE
+				, IPM_USEYN
+		)
+		VALUES
+		(
+	   		   	  #{IPM_KEYNO}
+				, #{IPM_URL}
+				, #{IPM_TYPE}
+				, #{IPM_USEYN}
+		)
+    </insert>
+  	
+  	<!-- IPM 수정 -->
+	<update id="IPM_update" parameterType="IP">
+		UPDATE 	t_ipfilter_main
+		SET		IPM_URL		=	#{IPM_URL},
+				IPM_TYPE	=	#{IPM_TYPE},
+				IPM_USEYN	=	#{IPM_USEYN}	
+		WHERE	IPM_KEYNO		=	#{IPM_KEYNO}
+    </update>
+  	  
+	<!-- IPS 등록 -->
+	<insert id="IPS_insert" parameterType="IP">
+       	INSERT INTO t_ipfilter_sub
+		(
+				  IPS_KEYNO
+				, IPS_IPM_KEYNO 
+				, IPS_TYPE
+				, IPS_IPADDRESS
+		)
+		VALUES
+		(
+	   		   	  #{IPS_KEYNO}
+	   		   	, #{IPS_IPM_KEYNO}  
+	   		   	, #{IPS_TYPE}
+	   		   	, #{IPS_IPADDRESS}  
+		)
+    </insert>
+    
+    <!-- IPS 수정 -->
+	<update id="IPS_update" parameterType="IP">
+		UPDATE 	t_ipfilter_sub
+		SET		IPS_IPADDRESS	=	#{IPS_IPADDRESS}
+		WHERE	IPS_KEYNO		=	#{IPS_KEYNO}
+    </update>
+	
+</mapper>
+ 

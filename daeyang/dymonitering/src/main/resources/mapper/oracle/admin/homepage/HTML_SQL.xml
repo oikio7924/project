@@ -1,0 +1,365 @@
+<?xml version ="1.0" encoding ="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace ="HTMLViewData">
+	<resultMap id="PAGEVIEW_MAP" type="HashMap">
+		<result property="MVD_DATA" column="MVD_DATA" jdbcType="CLOB" javaType="java.lang.String"/>
+		<result property="MVH_DATA" column="MVH_DATA" jdbcType="CLOB" javaType="java.lang.String"/>
+		<result property="VIEW_DATA" column="VIEW_DATA" jdbcType="CLOB" javaType="java.lang.String"/>
+	</resultMap>
+	
+	
+	
+	<select id="delete" parameterType="HTMLViewData" resultType="String">
+		SELECT MVD_DEL_YN
+		FROM s_menu_view_data
+		WHERE MVD_KEYNO = #{MVD_KEYNO}
+	</select>
+	
+	
+	
+	<!-- 미리보기 데이터 -->
+    <select id ="MVD_getDataPreview" parameterType="HTMLViewData" resultType="HTMLViewData"> 
+		SELECT 		SUBSTR(SUBSTR(MN_URL,0,INSTR(MN_URL,'/',2)-1),2) MVD_TILES 
+		<if test='MVD_KEYNO != ""'>
+					, M.MVD_DATA
+		FROM s_menu_view_data M
+		LEFT JOIN s_menu_manager MN
+		ON 			M.MVD_MN_KEYNO = MN.MN_KEYNO AND	 MN.MN_DEL_YN = 'N'
+		WHERE 		MVD_KEYNO = #{MVD_KEYNO} 
+		</if>
+		<if test='MVD_KEYNO == ""'>
+					, (SELECT MVH_DATA FROM s_menu_view_data_history WHERE MVH_KEYNO = #{MVH_KEYNO}) MVD_DATA 
+		FROM s_menu_view_data M
+		LEFT JOIN s_menu_manager MN
+		ON 			M.MVD_MN_KEYNO = MN.MN_KEYNO AND	 MN.MN_DEL_YN = 'N'
+		WHERE 	   	MVD_KEYNO = (SELECT MVH_MVD_KEYNO FROM s_menu_view_data_history WHERE MVH_KEYNO = #{MVH_KEYNO}) 
+		</if>
+		
+	</select>
+	
+	<!-- 메뉴 LIST -->
+	<select id ="MVD_getData" parameterType="String" resultType="HashMap" resultMap="PAGEVIEW_MAP"> 
+			SELECT 	 MN_KEYNO
+					, HM.HM_SITE_PATH
+					, SUBSTR(SUBSTR(MN_URL,2),0,INSTR(SUBSTR(MN_URL,2),'/')-1) TILES
+					, (SELECT MN_NAME FROM s_menu_manager WHERE MN_KEYNO = MVD.MVD_MN_KEYNO) MN_NAME
+					, MVD.MVD_DATA VIEW_DATA 
+			FROM s_menu_view_data MVD
+			LEFT JOIN s_menu_manager MN
+			ON      	MVD.MVD_MN_KEYNO = MN.MN_KEYNO
+			LEFT JOIN s_home_manager HM
+			ON      	MN.MN_HOMEDIV_C = HM.HM_MN_HOMEDIV_C
+			WHERE 		MVD_DEL_YN 	=	'N'
+			AND     	MVD_MN_KEYNO = #{MN_KEYNO}
+	</select>
+	
+    <select id ="MVD_getDataHistory" parameterType="String" resultType="HashMap" resultMap="PAGEVIEW_MAP"> 
+			SELECT 	  	(SELECT MN_NAME FROM s_menu_manager WHERE MN_KEYNO = MVD.MVD_MN_KEYNO) MN_NAME
+						, (SELECT MN_URL FROM s_menu_manager WHERE MN_KEYNO = MVD.MVD_MN_KEYNO) MN_URL
+						, MVH.MVH_DATA MVD_DATA
+			FROM s_menu_view_data_history MVH
+			LEFT JOIN s_menu_view_data MVD
+			ON MVH.MVH_MVD_KEYNO = MVD.MVD_KEYNO 
+			WHERE MVH_KEYNO = #{MVH_KEYNO}
+	</select>
+	
+	
+	
+	<!-- 메뉴관리 메뉴 등록 -->
+	<insert id ="MVD_regist" parameterType="HTMLViewData">
+       INSERT INTO s_menu_view_data(
+         	MVD_KEYNO,
+			MVD_MN_KEYNO,
+			MVD_MN_HOMEDIV_C,
+			MVD_DATA,
+			MVD_REGDT,
+			MVD_REGNM,
+			MVD_EDITOR_TYPE
+		) 
+        VALUES (
+        	#{MVD_KEYNO},
+	        #{MVD_MN_KEYNO},
+	        #{MVD_MN_HOMEDIV_C},
+	        #{MVD_DATA},
+	        SYSDATE,
+	        #{MVD_REGNM},
+	        #{MVD_EDITOR_TYPE}
+       )
+	</insert>
+	
+	<!-- 메뉴관리 메뉴 수정 -->
+	<insert id ="MVD_update" parameterType="HTMLViewData">
+	<![CDATA[
+        UPDATE s_menu_view_data
+        SET
+	            MVD_DATA	 		= 	#{MVD_DATA},
+				MVD_MODDT	 		= 	SYSDATE,
+				MVD_MODNM	 		=	#{MVD_MODNM},
+		        MVD_EDITOR_TYPE 	= #{MVD_EDITOR_TYPE},
+                MVD_DATA_SEARCH     = #{MVD_DATA_SEARCH}
+		WHERE 	MVD_KEYNO  =  #{MVD_KEYNO}	
+	]]>
+	</insert>
+	
+	<!-- 히스토리 등록 -->
+	<insert id ="MVH_regist" parameterType="HTMLViewData">
+	<![CDATA[
+		INSERT INTO s_menu_view_data_history(
+			MVH_KEYNO,
+			MVH_MVD_KEYNO,
+			MVH_DATA,
+			MVH_STDT,
+			MVH_ENDT,
+			MVH_MODNM,
+			MVH_VERSION,
+			MVH_COMMENT
+			)
+		VALUES(
+			#{MVH_KEYNO},
+		    #{MVH_MVD_KEYNO},
+		    #{MVH_DATA},
+		    TO_DATE(#{MVH_STDT},'YYYY-MM-DD HH24:MI:SS'),
+		    SYSDATE,
+		    #{MVH_MODNM},
+		    #{MVH_VERSION},
+		    #{MVH_COMMENT}
+			)
+	]]>
+	</insert>
+	
+	<!-- 히스토리 리스트 -->
+	<select id="MVH_getList" resultType="HTMLViewData">
+		SELECT 		A.*
+					, B.UI_ID MVD_MODNM
+		FROM s_menu_view_data_history A
+		LEFT JOIN u_userinfo B
+		ON			A.MVH_MODNM = B.UI_KEYNO
+		WHERE		MVH_MVD_KEYNO	=	#{MVD_KEYNO}
+		AND			MVH_DEL_YN		=	'N'
+		ORDER BY	MVH_STDT DESC
+	</select>
+	
+	<!-- 히스토리 데이터 -->
+	<select id="MVH_getData" parameterType="HTMLViewData" resultType="HTMLViewData">
+		SELECT 		*
+		FROM s_menu_view_data_history
+		WHERE		MVH_KEYNO	=	#{MVH_KEYNO}
+	</select>
+	
+	<!-- 히스토리 비교 데이터 -->
+	<select id="MVH_compareData" parameterType="HTMLViewData" resultType="HTMLViewData">
+		<if test='MVD_KEYNO != "undefined"'>
+		SELECT 		MVD_DATA 
+		FROM s_menu_view_data 
+		WHERE 		MVD_KEYNO	=	#{MVD_KEYNO}
+		UNION ALL
+		</if>
+		<![CDATA[
+		(
+		SELECT MVD_DATA FROM (
+			SELECT MVH_DATA MVD_DATA
+					,ROW_NUMBER() OVER(ORDER BY MVH_STDT DESC) AS RN
+			FROM s_menu_view_data_history
+			WHERE		MVH_MVD_KEYNO	= (
+											SELECT MVH_MVD_KEYNO 
+											FROM s_menu_view_data_history 
+											WHERE MVH_KEYNO	=  #{MVH_KEYNO}
+										  )
+			AND			MVH_DEL_YN		=	'N'
+	        AND			MVH_KEYNO		<=  #{MVH_KEYNO}
+			)
+	        WHERE RN <= 2
+		)
+		]]>
+	</select>
+	
+	
+	
+	<!-- 메뉴관리 메뉴 수정 -->
+	<update id ="MVD_update_STATEYN" parameterType="HTMLViewData">
+		UPDATE s_menu_view_data
+		SET		MVD_DEL_YN = #{MVD_DEL_YN}
+		WHERE 	MVD_KEYNO	=	#{MVD_KEYNO}
+	</update>
+	
+	<sql id ="MVD_getListBody"> 
+		FROM(
+		SELECT A.*
+			, ROW_NUMBER() OVER (
+				<choose>
+			 		<when test="orderBy == 1">
+			 		ORDER BY	MN_NAME ${sortDirect}
+			 		</when>
+			 		<when test="orderBy == 2">
+			 		ORDER BY	MVD_URL ${sortDirect}
+			 		</when>
+			 		<when test="orderBy == 3">
+			 		ORDER BY	MVD_REGNM ${sortDirect}
+			 		</when>
+			 		<when test="orderBy == 4">
+			 		ORDER BY	MVD_REGDT ${sortDirect}
+			 		</when>
+			 		<otherwise>
+			 		ORDER BY MVD_KEYNO DESC
+			 		</otherwise>
+			 	</choose>
+			 	) RNUM
+		FROM (
+			SELECT 	MVD_KEYNO
+					, MM.MN_NAME
+					, CASE WHEN MM2.MN_URL IS NULL THEN MM.MN_FORWARD_URL WHEN MM.MN_URL IS NOT NULL THEN MM2.MN_URL END MVD_URL 
+					, UI_ID MVD_REGNM
+					, TO_CHAR(MVD_REGDT,'YYYY-MM-dd HH:mm:ss') AS MVD_REGDT
+			FROM s_menu_view_data MV 
+			LEFT JOIN s_menu_manager MM
+			ON MV.MVD_MN_HOMEDIV_C = MM.MN_KEYNO
+			LEFT JOIN s_menu_manager MM2
+			ON 			MV.MVD_MN_KEYNO = MM2.MN_KEYNO
+			LEFT JOIN u_userinfo UI
+			ON	MV.MVD_REGNM = UI.UI_KEYNO
+			WHERE  MVD_DEL_YN = 'N'
+			AND		MM.MN_NAME IS NOT NULL
+		) A 
+		WHERE 1 = 1
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 					AND		MN_NAME 			=	#{item.searchKeyword}						
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 					AND		MVD_URL 			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 					AND		MVD_REGNM 			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 					AND		MVD_REGDT 	LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			
+	 			<when test='item.searchIndex.equals("all")'>
+			 		AND (
+			 				MN_NAME 		=	#{item.searchKeyword} 						OR
+			 				MVD_URL 			LIKE '%' || #{item.searchKeyword} || '%'	OR
+			 				MVD_REGNM 			LIKE '%' || #{item.searchKeyword} || '%'  	OR
+			 				MVD_REGDT 	LIKE '%' || #{item.searchKeyword} || '%' 	
+			 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+	 	) AA
+	</sql>
+	
+
+    <select id ="MVD_getList"  resultType="HTMLViewData"> 
+    	SELECT	*
+		<include  refid="MVD_getListBody"/>
+		<if test="recordCountPerPage != 0">
+	 	WHERE 1=1
+	 	AND 	RNUM BETWEEN  #{firstIndex}+1 AND #{lastIndex}
+		</if> 	
+	</select>
+	
+	<!-- 20190523 -->
+	<select id="get_PageViewInfo" resultMap="PAGEVIEW_MAP">
+		SELECT B.MVD_DATA, A.* FROM
+		(SELECT	DISTINCT MN_KEYNO
+				, MVD.MVD_KEYNO
+				, MVD.MVD_REGDT
+				, (SELECT UI_NAME FROM u_userinfo WHERE UI_KEYNO = MVD.MVD_REGNM) MVD_REGNM
+				, MVD.MVD_MODDT
+				, (SELECT UI_NAME FROM u_userinfo WHERE UI_KEYNO = MVD.MVD_MODNM) MVD_MODNM
+			    , MN.MN_HOMEDIV_C
+			    , MN.MN_URL MVD_URL
+			    , SUBSTR(SUBSTR(MN_URL,0,INSTR(MN_URL,'/',2)-1),2) MVD_TILES
+			    , MVD.MVD_EDITOR_TYPE
+			    , MAX(MVDH.MVH_VERSION) OVER() "viewVersion"
+		FROM s_menu_view_data  MVD
+		LEFT JOIN s_menu_manager  MN
+		ON MVD.MVD_MN_KEYNO = MN.MN_KEYNO
+		LEFT JOIN s_menu_view_data_history MVDH
+		ON			MVD.MVD_KEYNO = MVDH.MVH_MVD_KEYNO
+		WHERE 		1=1
+		AND		MVD_DEL_YN = 'N'
+		AND 	MN_KEYNO IS NOT NULL
+		<if test="MVD_KEYNO != null and MVD_KEYNO != ''">
+		AND 	MVD_KEYNO = #{MVD_KEYNO}
+		</if>
+		<if test="MVD_MN_HOMEDIV_C != null and MVD_MN_HOMEDIV_C != ''">
+		AND 	MVD_MN_HOMEDIV_C = #{MVD_MN_HOMEDIV_C}
+		</if>
+		) AJOIN s_menu_view_data B
+		ON A.MVD_KEYNO = B.MVD_KEYNO
+	</select>
+	
+	<select id="get_PageViewInfoDistribute" resultMap="PAGEVIEW_MAP">
+		SELECT B.MVD_DATA, A.* FROM
+		(SELECT	DISTINCT MN_KEYNO
+				, MVD.MVD_KEYNO
+				, MVD.MVD_REGDT
+				, (SELECT UI_NAME FROM u_userinfo WHERE UI_KEYNO = MVD.MVD_REGNM) MVD_REGNM
+				, MVD.MVD_MODDT
+				, (SELECT UI_NAME FROM u_userinfo WHERE UI_KEYNO = MVD.MVD_MODNM) MVD_MODNM
+			    , MN.MN_HOMEDIV_C
+			    , MN.MN_URL MVD_URL
+			    , SUBSTR(SUBSTR(MN_URL,0,INSTR(MN_URL,'/',2)-1),2) MVD_TILES
+			    , MVD.MVD_EDITOR_TYPE
+		FROM s_menu_view_data  MVD
+		LEFT JOIN s_menu_manager  MN
+		ON MVD.MVD_MN_KEYNO = MN.MN_KEYNO
+		WHERE 		1=1
+		AND		MVD_DEL_YN = 'N'
+		AND 	MN_KEYNO IS NOT NULL
+		<if test="MVD_KEYNO != null and MVD_KEYNO != ''">
+		AND 	MVD_KEYNO = #{MVD_KEYNO}
+		</if>
+		<if test="MVD_MN_HOMEDIV_C != null and MVD_MN_HOMEDIV_C != ''">
+		AND 	MVD_MN_HOMEDIV_C = #{MVD_MN_HOMEDIV_C}
+		</if>
+		) AJOIN s_menu_view_data B
+		ON A.MVD_KEYNO = B.MVD_KEYNO
+	</select>
+	
+	<select id="get_historyDate" resultType="String">
+		SELECT 	CASE WHEN MVD_MODDT IS NULL THEN MVD_REGDT ELSE MVD_MODDT END REGDT
+		FROM s_menu_view_data
+		WHERE 	MVD_KEYNO 	= 	#{MVD_KEYNO}
+	</select>
+	
+	<select id="get_pageViewKey" resultType="String">
+		SELECT MVD_KEYNO
+		FROM s_menu_view_data
+		WHERE MVD_MN_KEYNO = #{MN_KEYNO}
+	</select>
+	
+	<select id="get_historyVersion" resultType="double">
+		SELECT NVL(MAX(MVH_VERSION),0)
+		FROM s_menu_view_data_history
+		WHERE MVH_MVD_KEYNO = #{MVD_KEYNO}
+	</select>
+	
+	<update id="delete_pageView">
+		UPDATE s_menu_view_data
+		SET MVD_DEL_YN = 'Y'
+		WHERE MVD_MN_KEYNO = #{MN_KEYNO}
+	</update>
+	
+	<update id="delete_pageByKey">
+		UPDATE s_menu_view_data
+		SET MVD_DEL_YN = 'Y'
+		WHERE MVD_KEYNO = #{MVD_KEYNO}
+	</update>
+	
+	<select id="test" resultType="HTMLViewData">
+        select MVD_KEYNO, MVD_DATA
+        from S_MENU_VIEW_DATA
+    </select>
+    
+    <update id="test_update">
+        update S_MENU_VIEW_DATA
+        set MVD_DATA_SEARCH = #{MVD_DATA_SEARCH}
+        where MVD_KEYNO = #{MVD_KEYNO}
+    </update>
+	
+</mapper>

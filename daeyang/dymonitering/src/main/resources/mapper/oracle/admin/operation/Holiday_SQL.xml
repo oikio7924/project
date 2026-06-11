@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Holiday"> 
+	
+	
+	<sql id="THM_getListBody">
+		FROM (
+			SELECT	AB.*
+					, ROW_NUMBER() OVER (
+		    		<choose>
+				 		<when test="orderBy == 1">
+				 		ORDER BY	COUNT ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 2">
+				 		ORDER BY	THM_NAME ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 3">
+				 		ORDER BY	THM_DATE ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 4">
+				 		ORDER BY	THM_NATIONAL ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 5">
+				 		ORDER BY	THM_TYPE ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 6">
+				 		ORDER BY	THM_LUNAR ${sortDirect}
+				 		</when>
+				 		<otherwise>
+				 		ORDER BY 	COUNT
+				 		</otherwise>
+			 		</choose>
+			 		) RNUM
+			FROM (
+				SELECT 	ROWNUM AS COUNT
+						, B.* 
+				FROM (
+					SELECT 		THM_KEYNO
+								, THM_NAME
+								, THM_DATE
+								, CASE THM_NATIONAL
+									WHEN 'Y' THEN '공휴일'
+									ELSE '일반휴일'
+								END THM_NATIONAL
+								, CASE THM_TYPE
+									WHEN 'Y' THEN '매년'
+									WHEN 'M' THEN '매월'
+									WHEN 'D' THEN '매주'
+									ELSE '없음'
+								END THM_TYPE
+								, CASE THM_LUNAR
+									WHEN 'Y' THEN '음력'
+									ELSE '양력'
+								END THM_LUNAR 
+			    	FROM t_holiday_manager
+			    	WHERE		THM_DEL_YN	=	'N'
+			    	ORDER BY 	THM_KEYNO
+				) B
+			) AB
+		WHERE 1=1
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT 					LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		THM_NAME				LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		THM_DATE 				LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		THM_NATIONAL		=	#{item.searchKeyword}						
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		THM_TYPE 			=	#{item.searchKeyword}							
+	 			</when>
+	 			<when test='item.searchIndex.equals("6")'>
+ 		AND		THM_LUNAR 			=	#{item.searchKeyword}							
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT 					LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				THM_NAME				LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				THM_DATE 				LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				THM_NATIONAL		=	#{item.searchKeyword}	 					OR
+ 				THM_TYPE 			=	#{item.searchKeyword}	 					OR
+ 				THM_LUNAR 			=	#{item.searchKeyword}	 	
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+		)AA
+	
+	</sql>
+  	
+    <select id="THM_getListCnt" resultType="int">
+		SELECT	COUNT(*)
+		<include  refid="THM_getListBody"/>
+    </select>
+    
+    <select id="THM_getList" resultType="hashmap">
+    	SELECT	* 
+		<include  refid="THM_getListBody"/>
+		<if test=" recordCountPerPage != 0">
+		WHERE 1=1
+		AND 	RNUM BETWEEN  #{firstIndex}+1 AND #{lastIndex} 
+		</if>  
+    </select>
+	
+	<select id="THM_getData" resultType="Holiday">
+    	SELECT 	*
+    	FROM t_holiday_manager
+    	WHERE	THM_KEYNO	=	#{THM_KEYNO}
+    </select>
+    
+    
+	<!-- 서브 파일 정보 등록 처리 -->
+	<insert id="THM_insert" parameterType="Holiday">
+       	INSERT INTO t_holiday_manager
+		(
+			  THM_KEYNO
+			, THM_NAME
+			, THM_LUNAR
+			, THM_DATE
+			, THM_NATIONAL
+			, THM_TYPE
+		)
+		VALUES
+		(
+	   		  THM_SEQ.NEXTVAL
+			 ,#{THM_NAME}
+			 ,#{THM_LUNAR}
+			 ,#{THM_DATE}
+			 ,#{THM_NATIONAL}
+		  	 ,#{THM_TYPE}
+		)
+    </insert>   
+    
+    <select id="THM_selectAll" resultType="Holiday">
+    	SELECT 	*
+    	FROM t_holiday_manager
+    	WHERE	THM_DEL_YN	=	'N'
+    	
+    	<if test='"O".equals(holidayType)'>
+    		AND	THM_NATIONAL = 'Y'
+    	</if>
+    	<if test='"H".equals(holidayType)'>
+    		AND	THM_NATIONAL = 'N'
+    	</if>
+    </select>
+    
+    <update id="THM_update" parameterType="Holiday">
+   		UPDATE t_holiday_manager
+    	SET		  THM_NAME		=	#{THM_NAME}	
+				, THM_LUNAR		=	#{THM_LUNAR}
+				, THM_DATE		=	#{THM_DATE}
+				, THM_NATIONAL	=	#{THM_NATIONAL}
+				, THM_TYPE		=	#{THM_TYPE}
+		WHERE	  THM_KEYNO		=	#{THM_KEYNO}
+    </update>
+    
+    <update id="THM_delete" parameterType="Holiday">
+   		UPDATE t_holiday_manager
+    	SET		  THM_DEL_YN		=	'Y'	
+		WHERE	  THM_KEYNO		=	#{THM_KEYNO}
+    </update>
+    
+    
+	
+</mapper>
+ 

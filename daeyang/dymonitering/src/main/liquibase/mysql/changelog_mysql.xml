@@ -1,0 +1,1436 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd
+    http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+   
+    <changeSet id="1" author="ryanius">
+       <comment>사이트 관리 항목 추가 및 주석 추가</comment>
+       <sql>
+		ALTER TABLE T_SITE_MANAGER ADD SNS_DESCRIPTION varchar(500) NULL COMMENT 'SNS 공유 기본 설명';
+		ALTER TABLE T_SITE_MANAGER ADD SNS_IMAGE varchar(100) NULL COMMENT 'SNS 공유 기본 이미지';
+		ALTER TABLE T_SITE_MANAGER ADD SNS_IMAGE_WIDTH varchar(4) NULL COMMENT 'SNS 공유 기본 이미지 width';
+		ALTER TABLE T_SITE_MANAGER ADD SNS_IMAGE_HIEGHT varchar(4) NULL COMMENT 'SNS 공유 기본 이미지 height';
+       </sql>
+    </changeSet>
+    
+    <changeSet id="2" author="ryanius">
+       <comment>height 철자 수정..</comment>
+       <sql>
+		ALTER TABLE T_SITE_MANAGER CHANGE SNS_IMAGE_HIEGHT SNS_IMAGE_HEIGHT varchar(4) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL COMMENT 'SNS 공유 기본 이미지 height';
+       </sql>
+    </changeSet>
+    
+    <changeSet id="3" author="lhj">
+       <comment>설문조사 중복컬럼 삭제</comment>
+       <sql>
+		ALTER TABLE T_SURVEY_QUESTION DROP COLUMN SQ_ALIGN;
+       </sql>
+    </changeSet>
+    
+   
+    <changeSet id="4" author="lhj">
+       <comment>설문조사 문항 관리 추가 및 주석 추가</comment>
+       <sql>
+		ALTER TABLE T_SURVEY_QUESTION ADD SQ_COMMENT varchar(2000) NULL COMMENT '문항 코멘트';
+       </sql>
+    </changeSet>
+    
+   
+    <changeSet id="5" author="lhj">
+    	<comment>설문조사 문항 타입 테이블 삭제</comment>
+       <sql>
+		DROP TABLE T_SURVEY_TYPE;
+       </sql>
+    </changeSet>
+    
+   
+    <changeSet id="6" author="lhj">
+    	<comment>설문조사 문항 작성자 삭제 </comment>
+       <sql>
+		ALTER TABLE T_SURVEY_QUESTION DROP COLUMN SQ_REGNM;
+       </sql>
+    </changeSet>
+    
+   
+    <changeSet id="7" author="lhj">
+       <comment>서브 리소스 메뉴 타입 추가</comment>
+       <sql>
+		ALTER TABLE T_RESOURCES_MANAGER_SUB ADD RMS_MN_TYPE CHAR DEFAULT 'N' NULL COMMENT '메뉴 타입 (N: 단일, A: 전체)';
+       </sql>
+    </changeSet>
+    
+    <changeSet id="8" author="ryanius">
+       <comment>홈페이지 관리 사용여부 수정</comment>
+       <sql>
+		ALTER TABLE T_HOME_MANAGER CHANGE HM_DEL_YN HM_USE_YN char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'Y' NULL;
+		ALTER TABLE T_HOME_MANAGER MODIFY COLUMN HM_USE_YN char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'Y' NULL;
+		UPDATE T_HOME_MANAGER SET HM_USE_YN = 'D' WHERE HM_USE_YN = 'Y';
+       </sql>
+    </changeSet>
+    
+    <changeSet id="9" author="ryanius">
+    	<comment>홈페이지 관리 사용여부 수정 빠진거 추가</comment>
+       <sql>
+		UPDATE T_HOME_MANAGER SET HM_USE_YN = 'Y' WHERE HM_USE_YN = 'N';
+       </sql>
+    </changeSet>
+    
+    <changeSet id="10" author="ryanius">
+    	<comment>홈페이지 관리 안쓰는 컬럼 제거</comment>
+       <sql>
+		ALTER TABLE T_HOME_MANAGER DROP COLUMN HM_EN_TITLE;
+		ALTER TABLE T_HOME_MANAGER DROP COLUMN HM_KO_TITLE;
+		</sql>
+    </changeSet>
+    
+    <changeSet id="11" author="lhj">
+    	<comment>사이트 관리 관광 출발지 정보 컬럼 추가</comment>
+       <sql>
+		ALTER TABLE T_SITE_MANAGER ADD TOUR_START_LNG varchar(30) NULL COMMENT '출발지 경도';
+		ALTER TABLE T_SITE_MANAGER ADD TOUR_START_LAT varchar(30) NULL COMMENT '출발지 위도';
+		ALTER TABLE T_SITE_MANAGER ADD TOUR_START_TEXT varchar(50) NULL COMMENT '출발지 이름';
+       </sql>
+    </changeSet>
+    
+    <changeSet id="12" author="ryanius">
+    	<comment>T_HOME_AUTHORITY_MANAGER 테이블 정보 수정</comment>
+       <sql>
+		ALTER TABLE T_HOME_AUTHORITY_MANAGER DROP COLUMN HAM_KEYNO;
+		ALTER TABLE T_HOME_AUTHORITY_MANAGER ADD CONSTRAINT T_HOME_AUTHORITY_MANAGER_PK PRIMARY KEY (HM_KEYNO,UIA_KEYNO,HAM_DEFAULT_URL);
+       </sql>
+    </changeSet>
+    
+    <changeSet id="13" author="ryanius">
+    	<comment>T_HOME_AUTHORITY_MANAGER 테이블 정보 수정2</comment>
+       <sql>
+       	ALTER TABLE T_HOME_AUTHORITY_MANAGER DROP PRIMARY KEY;
+		ALTER TABLE T_HOME_AUTHORITY_MANAGER ADD CONSTRAINT T_HOME_AUTHORITY_MANAGER_PK PRIMARY KEY (HM_KEYNO,UIA_KEYNO);
+       </sql>
+    </changeSet>
+    
+    <changeSet id="14" author="ryanius">
+    	<comment>T_HOME_MANAGER 로그인 사용여부 추가</comment>
+       <sql>
+       	ALTER TABLE T_HOME_MANAGER ADD HM_LOGIN char(1) DEFAULT 'N' NULL COMMENT '로그인 사용여부';
+       </sql>
+    </changeSet>
+    <changeSet id="15" author="lck">
+    	<comment>T_BOARD_TYPE 컬럼추가</comment>
+       <sql>
+        ALTER TABLE T_BOARD_TYPE ADD BT_PERSONAL_YN CHAR DEFAULT 'N' NULL COMMENT '개인정보보안 여부';
+		ALTER TABLE T_BOARD_TYPE ADD BT_ZIP_YN CHAR DEFAULT 'N' NULL COMMENT '파일 압축 여부';
+		ALTER TABLE T_BOARD_TYPE ADD BT_PERSONAL varchar(100) NULL COMMENT '개인정보보안 종류';
+       </sql>
+    </changeSet>
+    
+	<changeSet id="16" author="jje">
+	    <comment>T_USERINFO_WITHDRAW 회원 탈퇴 관리 추가 및 주석</comment>
+	    <sql>
+	       CREATE TABLE T_USERINFO_WITHDRAW (
+			  UW_KEYNO varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '기본키',
+			  UW_REGDT datetime DEFAULT NULL COMMENT '탈퇴 날짜',
+			  UW_DEL_REASON varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '탈퇴 사유',
+			  UW_ZENDER char(1) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '성별',
+			  PRIMARY KEY (UW_KEYNO)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='회원 탈퇴 관리';
+       </sql>
+    </changeSet>
+    
+    <changeSet id="17" author="yhj">
+    	<comment>T_SITE_MANAGER 비밀번호 변경주기 추가</comment>
+    	<sql>
+	    	ALTER TABLE T_SITE_MANAGER ADD PASSWORD_CYCLE varchar(3) NULL COMMENT '비밀번호 변경주기';
+    	</sql>
+    </changeSet>
+    
+    <changeSet id="18" author="yhj">
+    	<comment>T_USERINFO 비밀번호 변경일 추가 및 데이터 업데이트</comment>
+    	<sql>
+	    	ALTER TABLE T_USERINFO ADD UI_PASSWORD_CHDT datetime NULL COMMENT '비밀번호 변경일';
+	    	UPDATE T_USERINFO SET UI_PASSWORD_CHDT = UI_REGDT;
+    	</sql>
+    </changeSet>
+    
+    <changeSet id="19" author="lhj">
+    	<comment>T_USERINFO_SETTING 프로그램 사용여부 컬럼 추가</comment>
+       <sql>
+        ALTER TABLE T_USERINFO_SETTING ADD US_APPLY CHAR DEFAULT 'N' NULL COMMENT '신청프로그램사용 여부';
+       </sql>
+    </changeSet>
+
+    <changeSet id="20" author="skc">
+    	<comment>T_COMMON_FILE_MAIN  압축 파일 경로</comment>
+       <sql>
+        ALTER TABLE T_COMMON_FILE_MAIN ADD FM_ZIP_PATH varchar(100) NULL COMMENT '압축 파일 경로';
+       </sql>
+    </changeSet>
+    <changeSet id="21" author="ryanius">
+    	<comment>로그인 횟수 추가</comment>
+       <sql>
+        ALTER TABLE T_USERINFO ADD UI_TRY_COUNT int(1) DEFAULT 0 NULL COMMENT '로그인 시도 횟수';
+		ALTER TABLE T_USERINFO MODIFY COLUMN UI_LOGIN_COUNT int(5) DEFAULT 0 NULL COMMENT '로그인횟수';
+       </sql>
+    </changeSet>
+    <changeSet id="22" author="ryanius">
+    	<comment>테스트</comment>
+       <sql>
+        ALTER TABLE T_USERINFO MODIFY COLUMN UI_DELYN char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'N' NULL COMMENT '삭제 여부';
+       </sql>
+    </changeSet>
+    <changeSet id="23" author="ryanius">
+    	<comment>테스트</comment>
+       <sql>
+        ALTER TABLE T_USERINFO MODIFY COLUMN UI_DELYN char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'N' NULL COMMENT '삭제 여부';
+       </sql>
+    </changeSet>
+    <changeSet id="24" author="ryanius">
+    	<comment>로그인 횟수 추가 - NOT NULL 추가</comment>
+       <sql>
+       	UPDATE T_USERINFO SET UI_LOGIN_COUNT = 0 WHERE UI_LOGIN_COUNT IS NULL;
+       	UPDATE T_USERINFO SET UI_TRY_COUNT = 0 WHERE UI_TRY_COUNT IS NULL;
+        ALTER TABLE T_USERINFO MODIFY COLUMN UI_TRY_COUNT int(1) DEFAULT 0 NOT NULL COMMENT '로그인 시도 횟수';
+		ALTER TABLE T_USERINFO MODIFY COLUMN UI_LOGIN_COUNT int(5) DEFAULT 0 NOT NULL COMMENT '로그인횟수';
+       </sql>
+    </changeSet>
+    
+    <changeSet id="25" author="lhj">
+    	<comment>게시판 타입 - 동영상에 썸네일 생성 여부 추가</comment>
+       <sql>
+       	ALTER TABLE T_BOARD_TYPE ADD BT_MOVIE_THUMBNAIL_YN CHAR DEFAULT 'N' NULL COMMENT '동영상 썸네일 생성 여부';
+       </sql>
+    </changeSet>
+    
+    <changeSet id="26" author="lhj">
+       <comment>게시판 타입 - 동영상에 썸네일 생성 여부 추가</comment>
+       <sql>
+       	ALTER TABLE T_BOARD_TYPE MODIFY COLUMN BT_MOVIE_THUMBNAIL_YN char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'N' NULL COMMENT '동영상 썸네일 생성 여부';
+       </sql>
+    </changeSet>
+    
+    <changeSet id="27" author="lhj">
+    	<comment>게시판 타입 - COLLATE 변경</comment>
+       <sql>
+       	ALTER TABLE T_BOARD_TYPE COLLATE=utf8mb4_unicode_ci;
+       </sql>
+    </changeSet>
+    
+     <changeSet id="28" author="lck">
+     	<comment>T_BOARD_TYPE - CATEGORY 쪽 컬럼추가 </comment>
+       <sql>
+        ALTER TABLE T_BOARD_TYPE ADD BT_CATEGORY_YN CHAR DEFAULT 'N' NULL COMMENT '카테고리 설정 여부';
+		ALTER TABLE T_BOARD_TYPE ADD BT_CATEGORY_INPUT varchar(200) NULL COMMENT '카테고리 요소 설정 |으로 구분';
+       </sql>
+    </changeSet>
+    
+       <changeSet id="29" author="lck">
+       	<comment>T_BOARD_NOTICE - CATEGORY_NAME 추가</comment>
+       <sql>
+        ALTER TABLE T_BOARD_NOTICE ADD BN_CATEGORY_NAME varchar(50) NULL COMMENT '카테고리 셀렉트';
+       </sql>
+    </changeSet>
+    
+    <changeSet id="30" author="yhj">
+    	<comment>T_POPUPZONE_LIST - TLM_ORDER 추가 </comment>
+       <sql>
+        ALTER TABLE T_POPUPZONE_LIST ADD TLM_ORDER int(20) NULL COMMENT '정렬순서';
+       </sql>
+    </changeSet>
+    
+    <changeSet id="31" author="lhj">
+    	<comment>T_SITE_MANAGER - PASSWORD_REGEX 추가</comment>
+       <sql>
+       ALTER TABLE T_SITE_MANAGER ADD PASSWORD_REGEX varchar(100) NULL COMMENT '비밀번호 정규식';
+       </sql>
+    </changeSet>
+    
+    <changeSet id="32" author="lhj">
+    	<comment>T_USERINFO_SETTING - US_REGEX 추가</comment>
+       <sql>
+       ALTER TABLE T_SITE_MANAGER MODIFY COLUMN PASSWORD_REGEX varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL COMMENT '비밀번호 정규식';
+       ALTER TABLE T_USERINFO_SETTING ADD US_REGEX varchar(20) NULL COMMENT '비밀번호 정규식';
+       </sql>
+    </changeSet>
+    
+    <changeSet id="33" author="yhj">
+    	<comment>T_BOARD_MAINMINI - BMM_SORT_COLUMN, BMM_SORT_ORDER 추가</comment>
+       <sql>
+		ALTER TABLE T_BOARD_MAINMINI ADD BMM_SORT_COLUMN varchar(50) NULL COMMENT '정렬 기준';
+		ALTER TABLE T_BOARD_MAINMINI ADD BMM_SORT_ORDER varchar(20) NULL COMMENT '오름차순, 내림차순';
+       </sql>
+    </changeSet>
+    
+    <changeSet id="34" author="yhj">
+    	<comment>T_BOARD_MAINMINI - 컬럼명 수정</comment>
+       <sql>
+		ALTER TABLE T_BOARD_MAINMINI CHANGE BMM_SORT_ORDER BMM_SORT_DIRECTION varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL COMMENT '정렬 방향';
+       </sql>
+    </changeSet>
+    
+    <changeSet id="35" author="lhj">
+    	<comment>T_SITE_MANAGER - 솔트값 추가</comment>
+       <sql>
+		ALTER TABLE T_SITE_MANAGER ADD SALT varchar(100) NULL COMMENT '솔트값';
+       </sql>
+    </changeSet>
+    
+    
+	<changeSet id="36" author="lhj">
+     <comment> 게시판 테이블 이름 변경 </comment>
+    	<sql>
+    		RENAME TABLE T_BOARD_TYPE 			     TO B_BOARD_TYPE; 			    
+    		RENAME TABLE T_BOARD_NOTICE_HISTORY      TO B_BOARD_NOTICE_HISTORY;     
+    		RENAME TABLE T_BOARD_NOTICE 		     TO B_BOARD_NOTICE; 		    
+    		RENAME TABLE T_BOARD_MAINMINI 		     TO B_BOARD_MAINMINI; 		    
+    		RENAME TABLE T_BOARD_INTRO_HTML 	     TO B_BOARD_INTRO_HTML; 	    
+   			RENAME TABLE T_BOARD_COMMENT 			 TO B_BOARD_COMMENT; 			
+    		RENAME TABLE T_BOARD_COLUMN_DATA_HISTORY TO B_BOARD_COLUMN_DATA_HISTORY;
+    		RENAME TABLE T_BOARD_COLUMN_DATA 		 TO B_BOARD_COLUMN_DATA; 		
+    		RENAME TABLE T_BOARD_COLUMN 			 TO B_BOARD_COLUMN; 			
+    	</sql>
+	</changeSet>
+	
+	<changeSet id="37" author="lhj">
+     <comment> T_COMMON_SEQ_CNT 게시판테이블 변경 </comment>
+    	<sql>
+    		UPDATE 	T_COMMON_SEQ_CNT 
+    		SET SQ_TABLE_NM = CONCAT('B',SUBSTRING(SQ_TABLE_NM,2))
+    		WHERE	SQ_TABLE_NM LIKE 'T_BOARD%'
+    	</sql>
+	</changeSet>
+	
+	<changeSet id="38" author="lhj">
+     <comment> 유저관련 테이블 이름 변경 </comment>
+    	<sql>
+			RENAME TABLE  T_USERINFO                           TO  U_USERINFO;                      
+			RENAME TABLE  T_USERINFO_AUTHORITY                 TO  U_USERINFO_AUTHORITY;            
+			RENAME TABLE  T_USERINFO_AUTHORITY_ROLL            TO  U_USERINFO_AUTHORITY_ROLL;      
+			RENAME TABLE  T_USERINFO_MEMBER_AUTHORITY          TO  U_USERINFO_MEMBER_AUTHORITY;   
+			RENAME TABLE  T_USERINFO_RESOURCE_AUTHORITY        TO  U_USERINFO_RESOURCE_AUTHORITY;  
+			RENAME TABLE  T_USERINFO_ROLL                      TO  U_USERINFO_ROLL;     
+			RENAME TABLE  T_USERINFO_SECURED_RESOURCE          TO  U_USERINFO_SECURED_RESOURCE;    
+			RENAME TABLE  T_USERINFO_SETTING                   TO  U_USERINFO_SETTING;        
+    	</sql>
+	</changeSet>
+	
+	<changeSet id="39" author="lhj">
+     <comment> T_COMMON_SEQ_CNT 유저관련 변경 </comment>
+    	<sql>
+    		UPDATE 	T_COMMON_SEQ_CNT 
+    		SET SQ_TABLE_NM = CONCAT('U',SUBSTRING(SQ_TABLE_NM,2))
+    		WHERE	SQ_TABLE_NM LIKE 'T_USERINFO%'
+    	</sql>
+	</changeSet>
+
+	<changeSet id="40" author="lhj">
+     <comment> T_USERINFO_WITHDRAW 테이블 이름 변경 </comment>
+    	<sql>
+    		RENAME TABLE  T_USERINFO_WITHDRAW    TO  U_USERINFO_WITHDRAW;  
+    	</sql>
+	</changeSet>
+	
+	<changeSet id="41" author="lhj">
+     <comment> T_USERINFO_WITHDRAW 테이블 이름 변경 </comment>
+    	<sql>
+    		RENAME TABLE  		T_MENU_MANAGER                  TO     S_MENU_MANAGER                ;
+			RENAME TABLE		T_COMMON_CODE_MAIN              TO     S_COMMON_CODE_MAIN            ;
+			RENAME TABLE		T_COMMON_CODE_SUB               TO     S_COMMON_CODE_SUB             ;
+			RENAME TABLE		T_COMMON_FILE_MAIN              TO     S_COMMON_FILE_MAIN            ;
+			RENAME TABLE		T_COMMON_FILE_SUB               TO     S_COMMON_FILE_SUB             ;
+			RENAME TABLE		T_COMMON_SEQ_CNT                TO     S_COMMON_SEQ_CNT              ;
+			RENAME TABLE		T_HOME_AUTHORITY_MANAGER        TO     S_HOME_AUTHORITY_MANAGER      ;
+			RENAME TABLE		T_HOME_MANAGER                  TO     S_HOME_MANAGER                ;
+			RENAME TABLE		T_MENU_VIEW_DATA                TO     S_MENU_VIEW_DATA              ;
+			RENAME TABLE		T_MENU_VIEW_DATA_HISTORY        TO     S_MENU_VIEW_DATA_HISTORY      ;
+			RENAME TABLE		T_RESOURCES_MANAGER_HISTORY     TO     S_RESOURCES_MANAGER_HISTORY   ;
+			RENAME TABLE		T_RESOURCES_MANAGER_SUB         TO     S_RESOURCES_MANAGER_SUB       ;
+			RENAME TABLE		T_SITE_MANAGER                  TO     S_SITE_MANAGER                ;
+			RENAME TABLE		T_RESOURCES_MANAGER             TO     S_RESOURCES_MANAGER           ;
+    	</sql>
+	</changeSet>
+	
+	<changeSet id="42" author="lhj">
+     <comment>T_COMMON_SEQ_CNT 시스템 관련 데이터 변경 </comment>
+    	<sql>
+    		UPDATE 	S_COMMON_SEQ_CNT 
+    		SET SQ_TABLE_NM = CONCAT('S',SUBSTRING(SQ_TABLE_NM,2))
+    		WHERE	SQ_TABLE_NM IN (
+    								 'T_MENU_MANAGER'              
+									,'T_COMMON_CODE_MAIN'          
+									,'T_COMMON_CODE_SUB'           
+									,'T_COMMON_FILE_MAIN'         
+									,'T_COMMON_FILE_SUB'           
+									,'T_COMMON_SEQ_CNT'           
+									,'T_HOME_AUTHORITY_MANAGER'    
+									,'T_HOME_MANAGER'              
+									,'T_MENU_VIEW_DATA'            
+									,'T_MENU_VIEW_DATA_HISTORY'   
+									,'T_RESOURCES_MANAGER_HISTORY'
+									,'T_RESOURCES_MANAGER_SUB'     
+									,'T_SITE_MANAGER'              
+									,'T_RESOURCES_MANAGER'         
+    								)
+    	</sql>
+	</changeSet>
+  
+	<changeSet id="43" author="lhj">
+     <comment>뷰 변경 </comment>
+    	<sql>
+    		CREATE OR REPLACE
+			VIEW `AUTHORITY_VIEW` AS select
+			    `A`.`USR_ORDER` AS `LEV`,
+			    ifnull
+			    (
+			        case `D`.`MN_PAGEDIV_C`
+			        when 'SC_QXCFB' then concat(`D`.`MN_URL`, '/**')
+			        else `D`.`MN_URL`
+			    end,
+			    `A`.`USR_PATTERN`) AS `URL`,
+			    `C`.`UIA_NAME` AS `AUTHORITY`
+			from
+			    (((`U_USERINFO_SECURED_RESOURCE` `A`
+			left join `U_USERINFO_RESOURCE_AUTHORITY` `B` on
+			    (`A`.`USR_KEYNO` = `B`.`USR_KEYNO`))
+			left join `U_USERINFO_AUTHORITY` `C` on
+			    (`B`.`UIA_KEYNO` = `C`.`UIA_KEYNO`))
+			left join `S_MENU_MANAGER` `D` on
+			    (`A`.`USR_MN_KEYNO` = `D`.`MN_KEYNO`))
+			where
+			    `A`.`USR_KEYNO` = `B`.`USR_KEYNO`
+			    and (`D`.`MN_DEL_YN` is null
+			    or `D`.`MN_DEL_YN` = 'N')
+			    and `A`.`USR_UIR_KEYNO` = 'UIR_0000000019'
+			order by
+			    `A`.`USR_ORDER`
+    	</sql>
+	</changeSet>
+	
+	<changeSet id="44" author="ryanius">
+     <comment>파일시스템 - 스토리지 정보 추가</comment>
+    	<sql>
+    		ALTER TABLE S_COMMON_FILE_SUB ADD FS_STORAGE varchar(20) DEFAULT 'none' NULL COMMENT '스토리지';
+			ALTER TABLE S_COMMON_FILE_SUB ADD FS_PUBLIC_PATH varchar(200) NULL COMMENT '이미지 경로';
+    	</sql>
+	</changeSet>
+    
+	<changeSet id="45" author="lhj">
+     <comment>T_POPUPZONE_LIST 디폴트 수정</comment>
+    	<sql>
+    		ALTER TABLE T_POPUPZONE_LIST MODIFY COLUMN TLM_DEL_YN char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'N' NULL COMMENT '삭제 여부';
+			ALTER TABLE T_POPUPZONE_LIST MODIFY COLUMN TLM_USE_YN char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'Y' NULL COMMENT '사용 여부';
+    	</sql>
+	</changeSet>
+    
+	<changeSet id="46" author="lhj">
+     <comment>파일시스템 - 스토리지 정보 추가</comment>
+    	<sql>
+    		ALTER TABLE S_COMMON_FILE_SUB ADD FS_PUBLIC_THUMB varchar(200) NULL COMMENT '썸네일 경로';
+    	</sql>
+	</changeSet>
+    
+	<changeSet id="47" author="lhj">
+     <comment>파일시스템 - 스토리지 정보 삭제</comment>
+    	<sql>
+    		ALTER TABLE S_COMMON_FILE_SUB DROP COLUMN FS_PUBLIC_THUMB;
+    	</sql>
+	</changeSet>
+    
+	<changeSet id="48" author="lhj">
+     <comment>S_MENU_MANAGER - 이메일 컬럼 추가</comment>
+    	<sql>
+    		ALTER TABLE S_MENU_MANAGER ADD MN_EMAIL varchar(200) NULL COMMENT '게시판 이메일';
+    	</sql>
+	</changeSet>
+    
+	<changeSet id="49" author="lhj">
+     <comment>S_RESOURCES_MANAGER - 순서 컬럼 추가</comment>
+    	<sql>
+    		ALTER TABLE S_RESOURCES_MANAGER ADD RM_ORDER INT DEFAULT 0 NULL COMMENT '순서';
+    	</sql>
+	</changeSet>
+    
+	<changeSet id="50" author="lhj">
+     <comment>S_RESOURCES_MANAGER - 순서 컬럼 추가</comment>
+    	<sql>
+    		ALTER TABLE S_RESOURCES_MANAGER MODIFY COLUMN RM_ORDER int(3) DEFAULT 0 NULL COMMENT '순서';
+    	</sql>
+	</changeSet>
+    
+    <changeSet id="51" author="kjw">
+     	<comment>T_SURVEY_MGR - 체크박스 최소, 최대값 컬럼 추가</comment>
+    	<sql>
+			ALTER TABLE T_SURVEY_QUESTION ADD COLUMN SQ_CK_MIN int(3) DEFAULT 1 NULL COMMENT '체크박스 최소값';
+			ALTER TABLE T_SURVEY_QUESTION ADD COLUMN SQ_CK_MAX int(3) DEFAULT 1 NULL COMMENT '체크박스 최대값';
+  		</sql>
+	</changeSet>
+
+    <changeSet id="52" author="kjw">
+     	<comment>T_SURVEY_QUESTION - 라디오 기타의견 사용 여부값 컬럼 추가</comment>
+    	<sql>
+			ALTER TABLE T_SURVEY_QUESTION ADD COLUMN SQ_ORDER_TYPE char(1) DEFAULT 'N' NULL COMMENT '라디오 기타의견 사용 유무';
+  		</sql>
+	</changeSet>
+	    
+    <changeSet id="53" author="lhj">
+     	<comment>B_BOARD_COMMENT_SUB - 댓글 공감수 관리 테이블</comment>
+    	<sql>
+			CREATE TABLE B_BOARD_COMMENT_SUB (
+			  BCS_UI_KEYNO varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '유저키',
+			  BCS_BC_KEYNO varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '댓글키',
+			  BCS_REGDT datetime DEFAULT NULL COMMENT '등록일',
+			  BCS_TYPE char(1) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '공감 타입'
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='댓글 공감갯수 관리'
+  		</sql>
+	</changeSet>
+	
+     <changeSet id="54" author="lck">
+         <sql>
+				ALTER TABLE	B_BOARD_TYPE ADD BT_SECRET_COMMENT_YN char(1) DEFAULT 'N' NULL COMMENT '비밀댓글사용여부';
+         </sql>
+     </changeSet> 
+     
+      <changeSet id="55" author="lck">
+         <sql>
+				ALTER TABLE B_BOARD_COMMENT ADD BC_SECRET_YN CHAR(1) DEFAULT 'N' NULL COMMENT '비밀댓글여부';
+         </sql>
+     </changeSet>
+         
+      <changeSet id="56" author="lhj">
+      	<comment>B_BOARD_COMMENT_SUB - 테이블 이름 변경</comment>
+         <sql>
+				RENAME TABLE B_BOARD_COMMENT_SUB TO B_BOARD_COMMENT_LIKE;
+         </sql>
+     </changeSet>
+         
+      <changeSet id="57" author="lhj">
+      	<comment>B_BOARD_COMMENT_SUB - PRIMARY KEY 추가 </comment>
+         <sql>
+				ALTER TABLE B_BOARD_COMMENT_LIKE ADD CONSTRAINT B_BOARD_COMMENT_LIKE_PK PRIMARY KEY (BCS_UI_KEYNO,BCS_BC_KEYNO);
+         </sql>
+     </changeSet>
+     
+	<changeSet id="58" author="lck">
+      	<comment> S_SITE_MANAGER SNS로그인연동 컬럼 추가 </comment>
+         <sql>
+				ALTER TABLE S_SITE_MANAGER ADD SNSLOGIN_NAVER_CLIENT_ID varchar(100) DEFAULT NULL NULL COMMENT '네이버 클라이언트 아이디';
+				ALTER TABLE S_SITE_MANAGER ADD SNSLOGIN_NAVER_CALLBACK varchar(100) DEFAULT NULL NULL COMMENT '네이버 콜백 유알엘';
+				ALTER TABLE S_SITE_MANAGER ADD SNSLOGIN_KAKAO_JSKEY varchar(100) DEFAULT NULL NULL COMMENT '카카오 자바스크립트 키';
+				ALTER TABLE S_SITE_MANAGER ADD SNSLOGIN_FACEBOOK_APPID varchar(100) DEFAULT NULL NULL COMMENT '페이스북 앱 아이디';
+				ALTER TABLE S_SITE_MANAGER ADD SNSLOGIN_NAVER_CLIENT_SECRET varchar(100) DEFAULT NULL NULL COMMENT '네이버 클라이언트 시크릿';
+         </sql>
+     </changeSet>
+     
+	<changeSet id="59" author="lck">
+      	<comment> U_USERINFO SNS 타입 및 SNS 아이디 컬럼 추가 </comment>
+         <sql>
+				ALTER TABLE U_USERINFO ADD UI_SNS_ID varchar(50) DEFAULT NULL NULL COMMENT 'SNS 아이디';
+				ALTER TABLE U_USERINFO ADD UI_SNS_TYPE varchar(25) DEFAULT NULL NULL COMMENT 'SNS 타입';
+             
+         </sql>
+     </changeSet>
+     
+     <changeSet id="60" author="lck">
+      	<comment> S_MENU_MANAGER 에  메뉴 새창여부 컬럼 추가 </comment>
+         <sql>
+				ALTER TABLE S_MENU_MANAGER ADD MN_NEWLINK char(1) DEFAULT NULL NULL COMMENT '메뉴 클릭시 새창으로 열릴지 여부';
+				
+         </sql>
+     </changeSet>
+     
+      <changeSet id="61" author="lck">
+      	<comment> S_MENU_MANAGER 에  메뉴 새창여부 컬럼 추가  컬럼 수정</comment>
+         <sql>
+				ALTER TABLE S_MENU_MANAGER MODIFY COLUMN MN_NEWLINK char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'N' NULL COMMENT '메뉴 클릭시 새창으로 열릴지 여부';
+
+				
+         </sql>
+     </changeSet>
+     
+     <changeSet id="62" author="jje">
+      	<comment> S_MENU_MANAGER - MN_EMAIL 컬럼 수정, B_BOARD_TYPE - BT_EMAIL_ADDRESS 컬럼 수정</comment>
+         <sql>
+         	ALTER TABLE S_MENU_MANAGER MODIFY COLUMN MN_EMAIL varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL COMMENT '게시판 이메일';
+			ALTER TABLE B_BOARD_TYPE MODIFY COLUMN BT_EMAIL_ADDRESS varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL COMMENT '글 등록시 이메일 수신할 주소';
+         </sql>
+     </changeSet>
+     
+     <changeSet id="63" author="lck">
+      	<comment> S_MENU_TEMPLATE 생성</comment>
+         <sql>
+				CREATE TABLE S_MENU_TEMPLATE (
+					SMT_KEYNO varchar(20) NOT NULL COMMENT '기본키',
+					SMT_FORM longtext DEFAULT NULL NULL COMMENT '양식',
+					SMT_REGDT datetime DEFAULT NULL NULL COMMENT '등록일',
+					SMT_REGNM varchar(20) DEFAULT NULL NULL COMMENT '등록날짜',
+					SMT_DELYN char(1) DEFAULT 'N' NULL COMMENT '삭제여부',
+					SMT_SUBJECT varchar(100) DEFAULT NULL NULL COMMENT '제목'
+				)
+				ENGINE=InnoDB
+				DEFAULT CHARSET=utf8mb4
+				COLLATE=utf8mb4_unicode_ci
+				COMMENT='메뉴 헤더 템플렛 관리';
+         </sql>
+     </changeSet>
+   
+     <changeSet id="64" author="lhj">
+      	<comment> 안쓰는 컬럼 삭제</comment>
+         <sql>
+			ALTER TABLE T_POPUPZONE_CATEGORY DROP COLUMN TCGM_FILE_NAME;
+			ALTER TABLE T_POPUPZONE_CATEGORY DROP COLUMN TCGM_FILE_PATH;
+			ALTER TABLE B_BOARD_MAINMINI DROP COLUMN BMM_FILE_NAME;
+			ALTER TABLE B_BOARD_MAINMINI DROP COLUMN BMM_FILE_PATH;
+         </sql>
+     </changeSet>
+    
+    
+     <changeSet id="65" author="kjw">
+     	<comment> T_SURVEY_SKIN - 스킨 관리 테이블 생성</comment>
+	      <sql>
+			CREATE TABLE T_SURVEY_SKIN (
+			  SS_KEYNO varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '기본키',	
+			  SS_SKIN_NAME varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '스킨명',
+			  SS_DATA longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '소스 데이터',
+			  SS_REGDT datetime DEFAULT NULL COMMENT '작성일',
+			  SS_MODDT datetime DEFAULT NULL COMMENT '수정일',
+			  SS_REGNM varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '작성자',
+			  SS_MODNM varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '수정자',
+			  SS_DEL_YN char(1) COLLATE utf8mb4_unicode_ci DEFAULT 'N' COMMENT '삭제유무',
+			  PRIMARY KEY (SS_KEYNO)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='설문 스킨 관리'
+         </sql>
+     </changeSet>
+     
+     <changeSet id="66" author="kjw">
+     	<comment> T_SURVEY_SKIN_HISTORY - 스킨 관리 히스토리 테이블 생성</comment>
+	      <sql>
+			CREATE TABLE T_SURVEY_SKIN_HISTORY (
+			  SSH_KEYNO varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '기본키',
+			  SSH_SS_KEYNO varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '레이아웃 기본키',
+			  SSH_DATA longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '데이터',
+			  SSH_STDT datetime DEFAULT NULL COMMENT '적용기간 시작',
+			  SSH_ENDT datetime DEFAULT NULL COMMENT '적용기간 종료',
+			  SSH_MODNM varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '수정자',
+			  SSH_DEL_YN char(1) COLLATE utf8mb4_unicode_ci DEFAULT 'N' COMMENT '삭제여부',
+			  SSH_VERSION decimal(10,2) DEFAULT NULL COMMENT '버전',
+			  SSH_COMMENT varchar(1000) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '코멘트',
+			  PRIMARY KEY (SSH_KEYNO)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=' 설문 스킨 데이터 히스토리 관리'
+         </sql>
+     </changeSet>
+     
+    <changeSet id="67" author="kjw">
+     	<comment> T_SURVEY_MGR - 설문 스킨 키 컬럼 추가</comment>
+	      <sql>
+			ALTER TABLE T_SURVEY_MGR ADD COLUMN SM_SS_KEYNO varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '설문 스킨 키';
+         </sql>
+     </changeSet>
+
+    <changeSet id="68" author="kjw">
+     	<comment> T_SURVEY_QUESTION - 카테고리 텍스트 컬럼 추가</comment>
+	      <sql>
+			ALTER TABLE T_SURVEY_QUESTION ADD COLUMN SQ_KG_TEXT varchar(2000) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '문항 카테고리 텍스트';         </sql>
+     </changeSet>
+     
+       
+    <changeSet id="69" author="ksy">
+      	<comment> S_HOME_MANAGER 페이지평가 스킨 컬럼 추가</comment>
+      	<sql>
+      		ALTER TABLE S_HOME_MANAGER ADD HM_RESEARCH_SKIN varchar(100) DEFAULT NULL NULL COMMENT '페이지평가 스킨';
+      	</sql>
+	</changeSet>
+	
+	<changeSet id="70" author="ksy">
+      	<comment> T_POPUPINFO_SKIN 생성</comment>
+      	<sql>
+			CREATE TABLE T_POPUPINFO_SKIN (
+			  PIS_KEYNO varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '기본키',
+			  PIS_FORM longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '양식',
+			  PIS_REGDT datetime DEFAULT NULL COMMENT '등록날짜',
+			  PIS_REGNM varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '작성자',
+			  PIS_SUBJECT varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '제목',
+			  PIS_DEL_YN varchar(1) COLLATE utf8mb4_unicode_ci DEFAULT 'N' COMMENT '삭제여부',
+			  PIS_DIVISION varchar(1) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '팝업 유형(W:윈도우 오픈형, B:배너형)',
+			  PRIMARY KEY (PIS_KEYNO)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='팝업 스킨관리 테이블'
+		</sql>
+	</changeSet>
+	
+    <changeSet id="71" author="ksy">
+      	<comment> S_HOME_MANAGER 팝업 스킨 컬럼 추가</comment>
+      	<sql>
+      		ALTER TABLE S_HOME_MANAGER ADD HM_POPUP_SKIN_W varchar(100) DEFAULT NULL NULL COMMENT '팝업 레이아웃형 스킨';
+			ALTER TABLE S_HOME_MANAGER ADD HM_POPUP_SKIN_B varchar(100) DEFAULT NULL NULL COMMENT '팝업 배너형 스킨';
+      	</sql>
+	</changeSet>
+	
+	<changeSet id="72" author="ksy">
+      	<comment> T_PAGE_RESEARCH_SKIN 생성</comment>
+      	<sql>
+			CREATE TABLE T_PAGE_RESEARCH_SKIN (
+		  PRS_KEYNO varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '기본키',
+		  PRS_FORM longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '양식',
+		  PRS_REGDT datetime DEFAULT NULL COMMENT '등록날짜',
+		  PRS_REGNM varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '작성자',
+		  PRS_SUBJECT varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '제목',
+		  PRS_DEL_YN varchar(1) COLLATE utf8mb4_unicode_ci DEFAULT 'N' COMMENT '삭제여부',
+		  PRIMARY KEY (PRS_KEYNO)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='페이지 평가 스킨 관리 테이블'
+		</sql>
+	</changeSet>
+	
+	<changeSet id="73" author="ksy">
+      	<comment> T_PAGE_RESEARCH_SKIN 페이지평가 스킨 수정자, 수정일 컬럼 추가</comment>
+      	<sql>
+		ALTER TABLE T_PAGE_RESEARCH_SKIN ADD PRS_MODDT DATETIME NULL COMMENT '수정날짜';
+		ALTER TABLE T_PAGE_RESEARCH_SKIN CHANGE PRS_MODDT PRS_MODDT DATETIME NULL COMMENT '수정날짜' AFTER PRS_REGDT;
+		ALTER TABLE T_PAGE_RESEARCH_SKIN ADD PRS_MODNM varchar(20) NULL COMMENT '수정자';
+		ALTER TABLE T_PAGE_RESEARCH_SKIN CHANGE PRS_MODNM PRS_MODNM varchar(20) NULL COMMENT '수정자' AFTER PRS_REGNM;
+		</sql>
+	</changeSet>
+
+	<changeSet id="74" author="ksy">
+      	<comment> T_PAGE_RESEARCH_SKIN_HISTORY 페이지평가 스킨 히스토리 테이블 추가</comment>
+      	<sql>
+		CREATE TABLE T_PAGE_RESEARCH_SKIN_HISTORY (
+		  PRSH_KEYNO varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '기본키',
+		  PRSH_PRS_KEYNO varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '레이아웃 기본키',
+		  PRSH_DATA longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '데이터',
+		  PRSH_STDT datetime DEFAULT NULL COMMENT '적용기간 시작',
+		  PRSH_ENDT datetime DEFAULT NULL COMMENT '적용기간 종료',
+		  PRSH_MODNM varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '수정자',
+		  PRSH_DEL_YN char(1) COLLATE utf8mb4_unicode_ci DEFAULT 'N' COMMENT '삭제여부',
+		  PRSH_VERSION decimal(10,2) DEFAULT NULL COMMENT '버전',
+		  PRSH_COMMENT varchar(1000) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '코멘트',
+		  PRIMARY KEY (PRSH_KEYNO)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='페이지평가 스킨 히스토리 관리';
+		</sql>
+	</changeSet>	 
+	
+	<changeSet id="75" author="kjw">   
+	  	<comment> T_SURVEY_QUESTION - 체크박스 필수 / 선택 컬럼 추가</comment>	
+	  	<sql>	
+   		 ALTER TABLE T_SURVEY_QUESTION ADD COLUMN SQ_REQYN CHAR(1) COLLATE utf8mb4_unicode_ci DEFAULT 'Y' COMMENT '체크박스 필수 / 선택';
+   		</sql>
+    </changeSet>
+    
+    <changeSet id="76" author="ksy">
+      	<comment> T_POPUPINFO_SKIN 팝업 스킨 수정자, 수정일 컬럼 추가</comment>
+      	<sql>
+		ALTER TABLE T_POPUPINFO_SKIN ADD PIS_MODDT DATETIME NULL COMMENT '수정날짜';
+		ALTER TABLE T_POPUPINFO_SKIN CHANGE PIS_MODDT PIS_MODDT DATETIME NULL COMMENT '수정날짜' AFTER PIS_REGDT;
+		ALTER TABLE T_POPUPINFO_SKIN ADD PIS_MODNM varchar(20) NULL COMMENT '수정자';
+		ALTER TABLE T_POPUPINFO_SKIN CHANGE PIS_MODNM PIS_MODNM varchar(20) NULL COMMENT '수정자' AFTER PIS_REGNM;
+		</sql>
+	</changeSet>
+	
+		<changeSet id="77" author="ksy">
+      	<comment> T_POPUPINFO_SKIN_HISTORY 팝업 스킨 히스토리 테이블 추가</comment>
+      	<sql>
+		CREATE TABLE T_POPUPINFO_SKIN_HISTORY (
+		  PISH_KEYNO varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '기본키',
+		  PISH_PIS_KEYNO varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '레이아웃 기본키',
+		  PISH_DATA longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '데이터',
+		  PISH_STDT datetime DEFAULT NULL COMMENT '적용기간 시작',
+		  PISH_ENDT datetime DEFAULT NULL COMMENT '적용기간 종료',
+		  PISH_MODNM varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '수정자',
+		  PISH_DEL_YN char(1) COLLATE utf8mb4_unicode_ci DEFAULT 'N' COMMENT '삭제여부',
+		  PISH_VERSION decimal(10,2) DEFAULT NULL COMMENT '버전',
+		  PISH_COMMENT varchar(1000) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '코멘트',
+		  PRIMARY KEY (PISH_KEYNO)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='팝업 스킨 히스토리 관리'
+		</sql>
+	</changeSet>
+	
+	<changeSet id="78" author="ryanius">
+      	<comment> B_BOARD_TYPE 썸네일 자동생성여부 컬럼 추가</comment>
+      	<sql>
+		ALTER TABLE B_BOARD_TYPE ADD BT_THUMBNAIL_INSERT char(1) DEFAULT 'N' NULL COMMENT '썸네일 자동생성여부';
+		</sql>
+	</changeSet>
+    <changeSet id="78" author="kjw">   
+	  	<comment> T_SURVEY_QUESTION - 라디오 내부 기타의견 사용 유무 컬럼 추가</comment>	
+	  	<sql>	
+   		 ALTER TABLE T_SURVEY_QUESTION ADD COLUMN SQ_IN_ORDER_TYPE CHAR(1) COLLATE utf8mb4_unicode_ci DEFAULT 'N' COMMENT '라디오 내부 기타의견 사용 유무';
+   		</sql>
+    </changeSet>
+    
+    <changeSet id="79" author="kjw">   
+	  	<comment> T_SURVEY_QUESTION_OPTION - 설문 기타의견 유무 확인 컬럼 추가</comment>	
+	  	<sql>	
+   		 ALTER TABLE T_SURVEY_QUESTION_OPTION ADD COLUMN SQO_ORDER_TYPE CHAR(1) COLLATE utf8mb4_unicode_ci DEFAULT 'N' COMMENT '설문 기타의견 유무';
+   		</sql>   		
+    </changeSet>
+    
+    <changeSet id="80" author="kjw">   
+	  	<comment> T_SURVEY_RESULT_DATA - 설문 기타의견 주관식 내용 컬럼 추가</comment>	
+	  	<sql>	
+   		 ALTER TABLE T_SURVEY_RESULT_DATA ADD COLUMN SRD_IN_DATA mediumtext COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '기타의견 주관식 내용';
+   		</sql>   		
+    </changeSet>
+    
+    <changeSet id="81" author="ksy">   
+	  	<comment> T_APPLICAITON_MANAGER - 홈페이지 구분 컬럼 추가</comment>	
+	  	<sql>	
+   		 ALTER TABLE T_APPLICAITON_MANAGER ADD AP_MN_HOMEDIV_C varchar(20) NULL COMMENT '홈페이지 키';
+   		</sql>   		
+    </changeSet>
+    
+    <changeSet id="82" author="ksy">   
+	  	<comment> T_GROUP_MANAGER - 홈페이지 구분 컬럼 추가</comment>	
+	  	<sql>	
+   		 ALTER TABLE T_GROUP_MANAGER ADD GM_MN_HOMEDIV_C varchar(20) NULL COMMENT '홈페이지 키';
+   		</sql>   		
+    </changeSet>
+    
+    <changeSet id="83" author="lhj">   
+	  	<comment> U_USERINFO_HOTKEY - 단축키 관리 테이블</comment>	
+	  	<sql>	
+   		 CREATE TABLE U_USERINFO_HOTKEY (
+				HK_UI_KEYNO varchar(20) NULL COMMENT '유저키',
+				HK_KEY0 INT NULL COMMENT '키0',
+				HK_KEY1 INT NULL COMMENT '키1',
+				HK_KEY2 INT NULL COMMENT '키2',
+				HK_KEY3 INT NULL COMMENT '키3',
+				HK_KEY4 INT NULL COMMENT '키4',
+				HK_KEY5 INT NULL COMMENT '키5',
+				HK_KEY6 INT NULL COMMENT '키6',
+				HK_KEY7 INT NULL COMMENT '키7',
+				HK_KEY8 INT NULL COMMENT '키8',
+				HK_KEY9 INT NULL COMMENT '키9'
+			)
+		ENGINE=InnoDB
+		DEFAULT CHARSET=utf8mb4
+		COLLATE=utf8mb4_general_ci
+		COMMENT='단축키 관리 테이블';
+   		</sql>   		
+    </changeSet>
+    
+    <changeSet id="84" author="lhj">   
+	  	<comment> U_USERINFO_HOTKEY - 단축키 관리 테이블 변경</comment>	
+	  	<sql>	
+   		 ALTER TABLE U_USERINFO_HOTKEY CHANGE HK_KEY0 HK_NUMBER int(11) DEFAULT NULL NULL COMMENT '키번호';
+		 ALTER TABLE U_USERINFO_HOTKEY MODIFY COLUMN HK_NUMBER int(11) DEFAULT NULL NULL COMMENT '키번호';
+		 ALTER TABLE U_USERINFO_HOTKEY CHANGE HK_KEY1 HK_VALUE int(11) DEFAULT NULL NULL COMMENT '키값';
+		 ALTER TABLE U_USERINFO_HOTKEY MODIFY COLUMN HK_VALUE int(11) DEFAULT NULL NULL COMMENT '키값';
+		 ALTER TABLE U_USERINFO_HOTKEY DROP COLUMN HK_KEY2;
+		 ALTER TABLE U_USERINFO_HOTKEY DROP COLUMN HK_KEY3;
+		 ALTER TABLE U_USERINFO_HOTKEY DROP COLUMN HK_KEY4;
+		 ALTER TABLE U_USERINFO_HOTKEY DROP COLUMN HK_KEY5;
+		 ALTER TABLE U_USERINFO_HOTKEY DROP COLUMN HK_KEY6;
+		 ALTER TABLE U_USERINFO_HOTKEY DROP COLUMN HK_KEY7;
+		 ALTER TABLE U_USERINFO_HOTKEY DROP COLUMN HK_KEY8;
+		 ALTER TABLE U_USERINFO_HOTKEY DROP COLUMN HK_KEY9;
+   		</sql>   		
+    </changeSet>
+    
+    <changeSet id="85" author="lhj">   
+	  	<comment> U_USERINFO_HOTKEY - 단축키 관리 테이블 변경</comment>	
+	  	<sql>	
+   		 ALTER TABLE U_USERINFO_HOTKEY ADD HK_KEYCODE INT NULL COMMENT '키코드';
+		 ALTER TABLE U_USERINFO_HOTKEY MODIFY COLUMN HK_VALUE VARCHAR(100) DEFAULT NULL NULL COMMENT '키값';
+   		</sql>   		
+    </changeSet>
+    
+    <changeSet id="86" author="lhj">   
+	  	<comment> U_USERINFO_HOTKEY - 단축키 관리 테이블 변경</comment>	
+	  	<sql>	
+   		ALTER TABLE U_USERINFO_HOTKEY MODIFY COLUMN HK_UI_KEYNO varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '유저키';
+		ALTER TABLE U_USERINFO_HOTKEY MODIFY COLUMN HK_NUMBER int(11) NOT NULL COMMENT '키번호';
+		ALTER TABLE U_USERINFO_HOTKEY MODIFY COLUMN HK_VALUE varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '키값';
+		ALTER TABLE U_USERINFO_HOTKEY MODIFY COLUMN HK_KEYCODE int(11) NOT NULL COMMENT '키코드';
+   		</sql>   		
+    </changeSet>
+    
+    <changeSet id="87" author="lhj">   
+	  	<comment> S_HOME_MANAGER - 사이트경로 컬럼 추가</comment>	
+	  	<sql>	
+   		ALTER TABLE S_HOME_MANAGER ADD HM_SITE_PATH varchar(50) NULL COMMENT '사이트 경로';
+   		</sql>   		
+    </changeSet>
+    
+         
+     <changeSet id="88" author="jje">
+      	<comment> S_MENU_MANAGER, S_HOME_MANAGER 메타 태그 컬럼추가 </comment>
+         <sql>
+			   ALTER TABLE S_MENU_MANAGER ADD MN_META_DESC varchar(200) NULL COMMENT '메뉴 메타 설명';
+			   ALTER TABLE S_MENU_MANAGER ADD MN_META_KEYWORD varchar(200) NULL COMMENT '메뉴 메타 키워드';
+			   ALTER TABLE S_HOME_MANAGER ADD HM_META_DESC varchar(200) NULL COMMENT '홈페이지 메타 설명';
+			   ALTER TABLE S_HOME_MANAGER ADD HM_META_KEYWORD varchar(200) NULL COMMENT '홈페이지 메타 키워드';
+         </sql>
+     </changeSet>
+    
+     <changeSet id="89" author="kjw">
+      	<comment> S_SITE_MANAGER - SNS_IMAGE 자료형 크기 수정</comment>
+         <sql>
+			   ALTER TABLE S_SITE_MANAGER MODIFY COLUMN SNS_IMAGE varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'SNS 공유 기본 이미지';
+         </sql>
+     </changeSet>
+     
+     <changeSet id="90" author="kjw">
+      	<comment> S_MENU_MANAGER - 사이트맵 컬럼 추가 </comment>
+         <sql>
+			   ALTER TABLE S_MENU_MANAGER ADD MN_CHANGE_FREQ varchar(10) DEFAULT 'monthly' COMMENT '사이트맵 빈도수';
+			   ALTER TABLE S_MENU_MANAGER ADD MN_PRIORITY DECIMAL(1,1) DEFAULT 0.8 COMMENT '사이트맵 우선순위';
+         </sql>
+     </changeSet>
+    
+     
+     <changeSet id="91" author="kjw">
+      	<comment> S_MENU_MANAGER - 사이트맵 자료형 변경 </comment>
+         <sql>
+			ALTER TABLE S_MENU_MANAGER MODIFY COLUMN MN_PRIORITY decimal(2,1) DEFAULT 0.8 NULL COMMENT '사이트맵 우선순위';
+         </sql>
+     </changeSet>
+     
+     <changeSet id="92" author="lhj">
+      	<comment>게시물 관련 키값 데이터 int로 변경</comment>
+         <sql>
+			update B_BOARD_COLUMN_DATA_HISTORY
+			set    BDH_BD_KEYNO = CAST(substring(NULLIF(BDH_BD_KEYNO, ''),4) as unsigned)
+				,  BDH_BD_BN_KEYNO = CAST(substring(NULLIF(BDH_BD_BN_KEYNO, ''),4) as unsigned)
+				,  BDH_BD_BL_KEYNO = CAST(substring(NULLIF(BDH_BD_BL_KEYNO, ''),4) as unsigned)
+				,  BDH_BNH_KEYNO = CAST(substring(NULLIF(BDH_BNH_KEYNO, ''),5) as unsigned);
+				
+			update B_BOARD_NOTICE
+			set    BN_KEYNO = CAST(substring(NULLIF(BN_KEYNO, ''),4) as unsigned)
+				,  BN_MAINKEY = CAST(substring(NULLIF(BN_MAINKEY, ''),4) as unsigned)
+				,  BN_PARENTKEY = CAST(substring(NULLIF(BN_PARENTKEY, ''),4) as unsigned);
+			
+			update B_BOARD_NOTICE_HISTORY
+			set    BNH_KEYNO = CAST(substring(NULLIF(BNH_KEYNO, ''),5) as unsigned)
+				,  BNH_BN_KEYNO = CAST(substring(NULLIF(BNH_BN_KEYNO, ''),5) as unsigned);
+			
+			update B_BOARD_COLUMN
+			set    BL_KEYNO = CAST(substring(NULLIF(BL_KEYNO, ''),4) as unsigned);
+			
+			update B_BOARD_COLUMN_DATA
+			set    BD_KEYNO = CAST(substring(NULLIF(BD_KEYNO, ''),4) as unsigned)
+				  ,BD_BN_KEYNO = CAST(substring(NULLIF(BD_BN_KEYNO, ''),4) as unsigned)
+				  ,BD_BL_KEYNO = CAST(substring(NULLIF(BD_BL_KEYNO, ''),4) as unsigned);
+				 
+			update B_BOARD_COMMENT
+			set    BC_KEYNO = CAST(substring(NULLIF(BC_KEYNO, ''),4) as unsigned)
+				  ,BC_BN_KEYNO = CAST(substring(NULLIF(BC_BN_KEYNO, ''),4) as unsigned)
+				  ,BC_MAINKEY = CAST(substring(NULLIF(BC_MAINKEY, ''),4) as unsigned)
+				  ,BC_ROOTKEY = CAST(substring(NULLIF(BC_ROOTKEY, ''),5) as unsigned);
+			
+			update B_BOARD_COMMENT_LIKE
+			set    BCS_BC_KEYNO = CAST(substring(NULLIF(BCS_BC_KEYNO, ''),4) as unsigned);
+
+			update B_BOARD_INTRO_HTML
+			set    BIH_KEYNO = CAST(substring(NULLIF(BIH_KEYNO, ''),4) as unsigned);
+         </sql>
+     </changeSet>
+     
+     <changeSet id="93" author="lhj">
+      	<comment>게시물 관련 키값 타입 int로 변경</comment>
+         <sql>
+			ALTER TABLE B_BOARD_COLUMN_DATA_HISTORY MODIFY COLUMN BDH_BD_KEYNO INT DEFAULT NULL NULL COMMENT '컬럼데이터 기본키';
+			ALTER TABLE B_BOARD_COLUMN_DATA_HISTORY MODIFY COLUMN BDH_BD_BN_KEYNO INT DEFAULT NULL NULL COMMENT '게시물키';
+			ALTER TABLE B_BOARD_COLUMN_DATA_HISTORY MODIFY COLUMN BDH_BD_BL_KEYNO INT DEFAULT NULL NULL COMMENT '게시판컬럼키';
+			ALTER TABLE B_BOARD_COLUMN_DATA_HISTORY MODIFY COLUMN BDH_BNH_KEYNO INT DEFAULT NULL NULL COMMENT '게시물 히스토리 게시물키';
+			ALTER TABLE B_BOARD_NOTICE MODIFY COLUMN BN_KEYNO INT NOT NULL COMMENT '기본키';
+			ALTER TABLE B_BOARD_NOTICE MODIFY COLUMN BN_MAINKEY INT DEFAULT NULL NULL COMMENT '메인 키';
+			ALTER TABLE B_BOARD_NOTICE MODIFY COLUMN BN_PARENTKEY INT DEFAULT NULL NULL COMMENT '부모 키';
+			ALTER TABLE B_BOARD_NOTICE MODIFY COLUMN BN_KEYNO int(11) NOT NULL AUTO_INCREMENT COMMENT '기본키';
+			ALTER TABLE B_BOARD_NOTICE_HISTORY MODIFY COLUMN BNH_KEYNO INT NOT NULL COMMENT '기본키';
+			ALTER TABLE B_BOARD_NOTICE_HISTORY MODIFY COLUMN BNH_BN_KEYNO INT DEFAULT NULL NULL COMMENT '게시판 기본키';
+			ALTER TABLE B_BOARD_NOTICE_HISTORY MODIFY COLUMN BNH_KEYNO int(11) NOT NULL AUTO_INCREMENT COMMENT '기본키';
+			ALTER TABLE B_BOARD_COLUMN MODIFY COLUMN BL_KEYNO INT NOT NULL COMMENT '기본키';
+			ALTER TABLE B_BOARD_COLUMN MODIFY COLUMN BL_KEYNO int(11) NOT NULL AUTO_INCREMENT COMMENT '기본키';
+			ALTER TABLE B_BOARD_COLUMN_DATA MODIFY COLUMN BD_KEYNO INT NOT NULL COMMENT '기본키';
+			ALTER TABLE B_BOARD_COLUMN_DATA MODIFY COLUMN BD_BN_KEYNO INT DEFAULT NULL NULL COMMENT '게시물키';
+			ALTER TABLE B_BOARD_COLUMN_DATA MODIFY COLUMN BD_BL_KEYNO INT DEFAULT NULL NULL COMMENT '게시판컬럼키';
+			ALTER TABLE B_BOARD_COLUMN_DATA MODIFY COLUMN BD_KEYNO int(11) NOT NULL AUTO_INCREMENT COMMENT '기본키';
+			ALTER TABLE B_BOARD_COMMENT MODIFY COLUMN BC_KEYNO INT NOT NULL COMMENT '기본키';
+			ALTER TABLE B_BOARD_COMMENT MODIFY COLUMN BC_BN_KEYNO INT DEFAULT NULL NULL COMMENT '게시물키';
+			ALTER TABLE B_BOARD_COMMENT MODIFY COLUMN BC_MAINKEY INT DEFAULT NULL NULL COMMENT '부모키';
+			ALTER TABLE B_BOARD_COMMENT MODIFY COLUMN BC_ROOTKEY INT DEFAULT NULL NULL COMMENT '최상단 부모키';
+			ALTER TABLE B_BOARD_COMMENT MODIFY COLUMN BC_KEYNO int(11) NOT NULL AUTO_INCREMENT COMMENT '기본키';
+			ALTER TABLE B_BOARD_COMMENT_LIKE MODIFY COLUMN BCS_BC_KEYNO INT NOT NULL COMMENT '댓글키';
+			ALTER TABLE B_BOARD_INTRO_HTML MODIFY COLUMN BIH_KEYNO INT NOT NULL COMMENT '기본키';
+         </sql>
+     </changeSet>
+
+     <changeSet id="94" author="skc">
+      	<comment>게시물 스킨테이블 생성</comment>
+         <sql>
+			CREATE TABLE B_BOARD_SKIN_TEMPLATE (
+				BST_KEYNO INT(11) NOT NULL AUTO_INCREMENT,
+				BST_FORM LONGTEXT  NULL,
+				BST_REGDT datetime NULL,
+				BST_REGNM varchar(100) NULL,
+				BST_DELETE varchar(100) NULL,
+				BST_TITLE varchar(100) NULL,
+				CONSTRAINT B_BOARD_SKIN_TEMPLATE_PK PRIMARY KEY (BST_KEYNO)
+			)
+			ENGINE=InnoDB
+			DEFAULT CHARSET=utf8mb4
+			COLLATE=utf8mb4_unicode_ci;
+         </sql>
+     </changeSet>
+     <changeSet id="95" author="skc">
+      	<comment>게시물 delete 칼럼 설정</comment>
+         <sql>
+			ALTER TABLE B_BOARD_SKIN_TEMPLATE MODIFY COLUMN BST_DELETE varchar(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'N' NULL;
+         </sql>
+     </changeSet>
+     <changeSet id="96" author="skc">
+      	<comment>게시물스킨 type 칼럼 설정</comment>
+         <sql>
+			ALTER TABLE B_BOARD_SKIN_TEMPLATE ADD BST_TYPE char NULL;
+         </sql>
+     </changeSet>
+     <changeSet id="97" author="skc">
+      	<comment>게시물스킨 type 칼럼 설정</comment>
+         <sql>
+			CREATE TABLE B_BOARD_SKIN_PACKAGE (
+				BSP_KEYNO int(11) NOT NULL AUTO_INCREMENT,
+				BSP_TITLE varchar(100) NULL,
+				BSP_LIST_KEYNO varchar(100) NULL,
+				BSP_DEATAIL_KEYNO varchar(100) NULL,
+				BSP_INSERT_KEYNO varchar(100) NULL,
+				BSP_REGNM varchar(100) NULL,
+				BSP_REGDT DATETIME NULL,
+				BSP_DELETE char(1) DEFAULT 'N' NULL,
+				CONSTRAINT B_BOARD_SKIN_PACKAGE_PK PRIMARY KEY (BSP_KEYNO)
+			)
+			ENGINE=InnoDB
+			DEFAULT CHARSET=utf8mb4
+			COLLATE=utf8mb4_unicode_ci;
+         </sql>
+     </changeSet>
+     <changeSet id="98" author="skc">
+      	<comment>게시판 타입 스킨 칼럼 3개 추가</comment>
+         <sql>
+			ALTER TABLE B_BOARD_TYPE ADD BT_LIST_KEYNO varchar(100) NULL COMMENT '리스트 스킨 키값';
+			ALTER TABLE B_BOARD_TYPE ADD BT_DEATAIL_KEYNO varchar(100) NULL COMMENT '상세페이지 스킨 키값';
+			ALTER TABLE B_BOARD_TYPE ADD BT_INSERT_KEYNO varchar(100) NULL COMMENT '등록페이지 스킨 키값';
+         </sql>
+     </changeSet>
+
+     <changeSet id="99" author="ksy">
+      	<comment>FileSub 테이블 hwp 파일 경로 및 변환 여부 컬럼 추가</comment>
+         <sql>
+			ALTER TABLE S_COMMON_FILE_SUB ADD FS_CONVERT_PATH varchar(200) DEFAULT NULL COMMENT '변환 파일 저장 경로';
+			ALTER TABLE S_COMMON_FILE_SUB ADD FS_CONVERT_CHK varchar(1) DEFAULT 'Y' COMMENT '변환 여부';
+         </sql>
+     </changeSet> 
+     
+      <changeSet id="100" author="lck">
+      	<comment>T_PLACE_MANAGER 테이블 좌석프로그램 배경파일_sub 키값 컬럼 추가</comment>
+         <sql>
+			  ALTER TABLE T_PLACE_MANAGER ADD PM_SEAT_FS_KEYNO varchar(20) DEFAULT NULL NULL COMMENT '좌석프로그램 배경 키값';
+         </sql>
+     </changeSet> 
+     
+      <changeSet id="101" author="lck">
+      	<comment>T_APPLICATION_PARTICIPATE_SEAT 생성</comment>
+         <sql>
+			  CREATE TABLE T_APPLICATION_PARTICIPATE_SEAT (
+					APS_APP_KEYNO varchar(20) DEFAULT NULL NULL COMMENT '참가자키 상위',
+					APS_SEATNAME varchar(20) DEFAULT NULL NULL COMMENT '좌석번호',
+					APS_APP_ST_DATE varchar(20) DEFAULT NULL NULL COMMENT '시작날짜',
+					APS_APP_ST_TIME varchar(20) DEFAULT NULL NULL COMMENT '시작시간',
+					APS_AP_KEYNO varchar(20) DEFAULT NULL NULL COMMENT '프로그램 기본키'
+				)
+				ENGINE=InnoDB
+				DEFAULT CHARSET=utf8mb4
+				COLLATE=utf8mb4_unicode_ci
+				COMMENT='참가자 좌석 목록';
+         </sql>
+     </changeSet> 
+     
+      <changeSet id="102" author="skc">
+      	<comment>B_BOARD_TYPE CALENDAR 추가</comment>
+         <sql>
+			  ALTER TABLE B_BOARD_TYPE ADD BT_CALENDAR_YN char(1) DEFAULT 'N' NULL;
+         </sql>
+     </changeSet> 
+     
+      <changeSet id="103" author="ksy">
+      	<comment>B_BOARD_TYPE 파일 미리보기 여부 칼럼 추가</comment>
+         <sql>
+			 ALTER TABLE B_BOARD_TYPE ADD BT_PREVIEW_YN char(1) DEFAULT 'N' NULL COMMENT '파일 미리보기 여부';
+         </sql>
+     </changeSet>      
+     
+     <changeSet id="104" author="skc">
+      	<comment>B_BOARDSKIN 테이블 TYPE 길이 변경</comment>
+         <sql>
+			 ALTER TABLE B_BOARD_SKIN_TEMPLATE MODIFY COLUMN BST_TYPE varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL;
+         </sql>
+     </changeSet> 
+          
+     <changeSet id="105" author="lhj">
+      	<comment>B_BOARD_SKIN_PACKAGE 컬럼명 변경</comment>
+         <sql>
+			ALTER TABLE B_BOARD_SKIN_PACKAGE CHANGE BSP_DEATAIL_KEYNO BSP_DETAIL_KEYNO varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL;
+         </sql>
+     </changeSet>   
+        
+     <changeSet id="106" author="lhj">
+      	<comment>B_BOARD_SKIN_PACKAGE 주석추가</comment>
+         <sql>
+			ALTER TABLE B_BOARD_SKIN_PACKAGE CHANGE BSP_DETAIL_KEYNO BSP_DETAIL_KEYNO varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL COMMENT '상세페이지 키';
+			ALTER TABLE B_BOARD_SKIN_PACKAGE MODIFY COLUMN BSP_DETAIL_KEYNO varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL COMMENT '상세페이지 키';
+			ALTER TABLE B_BOARD_SKIN_PACKAGE MODIFY COLUMN BSP_KEYNO int(11) auto_increment NOT NULL COMMENT '패키지 키값';
+			ALTER TABLE B_BOARD_SKIN_PACKAGE MODIFY COLUMN BSP_TITLE varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL COMMENT '패키지 명';
+			ALTER TABLE B_BOARD_SKIN_PACKAGE MODIFY COLUMN BSP_LIST_KEYNO varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL COMMENT '리스트키';
+			ALTER TABLE B_BOARD_SKIN_PACKAGE MODIFY COLUMN BSP_INSERT_KEYNO varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL COMMENT '등록페이지 키';
+			ALTER TABLE B_BOARD_SKIN_PACKAGE MODIFY COLUMN BSP_REGNM varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL COMMENT '등록자';
+			ALTER TABLE B_BOARD_SKIN_PACKAGE MODIFY COLUMN BSP_REGDT datetime DEFAULT NULL NULL COMMENT '등록일';
+			ALTER TABLE B_BOARD_SKIN_PACKAGE MODIFY COLUMN BSP_DELETE char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'N' NULL COMMENT '삭제여부';
+			ALTER TABLE B_BOARD_SKIN_TEMPLATE MODIFY COLUMN BST_KEYNO int(11) auto_increment NOT NULL COMMENT '스킨키';
+			ALTER TABLE B_BOARD_SKIN_TEMPLATE MODIFY COLUMN BST_FORM longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL COMMENT '스킨데이터';
+			ALTER TABLE B_BOARD_SKIN_TEMPLATE MODIFY COLUMN BST_REGDT datetime DEFAULT NULL NULL COMMENT '등록일';
+			ALTER TABLE B_BOARD_SKIN_TEMPLATE MODIFY COLUMN BST_REGNM varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL COMMENT '등록자';
+			ALTER TABLE B_BOARD_SKIN_TEMPLATE MODIFY COLUMN BST_DELETE varchar(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'N' NULL COMMENT '삭제여부';
+			ALTER TABLE B_BOARD_SKIN_TEMPLATE MODIFY COLUMN BST_TITLE varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL COMMENT '스킨명';
+			ALTER TABLE B_BOARD_SKIN_TEMPLATE MODIFY COLUMN BST_TYPE varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL COMMENT '타입(list, insert, detail)';
+         </sql>
+     </changeSet>      
+     
+     <changeSet id="107" author="lhj">
+      	<comment>B_BOARD_TYPE 컬럼명변경</comment>
+         <sql>
+			ALTER TABLE B_BOARD_TYPE CHANGE BT_DEATAIL_KEYNO BT_DETAIL_KEYNO varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL COMMENT '상세페이지 스킨 키값';
+         </sql>
+     </changeSet> 
+        
+     <changeSet id="108" author="lhj">
+      	<comment>데이터 형식 변경 String to int</comment>
+         <sql>
+			DELETE FROM S_COMMON_FILE_SUB 	WHERE 	FS_FM_KEYNO IN ('CKEDITOR4','SMARTADMIN2');
+			UPDATE S_COMMON_FILE_MAIN  		SET  	FM_KEYNO = CAST(SUBSTRING(NULLIF(FM_KEYNO, ''),4) AS UNSIGNED);
+			UPDATE S_COMMON_FILE_SUB  		SET     FS_KEYNO = CAST(SUBSTRING(NULLIF(FS_KEYNO, ''),4) AS UNSIGNED);
+			UPDATE S_COMMON_FILE_SUB  		SET     FS_FM_KEYNO = CAST(SUBSTRING(NULLIF(FS_FM_KEYNO, ''),4) AS UNSIGNED);
+			UPDATE S_COMMON_FILE_SUB  		SET     FS_M_KEYNO = CAST(SUBSTRING(NULLIF(FS_M_KEYNO, ''),4) AS UNSIGNED);
+			UPDATE S_MENU_MANAGER 			SET  	MN_QR_KEYNO = CAST(SUBSTRING(NULLIF(MN_QR_KEYNO, ''),4) AS UNSIGNED);
+			UPDATE B_BOARD_NOTICE 			SET     BN_FM_KEYNO = CAST(SUBSTRING(NULLIF(BN_FM_KEYNO, ''),4) AS UNSIGNED);
+			UPDATE B_BOARD_NOTICE 			SET     BN_THUMBNAIL = CAST(SUBSTRING(NULLIF(BN_THUMBNAIL, ''),4) AS UNSIGNED);
+			UPDATE B_BOARD_NOTICE_HISTORY 	SET     BNH_BN_FM_KEYNO = CAST(SUBSTRING(NULLIF(BNH_BN_FM_KEYNO, ''),4) AS UNSIGNED);
+			UPDATE B_BOARD_NOTICE_HISTORY 	SET     BNH_BN_THUMBNAIL = CAST(SUBSTRING(NULLIF(BNH_BN_THUMBNAIL, ''),4) AS UNSIGNED);
+			UPDATE T_COMMON_QRCODE          SET     CQ_FS_KEYNO = CAST(SUBSTRING(NULLIF(CQ_FS_KEYNO, ''),4) AS UNSIGNED);
+			UPDATE T_PLACE_MANAGER          SET     PM_FS_KEYNO = CAST(SUBSTRING(NULLIF(PM_FS_KEYNO, ''),4) AS UNSIGNED);
+			UPDATE T_PLACE_MANAGER          SET     PM_SEAT_FS_KEYNO = CAST(SUBSTRING(NULLIF(PM_SEAT_FS_KEYNO, ''),4) AS UNSIGNED);
+			UPDATE T_POPUPINFO              SET     PI_FS_KEYNO = CAST(SUBSTRING(NULLIF(PI_FS_KEYNO, ''),4) AS UNSIGNED);
+			UPDATE T_POPUPZONE_LIST 		SET     TLM_FS_KEYNO = CAST(SUBSTRING(NULLIF(TLM_FS_KEYNO, ''),4) AS UNSIGNED);
+			UPDATE T_TOURISM_IMAGE 			SET     TIM_FS_KEYNO = CAST(SUBSTRING(NULLIF(TIM_FS_KEYNO, ''),4) AS UNSIGNED);
+			UPDATE T_TOURISM_MENU 			SET     TM_IMG = CAST(SUBSTRING(NULLIF(TM_IMG, ''),4) AS UNSIGNED);
+			UPDATE T_XML_HISTORY 			SET     XH_FS_KEYNO = CAST(SUBSTRING(NULLIF(XH_FS_KEYNO, ''),4) AS UNSIGNED);
+			
+			UPDATE T_APPLICAITON_DISCOUNT_SELECT 	SET   AP_KEYNO = CAST(SUBSTRING(NULLIF(AP_KEYNO, ''),5) AS UNSIGNED);
+			UPDATE T_APPLICAITON_MANAGER 			SET   AP_KEYNO = CAST(SUBSTRING(NULLIF(AP_KEYNO, ''),5) AS UNSIGNED);
+			UPDATE T_APPLICATION_CHARGE 			SET   APC_KEYNO = CAST(SUBSTRING(NULLIF(APC_KEYNO, ''),5) AS UNSIGNED)
+														 ,APC_AP_KEYNO = CAST(SUBSTRING(NULLIF(APC_AP_KEYNO, ''),5) AS UNSIGNED);
+			UPDATE T_APPLICATION_PARTICIPATE 		SET   APP_KEYNO	 = CAST(SUBSTRING(NULLIF(APP_KEYNO, ''),5) AS UNSIGNED)
+														 ,APP_AP_KEYNO = CAST(SUBSTRING(NULLIF(APP_AP_KEYNO, ''),5) AS UNSIGNED)
+														 ,APP_ASM_KEYNO = CAST(SUBSTRING(NULLIF(APP_ASM_KEYNO, ''),5) AS UNSIGNED)
+														 ,APP_APU_KEYNO = CAST(SUBSTRING(NULLIF(APP_APU_KEYNO, ''),5) AS UNSIGNED);
+			UPDATE T_APPLICATION_PARTICIPATE_SEAT 	SET   APS_AP_KEYNO	 = CAST(SUBSTRING(NULLIF(APS_AP_KEYNO, ''),5) AS UNSIGNED)
+														 ,APS_APP_KEYNO = CAST(SUBSTRING(NULLIF(APS_APP_KEYNO, ''),5) AS UNSIGNED);
+			UPDATE T_APPLICATION_SCHEDULE_MAIN 		SET   ASM_KEYNO	 = CAST(SUBSTRING(NULLIF(ASM_KEYNO, ''),5) AS UNSIGNED)
+														 ,ASM_AP_KEYNO = CAST(SUBSTRING(NULLIF(ASM_AP_KEYNO, ''),5) AS UNSIGNED);
+			UPDATE T_APPLICATION_SCHEDULE_SUB 		SET   ASS_KEYNO	 = CAST(SUBSTRING(NULLIF(ASS_KEYNO, ''),5) AS UNSIGNED)
+														 ,ASS_ASM_KEYNO = CAST(SUBSTRING(NULLIF(ASS_ASM_KEYNO, ''),5) AS UNSIGNED);
+			UPDATE T_APPLICATION_USER 				SET   APU_KEYNO	 = CAST(SUBSTRING(NULLIF(APU_KEYNO, ''),5) AS UNSIGNED); 
+			UPDATE T_APPLY_PARTICIPATE_DISCOUNT 	SET   APD_APP_KEYNO	 = CAST(SUBSTRING(NULLIF(APD_APP_KEYNO, ''),5) AS UNSIGNED);
+			
+			
+			UPDATE T_HOLIDAY_MANAGER 		SET   THM_KEYNO = CAST(SUBSTRING(NULLIF(THM_KEYNO, ''),5) AS UNSIGNED);
+			
+			UPDATE T_SURVEY_MGR 			SET   SM_KEYNO = CAST(SUBSTRING(NULLIF(SM_KEYNO, ''),4) AS UNSIGNED);
+			UPDATE T_SURVEY_QUESTION 		SET   SQ_KEYNO = CAST(SUBSTRING(NULLIF(SQ_KEYNO, ''),4) AS UNSIGNED)
+												, SQ_SM_KEYNO = CAST(SUBSTRING(NULLIF(SQ_SM_KEYNO, ''),4) AS UNSIGNED);
+			UPDATE T_SURVEY_QUESTION_OPTION SET   SQO_KEYNO = CAST(SUBSTRING(NULLIF(SQO_KEYNO, ''),5) AS UNSIGNED)
+												, SQO_SQ_KEYNO = CAST(SUBSTRING(NULLIF(SQO_SQ_KEYNO, ''),4) AS UNSIGNED);
+			UPDATE T_SURVEY_RESULT_DATA 	SET   SRD_KEYNO = CAST(SUBSTRING(NULLIF(SRD_KEYNO, ''),5) AS UNSIGNED)
+												, SRD_SM_KEYNO = CAST(SUBSTRING(NULLIF(SRD_SM_KEYNO, ''),5) AS UNSIGNED)
+												, SRD_SRM_KEYNO = CAST(SUBSTRING(NULLIF(SRD_SRM_KEYNO, ''),5) AS UNSIGNED)
+												, SRD_SQ_KEYNO = CAST(SUBSTRING(NULLIF(SRD_SQ_KEYNO, ''),5) AS UNSIGNED)
+												, SRD_SQO_KEYNO = CAST(SUBSTRING(NULLIF(SRD_SQO_KEYNO, ''),5) AS UNSIGNED);
+			UPDATE T_SURVEY_RESULT_MGR 	SET   	  SRM_KEYNO = CAST(SUBSTRING(NULLIF(SRM_KEYNO, ''),5) AS UNSIGNED)
+												, SRM_SM_KEYNO = CAST(SUBSTRING(NULLIF(SRM_SM_KEYNO, ''),5) AS UNSIGNED);
+												
+												
+			UPDATE T_GROUP_MANAGER 			SET   GM_KEYNO = CAST(SUBSTRING(NULLIF(GM_KEYNO, ''),4) AS UNSIGNED);
+			UPDATE T_GROUP_PARTICIPATE 		SET   GP_KEYNO = CAST(SUBSTRING(NULLIF(GP_KEYNO, ''),4) AS UNSIGNED)
+												 ,GP_GM_KEYNO = CAST(SUBSTRING(NULLIF(GP_GM_KEYNO, ''),4) AS UNSIGNED)
+												 ,GP_GSS_KEYNO = CAST(SUBSTRING(NULLIF(GP_GSS_KEYNO, ''),5) AS UNSIGNED)
+												 ,GP_GSM_KEYNO = CAST(SUBSTRING(NULLIF(GP_GSM_KEYNO, ''),5) AS UNSIGNED);
+			UPDATE T_GROUP_SCHEDULE_MAIN 	SET   GSM_KEYNO = CAST(SUBSTRING(NULLIF(GSM_KEYNO, ''),5) AS UNSIGNED)
+					  							 ,GSM_GM_KEYNO = CAST(SUBSTRING(NULLIF(GSM_GM_KEYNO, ''),4) AS UNSIGNED);
+			UPDATE T_GROUP_SCHEDULE_SUB 	SET   GSS_KEYNO = CAST(SUBSTRING(NULLIF(GSS_KEYNO, ''),5) AS UNSIGNED)
+					  							 ,GSS_GSM_KEYNO = CAST(SUBSTRING(NULLIF(GSS_GSM_KEYNO, ''),5) AS UNSIGNED);	
+         </sql>
+     </changeSet>   
+      
+     <changeSet id="109" author="lhj">
+      	<comment>데이터 타입 변경 varchar to int, 고유키에 auto increment 추가</comment>
+         <sql>
+			ALTER TABLE S_COMMON_FILE_MAIN MODIFY COLUMN FM_KEYNO INT DEFAULT NULL NULL COMMENT '고유키';
+			ALTER TABLE S_COMMON_FILE_SUB MODIFY COLUMN FS_KEYNO INT DEFAULT NULL NULL COMMENT '고유키';
+			ALTER TABLE S_COMMON_FILE_SUB MODIFY COLUMN FS_FM_KEYNO INT DEFAULT NULL NULL COMMENT '파일 상위 그룹키';
+			ALTER TABLE S_COMMON_FILE_SUB MODIFY COLUMN FS_M_KEYNO INT DEFAULT NULL NULL COMMENT '모바일 리사이즈 이미지 키 ';
+			ALTER TABLE B_BOARD_NOTICE MODIFY COLUMN BN_FM_KEYNO INT DEFAULT NULL NULL COMMENT '파일키';
+			ALTER TABLE B_BOARD_NOTICE MODIFY COLUMN BN_THUMBNAIL INT DEFAULT NULL NULL COMMENT '썸네일';
+			ALTER TABLE B_BOARD_NOTICE_HISTORY MODIFY COLUMN BNH_BN_FM_KEYNO INT DEFAULT NULL NULL COMMENT '파일키';
+			ALTER TABLE B_BOARD_NOTICE_HISTORY MODIFY COLUMN BNH_BN_THUMBNAIL INT DEFAULT NULL NULL COMMENT '썸네일';
+			ALTER TABLE T_COMMON_QRCODE MODIFY COLUMN CQ_FS_KEYNO INT DEFAULT NULL NULL COMMENT '파일 고유키';
+			ALTER TABLE T_PLACE_MANAGER MODIFY COLUMN PM_FS_KEYNO INT DEFAULT NULL NULL COMMENT '장소이미지키값';
+			ALTER TABLE T_PLACE_MANAGER MODIFY COLUMN PM_SEAT_FS_KEYNO INT DEFAULT NULL NULL COMMENT '좌석프로그램 배경 키값';
+			ALTER TABLE T_POPUPINFO MODIFY COLUMN PI_FS_KEYNO INT DEFAULT NULL NULL COMMENT '파일키';
+			ALTER TABLE T_POPUPZONE_LIST MODIFY COLUMN TLM_FS_KEYNO INT DEFAULT NULL NULL COMMENT '이미지 기본키(FS)';
+			ALTER TABLE T_TOURISM_IMAGE MODIFY COLUMN TIM_FS_KEYNO INT DEFAULT NULL NULL COMMENT '파일키';
+			ALTER TABLE T_TOURISM_MENU MODIFY COLUMN TM_IMG INT DEFAULT NULL NULL COMMENT '음식이미지';
+			ALTER TABLE T_XML_HISTORY MODIFY COLUMN XH_FS_KEYNO INT DEFAULT NULL NULL COMMENT '파일키';
+			
+			ALTER TABLE S_COMMON_FILE_MAIN MODIFY COLUMN FM_KEYNO int(11) NOT NULL AUTO_INCREMENT COMMENT '고유키';
+			ALTER TABLE S_COMMON_FILE_SUB MODIFY COLUMN FS_KEYNO int(11) NOT NULL AUTO_INCREMENT COMMENT '고유키';
+			
+			ALTER TABLE B_BOARD_INTRO_HTML MODIFY COLUMN BIH_KEYNO int(11) NOT NULL AUTO_INCREMENT COMMENT '기본키';
+			
+			ALTER TABLE T_APPLICAITON_MANAGER MODIFY COLUMN AP_KEYNO INT NOT NULL AUTO_INCREMENT COMMENT '고유키';
+			ALTER TABLE T_APPLICATION_CHARGE MODIFY COLUMN APC_KEYNO INT NOT NULL AUTO_INCREMENT COMMENT '고유키';		
+			ALTER TABLE T_APPLICATION_PARTICIPATE MODIFY COLUMN APP_KEYNO INT NOT NULL AUTO_INCREMENT COMMENT '고유키';		
+			ALTER TABLE T_APPLICATION_SCHEDULE_MAIN MODIFY COLUMN ASM_KEYNO INT NOT NULL AUTO_INCREMENT COMMENT '고유키';
+			ALTER TABLE T_APPLICATION_SCHEDULE_MAIN MODIFY COLUMN ASM_KEYNO INT NOT NULL AUTO_INCREMENT COMMENT '고유키';		
+			ALTER TABLE T_APPLICATION_SCHEDULE_SUB MODIFY COLUMN ASS_KEYNO INT NOT NULL AUTO_INCREMENT COMMENT '고유키';		
+			ALTER TABLE T_APPLICATION_USER MODIFY COLUMN APU_KEYNO INT NOT NULL AUTO_INCREMENT COMMENT '고유키';
+			
+			ALTER TABLE T_HOLIDAY_MANAGER MODIFY COLUMN THM_KEYNO INT NOT NULL AUTO_INCREMENT COMMENT '고유키';
+			
+			ALTER TABLE T_SURVEY_MGR MODIFY COLUMN SM_KEYNO INT NOT NULL AUTO_INCREMENT COMMENT '설문지 기본키';
+			ALTER TABLE T_SURVEY_QUESTION MODIFY COLUMN SQ_KEYNO INT NOT NULL AUTO_INCREMENT COMMENT '설문문항 기본키';
+			ALTER TABLE T_SURVEY_QUESTION_OPTION MODIFY COLUMN SQO_KEYNO INT NOT NULL AUTO_INCREMENT COMMENT '설문 보기 기본키';
+			ALTER TABLE T_SURVEY_RESULT_DATA MODIFY COLUMN SRD_KEYNO INT NOT NULL AUTO_INCREMENT COMMENT '설문 결과 데이터 기본키';
+			ALTER TABLE T_SURVEY_RESULT_MGR MODIFY COLUMN SRM_KEYNO INT NOT NULL AUTO_INCREMENT COMMENT '설문결과 기본키';
+			
+			ALTER TABLE T_GROUP_MANAGER MODIFY COLUMN GM_KEYNO INT NOT NULL AUTO_INCREMENT COMMENT '고유키';
+			ALTER TABLE T_GROUP_PARTICIPATE MODIFY COLUMN GP_KEYNO INT NOT NULL AUTO_INCREMENT COMMENT '고유키';
+			ALTER TABLE T_GROUP_PARTICIPATE MODIFY COLUMN GP_GM_KEYNO INT DEFAULT NULL NULL COMMENT '프로그램 키';
+			ALTER TABLE T_GROUP_PARTICIPATE MODIFY COLUMN GP_GSS_KEYNO INT DEFAULT NULL NULL COMMENT '프로그램 서브키';
+			ALTER TABLE T_GROUP_PARTICIPATE MODIFY COLUMN GP_GSM_KEYNO INT DEFAULT NULL NULL COMMENT '프로그램 메인키';
+			ALTER TABLE T_GROUP_SCHEDULE_MAIN MODIFY COLUMN GSM_KEYNO INT NOT NULL AUTO_INCREMENT COMMENT '고유키';
+			ALTER TABLE T_GROUP_SCHEDULE_MAIN MODIFY COLUMN GSM_GM_KEYNO INT DEFAULT NULL NULL COMMENT '단체프로그램키';
+			ALTER TABLE T_GROUP_SCHEDULE_SUB MODIFY COLUMN GSS_KEYNO INT NOT NULL AUTO_INCREMENT COMMENT '기본키';
+			ALTER TABLE T_GROUP_SCHEDULE_SUB MODIFY COLUMN GSS_GSM_KEYNO INT DEFAULT NULL NULL COMMENT '메인프로그램키';
+         </sql>
+     </changeSet>    
+     
+     <changeSet id="110" author="ksy">
+      	<comment>B_BOARD_TYPE 댓글 페이징 컬럼 추가</comment>
+         <sql>
+			ALTER TABLE B_BOARD_TYPE ADD BT_PAGEUNIT_C INT(2) DEFAULT NULL NULL COMMENT '한 페이지당 게시되는 댓글 건 수';
+			ALTER TABLE B_BOARD_TYPE ADD BT_PAGESIZE_C INT(2) DEFAULT NULL NULL COMMENT '댓글 리스트에 게시되는 페이지 건 수';
+         </sql>
+     </changeSet> 
+    
+    
+
+     <changeSet id="111" author="ksy">
+      	<comment>B_BOARD_TYPE 게시물 삭제 사유 추가</comment>
+         <sql>
+			ALTER TABLE B_BOARD_TYPE ADD BT_DEL_MANAGE_YN char(1) DEFAULT 'N' NULL COMMENT '게시물 삭제 사유 수집 여부';
+         </sql>
+     </changeSet> 
+     
+     <changeSet id="112" author="ksy">
+      	<comment>B_BOARD_TYPE 삭제 정보, IP 정보 추가</comment>
+         <sql>
+			ALTER TABLE B_BOARD_NOTICE ADD BN_DEL_MEMO MEDIUMTEXT NULL COMMENT '삭제 사유';
+			ALTER TABLE B_BOARD_NOTICE ADD BN_DELDT DATETIME NULL COMMENT '삭제일자';
+			ALTER TABLE B_BOARD_NOTICE ADD BN_DELNM varchar(50) NULL COMMENT '삭제자';
+			ALTER TABLE B_BOARD_NOTICE ADD BN_INSERT_IP varchar(100) NULL COMMENT '등록자 ip';
+			ALTER TABLE B_BOARD_NOTICE ADD BN_UPDATE_IP varchar(100) NULL COMMENT '수정자 ip';
+			ALTER TABLE B_BOARD_NOTICE ADD BN_DELETE_IP varchar(100) NULL COMMENT '삭제자 ip';
+
+         </sql>
+     </changeSet> 
+     
+        <changeSet id="113" author="lck">
+      	<comment>통계 관리테이블 추가 T_STATISTICS_MANAGER</comment>
+         <sql>
+			CREATE TABLE T_STATISTICS_MANAGER (
+				STM_KEYNO int(11) auto_increment NOT NULL COMMENT '고유키',
+				STM_IP varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL COMMENT 'IP',
+				STM_REGDT datetime DEFAULT NULL NULL COMMENT '등록일',
+				STM_TYPE char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL COMMENT '통계 타입(F = 파일, U = ucc, B = 게시판)',
+				STM_MAINKEY varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL COMMENT '메인 연결키(F-BN, U-UM, B-MNMAIN)',
+				STM_CONNECT_KEY varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL NULL COMMENT '통계시킬 키(F-FS, U-US, B-BN)',
+				CONSTRAINT `PRIMARY` PRIMARY KEY (STM_KEYNO)
+			)
+			ENGINE=InnoDB
+			DEFAULT CHARSET=utf8mb4
+			COLLATE=utf8mb4_unicode_ci
+			COMMENT='통계 관리 테이블';
+         </sql>
+     </changeSet> 
+
+     <changeSet id="114" author="kjw">
+      	<comment>U_USERINFO 휴면계정 유무 컬럼 추가</comment>
+         <sql>
+			ALTER TABLE U_USERINFO ADD UI_DORMANCY CHAR(1) DEFAULT 'N' NULL COMMENT '휴면계정 유무';
+         </sql>
+     </changeSet> 
+     
+     <changeSet id="115" author="ksy">
+      	<comment>B_BOARD_NOTICE 에디터 타입 추가</comment>
+         <sql>
+			ALTER TABLE B_BOARD_NOTICE ADD BN_HTMLMAKER_PLUS_TYPE CHAR(1) DEFAULT 'N' NULL COMMENT 'web 에디터 타입';
+         </sql>
+     </changeSet> 
+     
+     <changeSet id="116" author="ksy">
+      	<comment>U_USERINFO_ROLL 다운로드 권한 추가</comment>
+         <sql>
+			INSERT INTO U_USERINFO_ROLL VALUES('UIR_0000000022', 'download', '다운로드', 'Y', 'SC_MYKFE');
+         </sql>
+     </changeSet> 
+     
+     <changeSet id="117" author="ksy">
+      	<comment>S_HOME_MANAGER 세션 종료시간 추가</comment>
+         <sql>
+			ALTER TABLE S_HOME_MANAGER ADD HM_SESSION int(5) DEFAULT 30 NULL COMMENT '세션 종료시간(분)';
+         </sql>
+     </changeSet> 
+     
+     <changeSet id="118" author="ksy">
+      	<comment>B_BOARD_TYPE 게시물 제목 글자 수 제한, 게시물 금지어 설정 컬럼 추가</comment>
+         <sql>
+			ALTER TABLE B_BOARD_TYPE ADD BT_SUBJECT_NUM int(2) NULL COMMENT '게시물 제목 글자 수 제한';
+			ALTER TABLE B_BOARD_TYPE ADD BT_FORBIDDEN varchar(1000) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '게시물 내용 금지어';
+			ALTER TABLE B_BOARD_TYPE ADD BT_FORBIDDEN_YN char(1) COLLATE utf8mb4_unicode_ci DEFAULT 'N' COMMENT '금지어 설정 여부';
+         </sql>
+     </changeSet> 
+     
+     <changeSet id="119" author="ksy">
+      	<comment>B_BOARD_NOTICE 내용 검색 컬럼 추가</comment>
+         <sql>
+			ALTER TABLE B_BOARD_NOTICE ADD BN_CONTENTS_SEARCH longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '내용검색';
+         </sql>
+     </changeSet>
+      
+     <changeSet id="120" author="ksy">
+      	<comment> S_MENU_VIEW_DATA 검색 데이터 컬럼 추가</comment>
+         <sql>
+			ALTER TABLE S_MENU_VIEW_DATA ADD MVD_DATA_SEARCH longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '검색 데이터';
+         </sql>
+     </changeSet> 
+     
+     <changeSet id="121" author="ksy">
+      	<comment> S_SITE_MANAGER 웹폴더관리 경로 컬럼 추가</comment>
+         <sql>
+			ALTER TABLE S_SITE_MANAGER ADD WEBFILE_PATH varchar(100) NULL COMMENT '웹폴더관리 경로';
+			UPDATE S_SITE_MANAGER SET WEBFILE_PATH = CONCAT(RESOURCE_PATH, 'webfile/');
+         </sql>
+     </changeSet> 
+     <changeSet id="122" author="ryanius">
+      	<comment> S_HOME_MANAGER 그룹 키값 추가</comment>
+         <sql>
+			ALTER TABLE S_HOME_MANAGER ADD HM_GROUP varchar(20) NULL COMMENT '그룹 키값';
+         </sql>
+     </changeSet>
+     
+     <changeSet id="123" author="ryanius">
+      	<comment> S_COMMON_CODE_MAIN 서브도메인 그룹 추가</comment>
+         <sql>
+         	INSERT INTO S_COMMON_CODE_MAIN(
+			MC_KEYNO,
+			MC_CODENM,
+			MC_REGDT,
+			MC_IN_C,
+			MC_SYS_YN,
+			MC_USE_YN
+			)
+		VALUES(
+			'MC_0000000001',
+			'서브도메인 그룹',
+			SYSDATE(),
+			'BA',
+			'N',
+			'Y'
+			);
+         </sql>
+     </changeSet>
+     <changeSet id="124" author="ryanius">
+      	<comment> U_USERINFO_AUTHORITY_ROLL INDEX 추가</comment>
+         <sql>
+         	CREATE INDEX U_USERINFO_AUTHORITY_ROLL_MN_KEYNO_IDX USING BTREE ON U_USERINFO_AUTHORITY_ROLL (MN_KEYNO);
+         </sql>
+     </changeSet>
+     <changeSet id="125" author="ryanius">
+      	<comment> U_USERINFO_AUTHORITY UIA_HOMEKEY 추가</comment>
+         <sql>
+         	ALTER TABLE U_USERINFO_AUTHORITY ADD UIA_HOMEKEY varchar(20) NULL COMMENT '홈페이지 관련키'
+         </sql>
+     </changeSet>
+     <changeSet id="126" author="ryanius">
+      	<comment> S_COMMON_CODE_SUB SC_KEYNO varchar20 변경</comment>
+         <sql>
+         	ALTER TABLE S_COMMON_CODE_SUB MODIFY COLUMN SC_KEYNO varchar(20) NOT NULL COMMENT '서브코드 키';
+         </sql>
+     </changeSet>
+     <changeSet id="127" author="ryanius">
+      	<comment> U_USERINFO_ROLL foreign key 추가</comment>
+         <sql>
+         	ALTER TABLE U_USERINFO_ROLL ADD CONSTRAINT U_USERINFO_ROLL_FK FOREIGN KEY (UIR_TYPE) REFERENCES S_COMMON_CODE_SUB(SC_KEYNO);
+         </sql>
+     </changeSet>
+     <changeSet id="128" author="ryanius">
+      	<comment> 코드관리 내용 추가</comment>
+         <sql>
+         	INSERT INTO S_COMMON_CODE_SUB(
+         		SC_KEYNO , SC_MC_IN_C,SC_CODENM,SC_CODELV,SC_USE_YN
+         	)
+         	VALUES(
+         	'SC_CACAC','AI','관리자페이지',4,'Y'
+         	);
+         </sql>
+     </changeSet>
+     <changeSet id="129" author="ryanius">
+      	<comment> 권한 roll 추가</comment>
+         <sql>
+         	INSERT INTO U_USERINFO_ROLL
+         	VALUES(
+         		'UIR_0000000024','manager','관리자페이지','Y','SC_CACAC'
+         	);
+         </sql>
+     </changeSet>
+     
+     <changeSet id="130" author="ryanius">
+      	<comment> 129번 삭제</comment>
+         <sql>
+         	DELETE FROM U_USERINFO_ROLL WHERE UIR_KEYNO = 'UIR_0000000024';
+         </sql>
+     </changeSet>
+     
+     <changeSet id="131" author="ryanius">
+      	<comment> 128번 삭제</comment>
+         <sql>
+         	DELETE FROM S_COMMON_CODE_SUB WHERE SC_KEYNO = 'SC_CACAC';
+         </sql>
+     </changeSet>
+     <changeSet id="132" author="ryanius">
+      	<comment> 관리자페이지 서브도메인별 권한 설정 테이블 추가</comment>
+         <sql>
+         	CREATE TABLE U_USERINFO_AUTHORITY_ADMIN (
+				MN_KEYNO varchar(20) NULL COMMENT '관리자페이지 메뉴 키',
+				HM_KEYNO varchar(20) NULL COMMENT '서브도메인 메뉴 키',
+				UIA_KEYNO varchar(20) NULL COMMENT '권한 키',
+				CONSTRAINT UAA_PK PRIMARY KEY (MN_KEYNO,HM_KEYNO,UIA_KEYNO)
+			)
+			ENGINE=InnoDB
+			DEFAULT CHARSET=utf8mb4
+			COLLATE=utf8mb4_unicode_ci
+			COMMENT='관리자페이지 서브도메인별 권한 설정';
+
+         </sql>
+     </changeSet>
+     
+     
+      
+</databaseChangeLog>
