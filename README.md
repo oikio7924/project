@@ -15,8 +15,12 @@
 - 상세 기획서: [`docs/SPEC.md`](./atglobal/ao-web/docs/SPEC.md)
 
 <p>
-  <img src="./atglobal/ao-web/docs/screenshots/login.png" width="49%" alt="ao-web 로그인" />
   <img src="./atglobal/ao-web/docs/screenshots/dashboard.png" width="49%" alt="ao-web 대시보드" />
+  <img src="./atglobal/ao-web/docs/screenshots/page-수주현황.png" width="49%" alt="ao-web 수주현황" />
+</p>
+<p>
+  <img src="./atglobal/ao-web/docs/screenshots/page-재고현황.png" width="49%" alt="ao-web 재고현황" />
+  <img src="./atglobal/ao-web/docs/screenshots/page-대리점.png" width="49%" alt="ao-web 대리점 조회" />
 </p>
 
 ### [daeyang/dm-web](./daeyang/dm-web) — 태양광 발전 모니터링 (v2)
@@ -25,8 +29,11 @@
 - **Stack**: React, Express, MariaDB, Google/Kakao/Naver Map API
 
 <p>
-  <img src="./daeyang/dm-web/docs/screenshots/login.png" width="49%" alt="dm-web 로그인" />
   <img src="./daeyang/dm-web/docs/screenshots/dashboard.png" width="49%" alt="dm-web 대시보드" />
+  <img src="./daeyang/dm-web/docs/screenshots/page-발전현황.png" width="49%" alt="dm-web 발전현황" />
+</p>
+<p>
+  <img src="./daeyang/dm-web/docs/screenshots/page-통계분석.png" width="49%" alt="dm-web 통계분석" />
 </p>
 
 ### [daeyang/ht-web](./daeyang/ht-web) — 태양광 세금계산서 발행 시스템
@@ -35,7 +42,6 @@
 - **Stack**: Node.js/Express, MariaDB
 
 <p>
-  <img src="./daeyang/ht-web/docs/screenshots/login.png" width="49%" alt="ht-web 로그인" />
   <img src="./daeyang/ht-web/docs/screenshots/dashboard.png" width="49%" alt="ht-web 대시보드" />
 </p>
 
@@ -44,8 +50,8 @@
 - **Stack**: Node.js/Express, MariaDB
 
 <p>
-  <img src="./daeyang/bd-web/docs/screenshots/login.png" width="49%" alt="bd-web 로그인" />
   <img src="./daeyang/bd-web/docs/screenshots/dashboard.png" width="49%" alt="bd-web 캘린더" />
+  <img src="./daeyang/bd-web/docs/screenshots/page-발전소등록.png" width="49%" alt="bd-web 발전소 등록" />
 </p>
 
 ### [daeyang/dymonitering](./daeyang/dymonitering) — 태양광 통합 모니터링 시스템 (Legacy)
@@ -55,8 +61,8 @@
 - **Stack**: Java, Spring, eGovFrame, MyBatis, MySQL/Oracle
 
 <p>
-  <img src="./daeyang/dymonitering/docs/screenshots/login.png" width="49%" alt="dymonitering 로그인" />
   <img src="./daeyang/dymonitering/docs/screenshots/dashboard.png" width="49%" alt="dymonitering 대시보드" />
+  <img src="./daeyang/dymonitering/docs/screenshots/page-통계분석.png" width="49%" alt="dymonitering 통계분석" />
 </p>
 
 ### [daeyang/485_emulator](./daeyang/485_emulator) — RS485 인버터 통신 에뮬레이터
