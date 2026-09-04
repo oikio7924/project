@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="SiteManager">
+
+	<update id="updateData" parameterType="SiteManager">
+		INSERT INTO s_site_manager(
+    		  USERID
+   			, HOMEPAGE_REP
+   			, HOMEPAGE_NAME
+   			, DAUM_APPKEY
+   			, GOOGLE_APPKEY
+   			, NAVER_APPKEY
+   			, PAGE_UNIT
+   			, PAGE_SIZE
+   			, EMAIL_SENDER
+   			, EMAIL_SENDER_NAME
+   			, FILE_EXT
+   			, FILE_PATH
+   			, RESOURCE_PATH
+   			, JSP_PATH
+   			, SNS_DESCRIPTION
+   			, SNS_IMAGE
+   			, SNS_IMAGE_WIDTH
+   			, SNS_IMAGE_HEIGHT
+   			, TOUR_START_TEXT
+   			, TOUR_START_LAT
+   			, TOUR_START_LNG
+   			, USER_DEL_POLICY
+   			, PASSWORD_CYCLE
+   			, PASSWORD_REGEX
+   			, SNSLOGIN_NAVER_CLIENT_ID
+			, SNSLOGIN_NAVER_CALLBACK
+			, SNSLOGIN_NAVER_CLIENT_SECRET
+			, SNSLOGIN_KAKAO_JSKEY
+			, SNSLOGIN_FACEBOOK_APPID
+    	)
+    	VALUES(
+			  #{USERID}
+   			, #{HOMEPAGE_REP}
+   			, #{HOMEPAGE_NAME}
+   			, #{DAUM_APPKEY}
+   			, #{GOOGLE_APPKEY}
+   			, #{NAVER_APPKEY}
+   			, #{PAGE_UNIT}
+   			, #{PAGE_SIZE}
+   			, #{EMAIL_SENDER}
+   			, #{EMAIL_SENDER_NAME}
+   			, #{FILE_EXT}
+   			, #{FILE_PATH}
+   			, #{RESOURCE_PATH}
+   			, #{JSP_PATH}
+   			, #{SNS_DESCRIPTION}
+   			, #{SNS_IMAGE}
+   			, #{SNS_IMAGE_WIDTH}
+   			, #{SNS_IMAGE_HEIGHT}
+   			, #{TOUR_START_TEXT}
+   			, #{TOUR_START_LAT}
+   			, #{TOUR_START_LNG}
+   			, #{USER_DEL_POLICY}
+   			, #{PASSWORD_CYCLE}
+   			, #{PASSWORD_REGEX}
+   			, #{SNSLOGIN_NAVER_CLIENT_ID}
+			, #{SNSLOGIN_NAVER_CALLBACK}
+			, #{SNSLOGIN_NAVER_CLIENT_SECRET}
+			, #{SNSLOGIN_KAKAO_JSKEY}
+			, #{SNSLOGIN_FACEBOOK_APPID}
+		)
+		ON DUPLICATE KEY UPDATE homepage_rep		=	#{HOMEPAGE_REP}
+			, HOMEPAGE_NAME   	=   #{HOMEPAGE_NAME}
+			, DAUM_APPKEY   	=   #{DAUM_APPKEY}
+			, GOOGLE_APPKEY		=	#{GOOGLE_APPKEY}
+			, NAVER_APPKEY		=	#{NAVER_APPKEY}
+			, PAGE_UNIT			=	#{PAGE_UNIT}
+			, PAGE_SIZE			=	#{PAGE_SIZE}
+			, EMAIL_SENDER		=	#{EMAIL_SENDER}
+			, EMAIL_SENDER_NAME	=	#{EMAIL_SENDER_NAME}
+			, FILE_EXT			=	#{FILE_EXT}
+			, FILE_PATH			=	#{FILE_PATH}
+			, RESOURCE_PATH		=	#{RESOURCE_PATH}
+			, JSP_PATH			=	#{JSP_PATH}
+			, SNS_DESCRIPTION	=	#{SNS_DESCRIPTION}
+			, SNS_IMAGE			=	#{SNS_IMAGE}
+			, SNS_IMAGE_WIDTH	=	#{SNS_IMAGE_WIDTH}
+			, SNS_IMAGE_HEIGHT	=	#{SNS_IMAGE_HEIGHT}
+			, TOUR_START_TEXT	=	#{TOUR_START_TEXT}
+			, TOUR_START_LAT	=	#{TOUR_START_LAT}
+			, TOUR_START_LNG	=	#{TOUR_START_LNG}
+			, USER_DEL_POLICY	=	#{USER_DEL_POLICY}
+			, PASSWORD_CYCLE	=	#{PASSWORD_CYCLE}
+			, PASSWORD_REGEX	=	#{PASSWORD_REGEX}
+			, SNSLOGIN_NAVER_CLIENT_ID = #{SNSLOGIN_NAVER_CLIENT_ID}
+			, SNSLOGIN_NAVER_CALLBACK = #{SNSLOGIN_NAVER_CALLBACK}
+			, SNSLOGIN_NAVER_CLIENT_SECRET = #{SNSLOGIN_NAVER_CLIENT_SECRET}
+			, SNSLOGIN_KAKAO_JSKEY = #{SNSLOGIN_KAKAO_JSKEY}
+			, SNSLOGIN_FACEBOOK_APPID = #{SNSLOGIN_FACEBOOK_APPID}
+	</update>
+	
+	<select id="getData" resultType="SiteManager" parameterType="String">
+		SELECT		A.*
+					, B.HM_TILES tiles
+		FROM		s_site_manager A
+		LEFT JOIN 	s_home_manager  B 
+		ON 			A.HOMEPAGE_REP = B.HM_MN_HOMEDIV_C 
+		WHERE		USERID	=	#{USERID}
+	</select>
+</mapper>

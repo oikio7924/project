@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="FileManage"> 
+  
+  <sql id="FM_getDataListBody">
+  FROM (
+    SELECT
+        FM_KEYNO KEYNO
+      , FM_KEYNO 
+      , FM_REGDT 
+      , FM_REGNM
+      , FM_WHERE_KEYS
+      , FM_COMMENTS
+      , ( SELECT GROUP_CONCAT(FS_ORINM) FROM s_common_file_sub WHERE FS_FM_KEYNO = FM.FM_KEYNO ) FS_ORINMS
+    FROM s_common_file_main FM
+  ) A
+  LEFT JOIN u_userinfo U
+  ON  A.FM_REGNM = U.UI_KEYNO
+  WHERE 1=1
+    
+    <if test="searchList != null">
+    <foreach collection="searchList" item="item">
+      <choose>
+         <when test='item.searchIndex.equals("1")'>
+	    AND   FM_KEYNO     LIKE '%'||#{item.searchKeyword}||'%'
+	        </when>
+	        <when test='item.searchIndex.equals("2")'>
+	    AND   FM_WHERE_KEYS    LIKE '%'||#{item.searchKeyword}||'%'
+	        </when>
+	        <when test='item.searchIndex.equals("3")'>
+	    AND   FM_COMMENTS     LIKE '%'||#{item.searchKeyword}||'%'
+	        </when>
+	        <when test='item.searchIndex.equals("4")'>
+	    AND   FM_REGNM       LIKE '%'||#{item.searchKeyword}||'%'
+	        </when>
+	        <when test='item.searchIndex.equals("5")'>
+	    AND   FM_REGDT     LIKE '%'||#{item.searchKeyword}||'%'
+	        </when>
+	        
+	        <when test='item.searchIndex.equals("all")'>
+	    AND (
+		        FM_KEYNO     LIKE '%'||#{item.searchKeyword}||'%'  OR
+				    FM_WHERE_KEYS    LIKE '%'||#{item.searchKeyword}||'%'  OR
+				    FM_COMMENTS     LIKE '%'||#{item.searchKeyword}||'%'  OR
+				    FM_REGNM       LIKE '%'||#{item.searchKeyword}||'%'  OR
+				    FM_REGDT     LIKE '%'||#{item.searchKeyword}||'%'
+	    )    
+	        </when>         
+	      </choose>
+    </foreach>
+    </if>
+  </sql>
+  
+  <!-- File Main 카운팅 -->
+	<select id="AFM_FileManageListCnt" resultType="int">
+		SELECT COUNT(*)
+		<include refid="FM_getDataListBody"/>
+  </select>
+  
+  <!-- File Main 목록 조회  -->
+	<select id="AFM_FileManageList" resultType="HashMap">
+		SELECT 	*
+		<include refid="FM_getDataListBody"/>
+    <choose>
+      <when test="orderBy == 1">
+      ORDER BY  FM_KEYNO ${sortDirect}
+      </when>
+      <when test="orderBy == 2">
+      ORDER BY  FM_WHERE_KEYS ${sortDirect}
+      </when>
+      <when test="orderBy == 3"> 
+      ORDER BY  FM_COMMENTS ${sortDirect}
+      </when>
+      <when test="orderBy == 4"> 
+      ORDER BY  FS_ORINMS ${sortDirect}
+      </when>
+      <when test="orderBy == 5">
+      ORDER BY  UI_ID ${sortDirect}
+      </when>
+      <when test="orderBy == 6">
+      ORDER BY  FM_REGDT ${sortDirect}
+      </when>
+      <otherwise>
+      ORDER BY  KEYNO DESC
+      </otherwise>
+    </choose>
+    <if test="recordCountPerPage != 0">
+      LIMIT   #{recordCountPerPage} OFFSET #{firstIndex}
+    </if> 
+  </select>
+  
+  <!-- File Main 상세 조회  -->
+  <select id="AFM_FileManageDetail" resultType="FileMain">
+    SELECT 		U.UI_NAME FM_REGNM, FM.*
+    FROM s_common_file_main FM
+    LEFT JOIN u_userinfo U
+    ON 			FM.FM_REGNM = U.UI_KEYNO
+    WHERE FM_KEYNO = #{FM_KEYNO}
+  </select>
+  
+  <!-- File Sub 상세 조회  -->
+  <select id="AFS_FileSelectByKey" resultType="HashMap">
+    SELECT 	  FS.*
+    		, CONCAT(FS_FOLDER,FS_CHANGENM, '.',FS_EXT) THUMBNAIL_PATH
+    		, FS_PUBLIC_PATH  THUMBNAIL_PUBLIC_PATH
+    FROM s_common_file_sub FS
+    WHERE
+    <choose>
+	    <when test="FS_KEYNO != null and FS_KEYNO != ''">
+	      FS_KEYNO = #{FS_KEYNO}
+	    </when>
+	    <otherwise>
+	      FS_FM_KEYNO = #{FS_FM_KEYNO}
+	    </otherwise>
+    </choose>
+  </select>
+  
+  <!-- 메인 파일 정보 수정 처리 -->
+  <update id="AFM_FileUpdateData" parameterType="FileMain">
+    UPDATE s_common_file_main
+    SET    
+      FM_REGNM      = #{FM_REGNM}
+      <if test="FM_WHERE_KEYS != null and FM_WHERE_KEYS != ''">
+      , FM_WHERE_KEYS = #{FM_WHERE_KEYS}
+      </if>
+      , FM_COMMENTS   = #{FM_COMMENTS}
+    WHERE   FM_KEYNO  =   #{FM_KEYNO}
+    </update>
+  
+  <!-- 서브 파일 교체 관련 정보 수정 -->
+  <update id="AFS_FileUpdateData" parameterType="FileSub" >
+    UPDATE s_common_file_sub
+    SET    
+			  FS_FILE_SIZE  	= #{FS_FILE_SIZE}
+			, FS_ORINM          = #{FS_ORINM}
+			, FS_ORIWIDTH       = #{FS_ORIWIDTH}
+			, FS_ORIHEIGHT      = #{FS_ORIHEIGHT}
+			, FS_REGNM          = #{FS_REGNM}
+			, FS_CHANGENM       = #{FS_CHANGENM}
+			, FS_EXT            = #{FS_EXT}
+			, FS_FOLDER		    = #{FS_FOLDER}
+			, FS_STORAGE		= #{FS_STORAGE}
+			, FS_PUBLIC_PATH	= #{FS_PUBLIC_PATH}
+			, FS_REGDT      	= SYSDATE()
+			<if test="FS_FM_KEYNO != null and FS_FM_KEYNO != ''">
+			, FS_FM_KEYNO        = #{FS_FM_KEYNO}
+			</if>
+			<if test="FS_ALT != null and FS_ALT != ''">
+			, FS_ALT        = #{FS_ALT}
+			</if>
+			<if test="FS_COMMENTS != null and FS_COMMENTS != ''">
+       		, FS_COMMENTS   = #{FS_COMMENTS}
+			</if>
+			<if test="FS_THUMBNAIL != null and FS_THUMBNAIL != ''">
+       		, FS_THUMBNAIL   = #{FS_THUMBNAIL}
+			</if>
+    WHERE   FS_KEYNO  =   #{FS_KEYNO}
+  </update>
+  
+  <!-- 서브 파일 보조정보 수정 -->
+  <update id="AFS_SubInfoUpdate" parameterType="FileSub" >
+  <![CDATA[
+    UPDATE s_common_file_sub
+    SET    
+			FS_ALT        = #{FS_ALT}
+			, FS_COMMENTS   = #{FS_COMMENTS}
+			, FS_ORDER   = #{FS_ORDER}
+    WHERE   FS_KEYNO  =   #{FS_KEYNO}
+  ]]>
+  </update>
+    
+</mapper>
+ 

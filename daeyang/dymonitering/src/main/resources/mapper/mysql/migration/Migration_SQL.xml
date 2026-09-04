@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="migration"> 
+	
+	<select id="UI_getList" resultType="USER">
+		SELECT	*
+		FROM	u_userinfo
+	</select>
+	
+	
+	<update id="UI_updateData">
+		UPDATE 	u_userinfo
+		SET		UI_PASSWORD	=	#{UI_PASSWORD}
+		WHERE	UI_ID	=	#{UI_ID}
+	
+	</update>		
+</mapper>
+ 

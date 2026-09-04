@@ -1,0 +1,56 @@
+name: Build Mac App
+
+on:
+  workflow_dispatch:  # 수동 실행
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Python 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 의존성 설치
+        run: |
+          pip install PyQt5 pyserial pyinstaller Pillow
+
+      - name: PNG → ICNS 변환
+        working-directory: inverter-emulator
+        run: |
+          mkdir -p icon.iconset
+          sips -z 16   16   icon.png --out icon.iconset/icon_16x16.png
+          sips -z 32   32   icon.png --out icon.iconset/icon_32x32.png
+          sips -z 64   64   icon.png --out icon.iconset/icon_64x64.png
+          sips -z 128  128  icon.png --out icon.iconset/icon_128x128.png
+          sips -z 256  256  icon.png --out icon.iconset/icon_256x256.png
+          sips -z 512  512  icon.png --out icon.iconset/icon_512x512.png
+          iconutil -c icns icon.iconset -o icon.icns
+
+      - name: PyInstaller 빌드
+        working-directory: inverter-emulator
+        run: |
+          pyinstaller --onefile --windowed \
+            --name "InverterEmulator" \
+            --icon="icon.icns" \
+            --add-data "icon.icns:." \
+            --add-data "icon.png:." \
+            emulator.py
+
+      - name: 빌드 결과 압축
+        working-directory: inverter-emulator
+        run: |
+          cd dist
+          zip -r InverterEmulator-mac.zip InverterEmulator.app
+
+      - name: 결과물 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: InverterEmulator-mac
+          path: inverter-emulator/dist/InverterEmulator-mac.zip
+          retention-days: 30

@@ -1,0 +1,10 @@
+node_modules/
+data/store.json
+.env
+.claude/
+logs/
+hometaxbill_sample/**/.vs/
+hometaxbill_sample/**/bin/
+hometaxbill_sample/**/obj/
+hometaxbill_sample/**/*.class
+hometaxbill_sample/파워빌더/

@@ -1,0 +1,3 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ include file="/WEB-INF/jsp/taglib/taglib.jspf"%>
+<p>asasasddsdsdsd</p>aaaadsdsds<figure><img id="tempimg0" class="tempImgs" src="http://221.144.83.86:7001/get.do?file=9umHJoFpDUOt031sHJKHP83LRzmdhuqn5fqzB3Ze9ISak/06ejn6weFj9Jm9kT2HpT3ZEmcEIPXuGxW+/2KL6A==" title="" style="width:px;height:px;"><figure><figure><img id="tempimg0" class="tempImgs" src="http://221.144.83.86:7001/get.do?file=9umHJoFpDUOt031sHJKHP83LRzmdhuqn5fqzB3Ze9IRolSlmjJIwA626XORlxal56YBIwXdZdwqzJRAjT4LQ9w==" title="" style="width:333px;height:px;"></figure><br></figure></figure><figure>dfgfggfg</figure>

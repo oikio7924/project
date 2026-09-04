@@ -1,0 +1,749 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="survey"> 
+
+	<resultMap id="SURVEYMAIN_MAP" type="HashMap">
+		<result property="SM_EXP" column="SM_EXP" jdbcType="CLOB" javaType="java.lang.String"/>
+		<result property="SS_DATA" column="SS_DATA" jdbcType="CLOB" javaType="java.lang.String"/>
+		<result property="SSH_DATA" column="SSH_DATA" jdbcType="CLOB" javaType="java.lang.String"/>
+  	</resultMap>
+
+
+  	<sql id="SM_getListBody">
+		FROM (
+			SELECT	AB.*
+					, ROW_NUMBER() OVER (
+		    		<choose>
+				 		<when test="orderBy == 1">
+				 		ORDER BY	COUNT ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 2">
+				 		ORDER BY	SM_TITLE ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 3">
+				 		ORDER BY	SM_REGNM ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 4">
+				 		ORDER BY	SM_STARTDT ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 5">
+				 		ORDER BY	SM_ENDDT ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 6">
+				 		ORDER BY	CNT ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 7">
+				 		ORDER BY	MN_NAME ${sortDirect}
+				 		</when>
+				 		<otherwise>
+				 		ORDER BY 	COUNT DESC
+				 		</otherwise>
+			 		</choose>
+			 		) RNUM
+			FROM (
+				SELECT 	ROWNUM AS COUNT
+						, B.* 
+				FROM (
+					SELECT	A.CNT
+							, B.*, MN.MN_NAME
+					FROM (
+						SELECT		SM_KEYNO 
+					            	, COUNT(SRM_SM_KEYNO) CNT
+					  	FROM t_survey_mgr SM
+					  	LEFT JOIN t_survey_result_mgr SRM
+					  	ON			SM.SM_KEYNO = SRM.SRM_SM_KEYNO
+					  	WHERE 		SM_DELYN = 'N'
+					  	GROUP BY 	SM_KEYNO
+					) A
+					LEFT JOIN t_survey_mgr B
+					ON			A.SM_KEYNO = B.SM_KEYNO
+				    LEFT JOIN s_menu_manager MN
+		       	 	ON			B.SM_MN_KEYNO = MN.MN_KEYNO
+					ORDER BY	B.SM_REGDT
+				) B
+			) AB
+		WHERE 1=1
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT 				LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		SM_TITLE			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		SM_REGNM 			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		SM_STARTDT			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		SM_ENDDT 			LIKE '%' || #{item.searchKeyword} || '%'						
+	 			</when>
+	 			<when test='item.searchIndex.equals("6")'>
+ 		AND		CNT 				LIKE '%' || #{item.searchKeyword} || '%'						
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT 				LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SM_TITLE			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SM_REGNM 			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SM_STARTDT			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SM_ENDDT 			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				CNT 				LIKE '%' || #{item.searchKeyword} || '%' 	 	
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+		)AA
+	
+	</sql>
+  	
+    <select id="SM_getListCnt" resultType="int">
+		SELECT	COUNT(*)
+		<include  refid="SM_getListBody"/>
+    </select>
+    
+    <select id="SM_getList" resultType="hashmap">
+    	SELECT	* 
+		<include  refid="SM_getListBody"/>
+		<if test=" recordCountPerPage != 0">
+		WHERE 1=1
+		AND 	RNUM BETWEEN  #{firstIndex}+1 AND #{lastIndex} 
+		</if>  
+    </select>
+  
+    <!-- 설문 등록 -->
+    <insert id="SM_insert" parameterType="SmDTO">
+    	INSERT INTO t_survey_mgr
+    		(
+    			 SM_KEYNO
+    			,SM_TITLE
+    			,SM_EXP
+    			,SM_STARTDT
+    			,SM_ENDDT
+    			,SM_REGNM
+    			,SM_REGDT
+    			,SM_IDYN
+    			,SM_HOMEYN
+    			,SM_CNT_TYPE
+    			,SM_MN_KEYNO
+    			,SM_SS_KEYNO
+    			
+    		)
+    	VALUES
+    		(
+    			 SM_SEQ.NEXTVAL
+    			,#{SM_TITLE}
+    			,#{SM_EXP}
+    			,#{SM_STARTDT}
+    			,#{SM_ENDDT}
+    			,#{SM_REGNM}
+    			,SYSDATE
+    			,#{SM_IDYN}
+    			,'Y'
+    			,#{SM_CNT_TYPE}
+    			,#{SM_MN_KEYNO}
+    			,#{SM_SS_KEYNO}
+    			
+    		)
+    </insert>
+    
+    <!-- 설문 문항 등록 -->
+    <insert id="SQ_insert" parameterType="SqDTO">
+    	INSERT INTO t_survey_question
+    		(
+    			 SQ_KEYNO
+    			,SQ_SM_KEYNO
+    			,SQ_NUM
+    			,SQ_ST_TYPE
+    			,SQ_QUESTION
+    			,SQ_COMMENT
+				,SQ_CK_MIN
+    			,SQ_CK_MAX	 
+    			,SQ_ORDER_TYPE	 
+    			,SQ_KG_TEXT
+    			,SQ_REQYN
+    			,SQ_IN_ORDER_TYPE
+    		)
+    	VALUES
+    		(
+    			 SQ_SEQ.NEXTVAL
+    			,#{SQ_SM_KEYNO}
+    			,#{SQ_NUM}
+    			,#{SQ_ST_TYPE}
+    			,#{SQ_QUESTION}
+    			,#{SQ_COMMENT}
+    			,#{SQ_CK_MIN}
+				,#{SQ_CK_MAX}
+				,#{SQ_ORDER_TYPE}
+				,#{SQ_KG_TEXT}
+				,#{SQ_REQYN}
+				,#{SQ_IN_ORDER_TYPE}
+    		)
+    </insert>
+    
+    <!-- 설문 보기 등록 -->
+    <insert id="SQO_insert" parameterType="SqDTO">
+    	INSERT INTO t_survey_question_option
+    		(
+    			 SQO_KEYNO
+    			,SQO_SQ_KEYNO
+    			,SQO_NUM
+    			,SQO_OPTION
+    			,SQO_VALUE
+    			,SQO_ORDER_TYPE
+    		)
+    	VALUES
+    		(
+    			 SQQ_SEQ.NEXTVAL
+    			,#{SQO_SQ_KEYNO}
+    			,#{SQO_NUM}
+    			,#{SQO_OPTION}
+    			,#{SQO_VALUE}
+    			,#{SQO_ORDER_TYPE}
+    		)
+    </insert>
+    
+    <!-- 설문지 데이터 불러오기 -->
+    <select id="SM_selectBySmkey" resultMap="SURVEYMAIN_MAP" resultType="HashMap">
+    	SELECT SM.*, (SELECT COUNT(*) FROM t_survey_result_mgr WHERE SM.SM_KEYNO = SRM_SM_KEYNO ) CNT
+    	FROM t_survey_mgr SM
+    	WHERE SM_KEYNO 	= #{SM_KEYNO}
+    	AND SM_DELYN	= 'N'
+    </select>
+    
+    <!-- 설문지 문항 데이터 불러오기 -->
+    <select id="SQ_getListBySmkey" resultType="HashMap">
+    	SELECT *
+    	FROM t_survey_question
+    	WHERE SQ_SM_KEYNO = #{SM_KEYNO}
+    	ORDER BY SQ_NUM
+    </select>
+    
+    <!-- 설문지 문항 보기 데이터 불러오기 -->
+    <select id="SQO_getListBySqkey" resultType="HashMap">
+    	SELECT *
+    	FROM t_survey_question_option a
+    	left join T_SURVEY_QUESTION b
+    	ON a.SQO_SQ_KEYNO = b.SQ_KEYNO
+    	WHERE b.SQ_SM_KEYNO = #{SM_KEYNO}
+    	ORDER BY SQO_NUM, SQO_KEYNO
+    </select>
+    
+    <!-- 설문지 메인 수정 -->
+    <update id="SM_update" parameterType="SmDTO">
+    	UPDATE t_survey_mgr
+   		SET  	 SM_TITLE		=	#{SM_TITLE}
+	   			,SM_EXP			=	#{SM_EXP}
+	   			,SM_STARTDT		=	#{SM_STARTDT}
+	   			,SM_ENDDT		=	#{SM_ENDDT}
+	   			,SM_IDYN		=	#{SM_IDYN}
+	   			,SM_CNT_TYPE	=	#{SM_CNT_TYPE}
+	   			,SM_MN_KEYNO	=	#{SM_MN_KEYNO}
+	   			,SM_SS_KEYNO	=	#{SM_SS_KEYNO}
+    	WHERE SM_KEYNO = #{SM_KEYNO}
+    </update>
+    
+    <!-- 설문지 문항 수정 -->
+    <update id="SQ_update" parameterType="SqDTO">
+    	UPDATE t_survey_question
+    	SET		 SQ_ST_TYPE		=	#{SQ_ST_TYPE}
+    			,SQ_QUESTION	=	#{SQ_QUESTION}
+    			<if test="SQ_NUM != null">
+				 ,SQ_NUM		=	#{SQ_NUM}
+				 </if>
+ 				 <if test="SQ_CK_MIN != null">
+				 ,SQ_CK_MIN 	=	#{SQ_CK_MIN}
+				 </if>
+				 <if test="SQ_CK_MAX != null">
+				 ,SQ_CK_MAX		=	#{SQ_CK_MAX}
+				 </if>
+				 <if test="SQ_ORDER_TYPE != null">
+				 ,SQ_ORDER_TYPE		=	#{SQ_ORDER_TYPE}
+				 </if>
+ 				 ,SQ_KG_TEXT = #{SQ_KG_TEXT}
+ 				 ,SQ_REQYN = #{SQ_REQYN}				 		  				 	
+ 				 ,SQ_IN_ORDER_TYPE = #{SQ_IN_ORDER_TYPE}				 		  				 	
+    	WHERE SQ_KEYNO = #{SQ_KEYNO}
+    </update>
+    
+    <!-- 설문지 보기 수정(지금 안씀) -->
+  	<update id="SQO_update" parameterType="SqDTO">
+  		UPDATE t_survey_question_option
+  		SET		 SQO_OPTION	=	#{SQO_OPTION}
+  				,SQO_NUM	=	#{SQO_NUM}
+  				<if test="SQO_VALUE != null">
+  				,SQO_VALUE	=	#{SQO_VALUE}
+  				</if>
+  		WHERE SQO_KEYNO = #{SQO_KEYNO}
+  	</update>
+  	  	
+	<!-- 설문지 보기 삭제 -->
+  	<delete id="SQO_delete">
+  		DELETE FROM t_survey_question_option
+  		WHERE SQO_SQ_KEYNO = #{SQO_SQ_KEYNO}
+  	</delete>  
+  	
+  	<!-- 설문지 문항 삭제(지금 안씀) -->
+  	<update id="SQ_delete_back" parameterType="hashmap">
+  		UPDATE t_survey_question
+  		SET		SQ_DELYN = 'Y'
+  		WHERE	SQ_KEYNO in
+  		<foreach collection="keys" item="item" open="(" close=")" separator=",">
+  		 #{item}
+  		</foreach>
+  	</update>
+  	
+	<!-- 설문지 문항 삭제(지금 안씀) -->
+  	<update id="SQ_delete" parameterType="hashmap">
+  		DELETE FROM t_survey_question
+  		WHERE SQ_SM_KEYNO = #{SM_KEYNO}
+  	</update>
+  	
+  	<!-- 설문지 삭제 -->
+  	<update id="SM_delete" parameterType="SmDTO">
+  		UPDATE t_survey_mgr
+  		SET SM_DELYN = 'Y'
+  		WHERE SM_KEYNO = #{SM_KEYNO}
+  	</update>
+  	
+  	<!-- 홈페이지 등록 설문지 목록 가져오기 -->
+  	<select id="SM_selectUser" resultType="hashmap" resultMap="SURVEYMAIN_MAP">
+  	<![CDATA[
+  		SELECT * FROM (
+	  	SELECT 	  M.*
+	  			, CASE 
+	  				WHEN  SM_STARTDT > TO_CHAR(SYSDATE, 'YYYY-MM-DD') THEN '예정' 
+	  				WHEN  SM_STARTDT <= TO_CHAR(SYSDATE, 'YYYY-MM-DD') AND SM_ENDDT >= TO_CHAR(SYSDATE, 'YYYY-MM-DD') THEN '진행중' 
+	  				ELSE '마감' 
+	  			  END SM_STATE
+	  	FROM t_survey_mgr M
+	  	WHERE     SM_HOMEYN = 'Y'
+	  	AND 	  SM_DELYN = 'N'
+	  	) A
+	  	ORDER BY CASE WHEN SM_STATE IN ('진행중') THEN 0 ELSE 1 END, SM_REGDT DESC
+  	]]>
+  	</select>
+  	
+  	<!-- 설문참여인원 -->
+  	<select id="SM_countPenel" resultType="SmDTO">
+  		UPDATE t_survey_mgr
+  		SET SM_PANEL_CNT = SM_PANEL_CNT + 1
+  		WHERE SM_KEYNO = #{SM_KEYNO}
+  	</select>
+
+	<!-- 설문 스킨 삭제 -->
+	<update id ="SS_delete">
+		UPDATE T_SURVEY_SKIN
+		SET 	 SS_DEL_YN = 'Y'
+		WHERE 	SS_KEYNO   = #{SS_KEYNO}
+	</update>
+
+	<!-- 설문 스킨 목록 불러오기 -->
+	<select id="SS_getSkinData" resultType="SsDTO">
+		SELECT 	  (SELECT UI_NAME FROM u_userinfo WHERE UI_KEYNO = SS.SS_REGNM) SS_REGNM
+				, (SELECT UI_NAME FROM u_userinfo WHERE UI_KEYNO = SS.SS_MODNM) SS_MODNM
+				, TO_CHAR(SS.SS_REGDT, 'YYYY-MM-DD HH24:MI:SS') SS_REGDT
+				, TO_CHAR(SS.SS_MODDT, 'YYYY-MM-DD HH24:MI:SS') SS_MODDT
+				, SS.SS_KEYNO
+			    , SS_DATA
+			    , SS_SKIN_NAME
+		FROM T_SURVEY_SKIN SS
+		WHERE 	SS_DEL_YN = 'N'
+		<if test="SS_KEYNO != null">
+		AND SS_KEYNO = #{SS_KEYNO}
+		</if>
+		
+	</select>
+
+	<!-- 설문 스킨 히스토리 리스트 -->
+	<select id="SSH_getList" resultType="HashMap" resultMap="SURVEYMAIN_MAP">
+			SELECT 		A.SSH_KEYNO
+						, A.SSH_SS_KEYNO
+						, A.SSH_DATA
+						, TO_CHAR(A.SSH_STDT, 'YYYY-MM-DD HH24:MI:SS') SSH_STDT
+				 		, TO_CHAR(A.SSH_ENDT, 'YYYY-MM-DD HH24:MI:SS') SSH_ENDT
+						, B.UI_ID SSH_MODNM
+						, A.SSH_VERSION
+						, A.SSH_COMMENT
+			FROM T_SURVEY_SKIN_HISTORY A
+			LEFT JOIN u_userinfo B
+			ON			A.SSH_MODNM = B.UI_KEYNO
+			WHERE		SSH_SS_KEYNO	=	#{SS_KEYNO}
+			AND			SSH_DEL_YN		=	'N'
+			ORDER BY	SSH_ENDT DESC
+	</select>
+
+	<!-- 설문 스킨 히스토리 작성일 -->
+	<select id="get_historyDate" resultType="String">
+		SELECT 	CASE WHEN SS_MODDT IS NULL THEN SS_REGDT ELSE SS_MODDT END REGDT
+		FROM T_SURVEY_SKIN
+		WHERE 	SS_KEYNO 	=  #{SS_KEYNO}
+		AND   	SS_DEL_YN 	= 'N'
+	</select>
+	
+ 	<!-- 설문 스킨 히스토리버전 -->
+  	<select id="get_historyVersion" resultType="double">
+		SELECT NVL(MAX(SSH_VERSION),0)
+		FROM T_SURVEY_SKIN_HISTORY
+		WHERE SSH_SS_KEYNO = #{SS_KEYNO}
+	</select>
+	
+	<!-- 설문 스킨 추가 -->
+	<insert id="SS_insert" parameterType="SsDTO">
+          INSERT INTO T_SURVEY_SKIN(
+    	  	SS_KEYNO
+			, SS_SKIN_NAME
+			, SS_DATA			
+			, SS_REGDT
+			, SS_REGNM
+			) 
+         VALUES (
+		      #{SS_KEYNO}
+		    , #{SS_SKIN_NAME}
+			, #{SS_DATA}
+			, SYSDATE
+			, #{SS_REGNM}
+	       )
+	</insert>
+
+	<!-- 설문 스킨 업데이트 -->
+	<insert id="SS_update" parameterType="SsDTO">
+         UPDATE T_SURVEY_SKIN
+         SET
+	            SS_DATA	 	= 	#{SS_DATA},
+				SS_MODDT 	= 	SYSDATE,
+				SS_SKIN_NAME	=	#{SS_SKIN_NAME},				
+				SS_MODNM 	=	#{SS_MODNM}
+		WHERE 	SS_KEYNO 	= 	#{SS_KEYNO}
+	</insert>
+
+
+	<!-- 설문 스킨 히스토리 등록 -->
+	<insert id ="SSH_insert" parameterType="SsDTO">
+		INSERT INTO T_SURVEY_SKIN_HISTORY(
+			 SSH_KEYNO
+			,SSH_SS_KEYNO
+			,SSH_DATA
+			,SSH_STDT
+			,SSH_ENDT
+			,SSH_MODNM
+			,SSH_VERSION
+			,SSH_COMMENT
+			)
+		VALUES(
+			 #{SSH_KEYNO}
+			,#{SSH_SS_KEYNO}
+			,#{SSH_DATA}
+			,TO_DATE(#{SSH_STDT},'YYYY-MM-DD HH24:MI:SS')
+			,SYSDATE
+			,#{SSH_MODNM}
+			,#{SSH_VERSION}
+			,#{SSH_COMMENT}
+			)
+	</insert>
+
+	<!-- 설문 스킨 히스토리 데이터 -->
+	<select id="SSH_getData" parameterType="SsDTO" resultType="SsDTO">
+		SELECT 		*
+		FROM T_SURVEY_SKIN_HISTORY
+		WHERE		SSH_KEYNO	=	#{SSH_KEYNO}
+	</select>
+
+	<!-- 설문 스킨 히스토리 비교 데이터 -->
+	<select id="SSH_compareData" parameterType="SsDTO" resultType="SsDTO">
+		<if test='SS_KEYNO != "undefined"'>
+			SELECT 		SS_DATA 
+			FROM T_SURVEY_SKIN 
+			WHERE 		SS_KEYNO	=	#{SS_KEYNO}
+			UNION ALL
+		</if>
+		<![CDATA[
+		(
+			SELECT SSH_DATA SS_DATA 
+			FROM(
+				SELECT      SSH_DATA 
+							,ROW_NUMBER() OVER(ORDER BY SSH_STDT DESC) AS SS
+				FROM T_SURVEY_SKIN_HISTORY
+				WHERE		SSH_SS_KEYNO	= (
+												SELECT SSH_SS_KEYNO 
+												FROM T_SURVEY_SKIN_HISTORY
+												WHERE SSH_KEYNO	=  #{SSH_KEYNO}
+											  )
+				AND			SSH_DEL_YN		=	'N'
+		        AND			SSH_KEYNO		<=   #{SSH_KEYNO}
+				ORDER BY	SSH_ENDT DESC
+		      )
+       		WHERE SS <= 2
+			
+		)
+		]]>
+	</select>
+		
+	<!-- 스킨 이름 중복 검사 -->
+	<select id="SS_getSkinRDList"  resultType="int">
+			SELECT 	COUNT(*)
+			FROM T_SURVEY_SKIN 
+			WHERE 	SS_DEL_YN 		=	'N'
+			<if test='SS_KEYNO != null and SS_KEYNO  != ""'>
+			AND		SS_KEYNO != #{SS_KEYNO}
+			</if>
+			AND		SS_SKIN_NAME 	=	#{SS_SKIN_NAME} 
+	</select>
+  	  	
+	<!-- 문항 목록 검색 -->
+  	<select id="SQ_getListCnt" resultType="int">
+		SELECT	COUNT(*)
+		<include  refid="SQ_getListBody"/>
+    </select>
+
+  	<sql id="SQ_getListBody">
+		FROM (
+			SELECT	AB.*
+					, ROW_NUMBER() OVER (
+		    		<choose>
+				 		<when test="orderBy == 1">
+				 		ORDER BY	SQ_NUM ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 2">
+				 		ORDER BY	SQ_ST_TITLE ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 3">
+				 		ORDER BY	SQ_KG_TEXT ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 4">
+				 		ORDER BY	SQ_QUESTION ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 5">
+				 		ORDER BY	SQ_COMMENT ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 6">
+				 		ORDER BY	SQ_ORDER_TYPE ${sortDirect}
+				 		</when>
+				 		<otherwise>
+				 		ORDER BY 	SQ_NUM DESC
+				 		</otherwise>
+			 		</choose>
+			 		) RNUM
+			FROM (
+				SELECT 	ROWNUM AS COUNT
+						, B.* 
+				FROM (
+					SELECT *
+			    		FROM t_survey_question
+			    		WHERE SQ_SM_KEYNO = #{SQ_SM_KEYNO}
+			    		ORDER BY SQ_NUM
+				) B
+			) AB
+		WHERE 1=1
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		SQ_NUM 				LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		SQ_ST_TYPE			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		SQ_QUESTION 			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		SQ_KG_TEXT 			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		SQ_COMMENT 			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("6")'>
+ 		AND		SQ_ORDER_TYPE		LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				SQ_NUM 				LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SQ_ST_TYPE			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SQ_QUESTION			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SQ_KG_TEXT			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SQ_COMMENT			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SQ_ORDER_TYPE		LIKE '%' || #{item.searchKeyword} || '%'  					
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+		)AA	
+	</sql> 
+	
+	<select id="SQ_getList" resultType="hashmap">
+    	SELECT	* 
+		<include  refid="SQ_getListBody"/>
+		<if test=" recordCountPerPage != 0">
+		WHERE 1=1
+		AND 	RNUM BETWEEN  #{firstIndex}+1 AND #{lastIndex} 
+		</if>  
+    </select>
+    
+	<!-- 설문 문항 단일 데이터 불러오기 -->
+    <select id="SQ_getListBySqkey" resultType="HashMap">
+    	SELECT *
+    	FROM t_survey_question
+    	WHERE SQ_KEYNO = #{SQ_KEYNO}
+    	ORDER BY SQ_NUM
+    </select>
+    
+    <!-- 설문 문항 보기 배점방식만 수정 -->
+    <update id="SM_cnt_update" parameterType="SmDTO">
+    	UPDATE t_survey_mgr
+   		SET  	SM_CNT_TYPE	=	#{SM_CNT_TYPE}			
+    	WHERE SM_KEYNO = #{SM_KEYNO}
+    </update>
+    
+     <!-- 설문지 문항 삭제 -->
+  	<delete id="SQ_quest_delete">
+  		DELETE FROM t_survey_question
+  		WHERE SQ_KEYNO = #{SQ_KEYNO}
+  	</delete>
+        	
+    <!-- 문항 번호 중복 검사 -->
+	<select id="SQ_getSQnumList"  resultType="int">		 
+		SELECT 	COUNT(*)
+		FROM t_survey_question
+		WHERE SQ_SM_KEYNO = #{SQ_SM_KEYNO}
+		<if test='SQ_KEYNO != null and SQ_KEYNO != ""'>
+		AND		SQ_KEYNO != #{SQ_KEYNO}
+		</if>
+		AND		SQ_NUM	=	#{SQ_NUM}
+	</select>    	
+        	
+    	<!-- 문항 목록 검색 -->
+  	<select id="SS_getListCnt" resultType="int">
+		SELECT	COUNT(*)
+		<include  refid="SS_getListBody"/>
+    </select>
+
+
+  	<sql id="SS_getListBody">
+		FROM (
+			SELECT	AB.*
+					, ROW_NUMBER() OVER (
+		    		<choose>
+				 		<when test="orderBy == 1">
+				 		ORDER BY	COUNT ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 2">
+				 		ORDER BY	SS_SKIN_NAME ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 3">
+				 		ORDER BY	SS_REGNM ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 4">
+				 		ORDER BY	SS_REGDT ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 5">
+				 		ORDER BY	SS_MODNM ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 6">
+				 		ORDER BY	SS_MODDT ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 7">
+				 		ORDER BY	SS_USE ${sortDirect}
+				 		</when>
+				 		<otherwise>
+				 		ORDER BY 	COUNT DESC
+				 		</otherwise>
+			 		</choose>
+			 		) RNUM
+			FROM (
+				SELECT 	ROWNUM AS COUNT
+						, B.* 
+				FROM (
+					SELECT SS_KEYNO
+						, SS_SKIN_NAME
+						, SS_DATA
+						, SS_DEL_YN
+						, (SELECT UI_ID FROM u_userinfo WHERE UI_KEYNO = SS.SS_REGNM) SS_REGNM
+						, (SELECT UI_ID FROM u_userinfo WHERE UI_KEYNO = SS.SS_MODNM) SS_MODNM
+						, TO_CHAR(SS.SS_REGDT, 'YYYY-MM-DD') SS_REGDT
+						, TO_CHAR(SS.SS_MODDT, 'YYYY-MM-DD') SS_MODDT
+						, DECODE((SELECT COUNT(*) FROM t_survey_mgr WHERE SM_SS_KEYNO = SS_KEYNO AND SM_DELYN = 'N'), 0, 'N', 'Y') SS_USE						
+			    		FROM T_SURVEY_SKIN SS
+			    		WHERE 	SS_DEL_YN = 'N'			    		
+				) B
+			 	ORDER BY COUNT
+			) AB
+		WHERE 1=1
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT 				LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		SS_SKIN_NAME			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		SS_REGNM 			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		SS_REGDT 			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		SS_MODNM 			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("6")'>
+ 		AND		SS_MODDT		LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("7")'>
+ 		AND		SS_USE		LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT 				LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SS_SKIN_NAME		LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SS_REGNM			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SS_REGDT			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SS_MODNM			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SS_MODDT			LIKE '%' || #{item.searchKeyword} || '%'  	OR				
+ 				SS_USE				LIKE '%' || #{item.searchKeyword} || '%'  					
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+		)AA	
+	</sql>     	
+	    
+    <select id="SS_getList" resultType="hashmap">
+    	SELECT	* 
+		<include  refid="SS_getListBody"/>
+		<if test=" recordCountPerPage != 0">
+		WHERE 1=1
+		AND 	RNUM BETWEEN  #{firstIndex}+1 AND #{lastIndex} 
+		</if>  
+    </select>
+        	
+    <!-- 스킨 사용여부 검사 -->
+	<select id="SS_getSkinUsing"  resultType="int">
+			SELECT 	COUNT(*)
+			FROM t_survey_mgr 
+			WHERE 	SM_SS_KEYNO = #{SS_KEYNO}
+			AND 	SM_DELYN = 'N'			
+	</select>    	
+	
+	<update id="SM_paneUpdate" parameterType="SmDTO">
+    	UPDATE t_survey_mgr
+   		SET  	 SM_PANEL_CNT	=	SM_PANEL_CNT - 1
+    	WHERE SM_KEYNO = #{SM_KEYNO}
+    </update>
+        
+    <select id="getSkinForm" resultType="String">
+        SELECT     SS_DATA
+        FROM T_SURVEY_SKIN
+        WHERE     SS_KEYNO = #{SS_KEYNO}
+    </select>
+</mapper>
+ 

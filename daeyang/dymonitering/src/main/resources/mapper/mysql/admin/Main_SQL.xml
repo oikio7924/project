@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MainSQL"> 
+	
+	<!-- 최근 게시물  - 관리자 메인 -->
+  	<select id="get_mainPageBoardList" resultType="hashmap">
+		SELECT 		M.MN_NAME
+			   		,IFNULL(U.UI_REP_NAME,BN_REGNM) BN_UI_NAME
+			   		,N.* 
+			   		,(SELECT COUNT(*) FROM b_board_notice) BN_TOTAL
+		FROM b_board_notice N
+		LEFT JOIN s_menu_manager M
+		ON			N.BN_MN_KEYNO = M.MN_KEYNO
+		LEFT JOIN u_userinfo U
+		ON			BN_REGNM	=	U.UI_KEYNO
+		WHERE 		BN_USE_YN = 'Y'
+		AND   		BN_DEL_YN = 'N'
+		AND			M.MN_HOMEDIV_C = #{MN_HOMEDIV_C}
+		ORDER BY 	BN_KEYNO DESC
+		LIMIT 13
+    </select>
+    
+	<!-- 회원 목록  - 관리자 메인 -->
+	<select id="get_mainPageMemberList" resultType="USER">
+ 		 SELECT (SELECT COUNT(*) FROM u_userinfo) UI_TOTAL
+ 		 		,(SELECT COUNT(*) FROM u_userinfo WHERE UI_DELYN = 'Y') UI_TOTAL_LEAVE
+ 		 		,CASE WHEN UI_DELYN = 'Y' THEN '탈퇴회원' ELSE GROUP_CONCAT(UIA_NAME) END UIA_NAME
+ 		 		,GROUP_CONCAT(S.UIA_KEYNO) UIA_KEYNO
+ 		 		,M.*
+		 FROM u_userinfo M
+         LEFT JOIN u_userinfo_member_authority A
+         ON	M.UI_KEYNO = A.UI_KEYNO
+         LEFT JOIN u_userinfo_authority S
+         ON	A.UIA_KEYNO	=	S.UIA_KEYNO
+		 GROUP BY UI_KEYNO
+		 ORDER BY UI_REGDT DESC
+		 LIMIT 13
+    </select>
+    
+    <select id="get_mainPageKeywordList" parameterType="Keyword" resultMap="ResultMap.rownumHashMap">
+    	SELECT	* 
+		FROM (
+			SELECT	B.*
+					, @ROWNUM:=@ROWNUM+1 as COUNT
+			FROM (
+				SELECT	SK_KEYWORD
+			          	, COUNT(*) SK_SIZE 
+			  	FROM t_search_keyword 
+				WHERE (@ROWNUM:=0)=0
+				 <if test="STDT != null and STDT != ''">
+	        	<![CDATA[
+		 		AND			DATE_FORMAT(SK_REGDT,'%Y-%m-%d') 	>=	#{STDT}
+		 		]]>
+			 	</if>
+			 	<if test="ENDT != null and ENDT != ''">
+			 	<![CDATA[
+		 		AND			DATE_FORMAT(SK_REGDT,'%Y-%m-%d') 	<=	#{ENDT}
+			 	]]>
+			 	</if>
+			  	GROUP BY SK_KEYWORD 
+				ORDER BY SK_SIZE DESC
+			) B
+		)AA
+		LIMIT 13
+    </select>
+    
+    <select id="get_mainPageKeywordListCnt" resultType="int" parameterType="Keyword">
+   
+		
+				SELECT COUNT(*) FROM (
+					SELECT	SK_KEYWORD
+			  		FROM t_search_keyword 
+					WHERE  1=1
+					<if test="STDT != null and STDT != ''">
+		        	<![CDATA[
+			 		AND			DATE_FORMAT(SK_REGDT,'%Y-%m-%d') 	>=	#{STDT}
+			 		]]>
+				 	</if>
+				 	<if test="ENDT != null and ENDT != ''">
+				 	<![CDATA[
+			 		AND			DATE_FORMAT(SK_REGDT,'%Y-%m-%d') 	<=	#{ENDT}
+				 	]]>
+				 	</if>
+			  		GROUP BY SK_KEYWORD 
+					) BB
+		
+	
+    </select>
+  	
+  	 <!-- 관리자페이지 메인에서 평가 5개 -->
+	<select id="get_mainPageSatisfactionList" resultMap="ResultMap.rownumHashMap" parameterType="hashmap">
+		SELECT * FROM (
+			SELECT	*
+			FROM (
+				SELECT 	  	
+							(RANK() OVER(ORDER BY TPR.TPS_REGDT DESC)) COUNT
+							, LEFT(TPR.TPS_REGDT, 10) AS TPS_REGDT
+			   				, TPS_IP
+			   				, TPS_COMMENT
+			   				, TPS_SCORE_NAME
+			   				, TPS_MN_KEYNO
+			   				, TMM.MN_NAME AS MN_NAME
+			   				,(SELECT COUNT(*) 
+			   					 FROM t_page_research_manager TPR
+									LEFT JOIN s_menu_manager TMM
+						            ON		TPR.TPS_MN_KEYNO = TMM.MN_KEYNO
+						       		<if test="UIA_KEYNO != 'UIA_ASDFG'">
+						       		LEFT JOIN u_userinfo_authority_roll UAR
+						       		ON		UAR.MN_KEYNO = TPR.TPS_MN_KEYNO
+						       		</if>
+							        WHERE MN_NAME IS NOT NULL
+							        <if test="UIA_KEYNO != 'UIA_ASDFG'">
+							        AND		UAR.UIA_KEYNO		=	#{UIA_KEYNO}
+							        </if> 
+							        AND (TPS_COMMENT IS NOT NULL AND TPS_COMMENT != '')
+							        AND TMM.MN_HOMEDIV_C = #{MN_HOMEDIV_C}
+			   				)TPR_TOTAL
+		        FROM t_page_research_manager TPR
+					LEFT JOIN s_menu_manager TMM
+		            ON		TPR.TPS_MN_KEYNO = TMM.MN_KEYNO
+		       		<if test="UIA_KEYNO != 'UIA_ASDFG'">
+		       		LEFT JOIN u_userinfo_authority_roll UAR
+		       		ON		UAR.MN_KEYNO = TPR.TPS_MN_KEYNO
+		       		</if>
+		        WHERE MN_NAME IS NOT NULL
+		        <if test="UIA_KEYNO != 'UIA_ASDFG'">
+		        AND		UAR.UIA_KEYNO		=	#{UIA_KEYNO}
+		        </if> 
+		        AND (TPS_COMMENT IS NOT NULL AND TPS_COMMENT != '')
+		        AND TMM.MN_HOMEDIV_C = #{MN_HOMEDIV_C}
+		             ORDER BY 	TPS_REGDT DESC 
+			) AB
+		)AA
+		WHERE 1=1
+ 		LIMIT 13
+	</select>  	
+  	
+	<!--메뉴 카운팅 조회  관리자메인 페이지에서 -->
+	<select id="get_mainPageMenuCount" parameterType="Log" resultType="Log">
+		SELECT AH.*, COUNT(*) selectCount
+		FROM (
+				SELECT 		A.AH_KEYNO
+							, B.MN_KEYNO
+							, CASE 
+								WHEN B.MN_LEV = '0' THEN '메인페이지'
+								ELSE B.MN_NAME
+							END MN_NAME
+				FROM t_activity_history A
+				LEFT JOIN s_menu_manager B
+				ON 			A.AH_MENU = B.MN_KEYNO
+				LEFT JOIN s_menu_manager C
+				ON			B.MN_HOMEDIV_C = C.MN_KEYNO
+				WHERE 		1=1		
+			 	AND			AH_OS		!=	'searchbot'	
+		        AND			B.MN_KEYNO IS NOT NULL
+		        AND			A.AH_SESSION IS NOT NULL
+		        AND			A.AH_HOMEDIV_C = #{AH_HOMEDIV_C}
+		        <if test="STDT != null and STDT != ''">
+	        	<![CDATA[
+		 		AND			DATE_FORMAT(AH_DATE,'%Y-%m-%d') 	>=	DATE_FORMAT(#{STDT},'%Y-%m-%d')
+		 		]]>
+			 	</if>
+			 	<if test="ENDT != null and ENDT != ''">
+			 	<![CDATA[
+		 		AND			DATE_FORMAT(AH_DATE,'%Y-%m-%d') 	<=	DATE_FORMAT(#{ENDT},'%Y-%m-%d')
+			 	]]>
+			 	</if>
+			 	GROUP BY B.MN_KEYNO, A.AH_SESSION
+			) AH
+   		GROUP BY MN_KEYNO
+		ORDER BY selectCount DESC
+		LIMIT 7
+	</select>
+	
+	<!-- 방문자 카운팅 조회  관리자메인 페이지에서 -->
+	<select id="get_mainPageVisitorCount" resultType="Log">
+    	SELECT 	  A.visitorType
+				, IFNULL(L.COUNT,'0') AS lastCount
+				, IFNULL(C.COUNT,'0') AS thisCount
+		FROM(
+			SELECT '01' visitorType
+			UNION ALL SELECT '02'
+			UNION ALL SELECT '03'
+			UNION ALL SELECT '04'
+			UNION ALL SELECT '05'
+			UNION ALL SELECT '06'
+			UNION ALL SELECT '07'
+			UNION ALL SELECT '08'
+			UNION ALL SELECT '09'
+			UNION ALL SELECT '10'
+			UNION ALL SELECT '11'
+			UNION ALL SELECT '12'
+		) A
+		LEFT JOIN (
+		    	SELECT	CONTENT visitorType, COUNT(*) COUNT
+		    	FROM (
+			    	SELECT	SUBSTR(AH_DATE, 6,2) CONTENT, AH_DATE
+			       	FROM t_activity_history
+			       	WHERE	1=1
+			       	AND		AH_HOMEDIV_C  = #{AH_HOMEDIV_C}
+				 	AND		AH_OS		 !=	'searchbot'	
+				 	<![CDATA[
+				 	AND 	DATE_FORMAT(AH_DATE,'%Y-%m-%d') 	>=	DATE_FORMAT(CONCAT(#{lastYear},'-01-01'),'%Y-%m-%d')
+			 		]]>
+		 			<![CDATA[
+		 			AND		DATE_FORMAT(AH_DATE,'%Y-%m-%d') 	<=	DATE_FORMAT(CONCAT(#{lastYear},'-12-31'),'%Y-%m-%d')
+		 			]]>
+				 	GROUP BY AH_SESSION
+		    		ORDER BY AH_KEYNO
+		    	) BODY
+				GROUP BY visitorType
+		) L
+		ON A.visitorType = L.visitorType
+		LEFT JOIN (
+					SELECT	 CONTENT visitorType, COUNT(*) COUNT
+			    	FROM (
+				    	SELECT	SUBSTR(AH_DATE, 6,2) CONTENT, AH_DATE
+				       	FROM t_activity_history
+				       	WHERE	1=1
+				       	AND		AH_HOMEDIV_C  = #{AH_HOMEDIV_C}
+					 	AND		AH_OS		 !=	'searchbot'	
+					 	<![CDATA[
+					 	AND 		DATE_FORMAT(AH_DATE,'%Y-%m-%d') 	>=	DATE_FORMAT(CONCAT(#{thisYear},'-01-01'),'%Y-%m-%d')
+					 	]]>
+	 					<![CDATA[
+			 			AND			DATE_FORMAT(AH_DATE,'%Y-%m-%d') 	<=	DATE_FORMAT(CONCAT(#{thisYear},'-12-31'),'%Y-%m-%d')
+			 			]]>
+					 	GROUP BY AH_SESSION
+			    		ORDER BY AH_KEYNO
+			    	) BODY
+					GROUP BY visitorType
+		) C
+		ON A.visitorType = C.visitorType
+	</select>
+</mapper>

@@ -1,0 +1,114 @@
+@CHARSET "UTF-8";
+
+/* CCALENdAR */ 
+.calendar {
+  width: 274px;
+  height :281px;
+  background: #f7f6f3;   
+  overflow: hidden;
+}
+.ui-datepicker-header {
+  height: 47px;
+  line-height: 47px;
+  font-size: 15px;
+  text-align: center;
+  color: #b0aead;
+  background: #d2cfcf;
+  margin-bottom: 10px;
+} 
+.ui-datepicker-prev, 
+.ui-datepicker-next {
+  width: 20px;
+  height: 20px;
+  text-indent: 9999px;
+  border: 2px solid #b0aead;
+  border-radius: 100%;
+  cursor: pointer;
+  overflow: hidden;
+  margin-top: 12px;
+}
+.ui-datepicker-prev {
+  float: left;
+  margin-left: 12px;
+}
+.ui-datepicker-prev:after {
+  transform: rotate(45deg);
+  margin: -43px 0px 0px 8px;
+}
+.ui-datepicker-next {
+  float: right;
+  margin-right: 12px;
+}
+.ui-datepicker-next:after {
+  transform: rotate(-135deg);
+  margin: -43px 0px 0px 6px;
+}
+.ui-datepicker-prev:after,
+.ui-datepicker-next:after {
+  content: '';
+  position: absolute;
+  display: block;
+  width: 4px;
+  height: 4px;
+  border-left: 2px solid #b0aead;
+  border-bottom: 2px solid #b0aead;
+}
+.ui-datepicker-prev:hover,
+.ui-datepicker-next:hover,
+.ui-datepicker-prev:hover:after,
+.ui-datepicker-next:hover:after {
+  border-color: #5ed1cc;
+}
+.ui-datepicker-title {
+  text-align: center;
+  font-weight: 900 !important;
+  color:#464646 !important;
+}
+.ui-datepicker-calendar {
+  width: 100%;
+  text-align: center;
+}
+.ui-datepicker-calendar thead tr th span {
+  display: block;
+  color: #2183f0;
+  margin-bottom: 5px;
+  font-size: 15px;
+  font-weight: 900;
+}
+.ui-state-default { 
+  display: block;
+  text-decoration: none;
+  color: #b5b5b5; 
+  line-height: 46px; 
+  font-size: 14px;
+}
+.ui-state-default:hover {
+ /*  background: rgba(0,0,0,0.02); */
+  background: rgba(8,106,216,0.3);  
+}
+.ui-state-highlight {
+  color: #8dd391;
+}
+.ui-state-active {
+  /* #5ed1cc */ 
+  color: #fff;
+  background-color: #2183f0;
+}  
+.ui-datepicker-unselectable .ui-state-default {
+  color: #eee;
+  border: 2px solid transparent; 
+}
+
+.eventday {
+    background-color: #C0DCF3 !important;
+    background-image :none !important;
+    color: #ffffff !important;
+}
+
+.eventday thead tr th span{
+	display: block;
+    width: 27px;
+    color: #2182ef;
+    margin-bottom: 5px;
+    font-size: 13px;  
+}  

@@ -1,0 +1,12 @@
+-- DB_RESET=true 일 때만 실행됨: 기존 테이블을 전부 삭제하고 schema.sql로 처음부터 재생성
+DROP TABLE IF EXISTS distributor_product_prices CASCADE;
+DROP TABLE IF EXISTS product_batches CASCADE;
+DROP TABLE IF EXISTS shipment_items CASCADE;
+DROP TABLE IF EXISTS shipments CASCADE;
+DROP TABLE IF EXISTS sales CASCADE;
+DROP TABLE IF EXISTS order_items CASCADE;
+DROP TABLE IF EXISTS orders CASCADE;
+DROP TABLE IF EXISTS distributor_inventory CASCADE;
+DROP TABLE IF EXISTS inventory CASCADE;
+DROP TABLE IF EXISTS products CASCADE;
+DROP TABLE IF EXISTS users CASCADE;

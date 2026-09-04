@@ -1,0 +1,320 @@
+@charset "utf-8";
+/* CSS Document */
+
+.sub-survey-wrap  {
+    width: 100%;
+     padding: 0px 0 60px;
+}
+.sub-survey-wrap .inner1200  {
+}
+.sub-survey-wrap .sub-survey-box  {
+    width: 100%;
+     border: 1px solid #ddd;
+}
+.sub-survey-wrap .sub-survey-box:after  {
+     visibility:  hidden;
+    display: block;
+    font-size:  0;
+    content: ".";
+    clear:  both;
+    height:  0;
+    *zoom: 1;
+}
+.sub-survey-wrap .sub-survey-box .detail-info-b  {
+    width: 100%;
+     padding: 15px 28px 12px;
+     border-bottom: 1px solid #ddd;
+}
+.sub-survey-wrap .sub-survey-box .detail-info-b .letter-b  {
+    margin-right: 25px;
+}
+.sub-survey-wrap .sub-survey-box .detail-info-b .letter-b:last-of-type  {
+    margin-right: 0;
+}
+.sub-survey-wrap .sub-survey-box .detail-info-b .letter-b .icon  {
+    display:  inline-block;
+     width: 21px;
+     height:  20px;
+     margin-right:  5px;
+     background: url(/resources/img/icon/survey/icon_bottom_survey_01.png) no-repeat left top;
+     vertical-align:  middle;
+     margin-top: -2px;
+}
+.sub-survey-wrap .sub-survey-box .detail-info-b .letter-b .icon.icon1  {
+    background-position: 0 0;
+}
+.sub-survey-wrap .sub-survey-box .detail-info-b .letter-b .icon.icon2  {
+    background-position: -21px 0;
+}
+.sub-survey-wrap .sub-survey-box .detail-info-b .letter-b .icon.icon3  {
+    background-position: -42px 0;
+}
+.sub-survey-wrap .sub-survey-box .detail-info-b .letter-b .icon.icon4  {
+    background-position: -63px 0;
+}
+.sub-survey-wrap .sub-survey-box .detail-info-b .letter-b .txt  {
+    font-size: 13px;
+     font-weight:  500;
+     color: #555;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box  {
+    width: 100%;
+     background-color: #f2f4f5;
+     padding: 22px 20px 25px 77px;
+     position: relative;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box:after  {
+     visibility:  hidden;
+    display: block;
+    font-size:  0;
+    content: ".";
+    clear:  both;
+    height:  0;
+    *zoom: 1;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .icon-box  {
+    position: absolute;
+     left: 24px;
+     top: 15px;
+     width: 39px;
+     height: 39px;
+     border-radius:  50%;
+     background-color: #3e70b5;
+     text-align:  center;
+     padding: 10px 0 0 3px;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b h3  {
+    font-size:  15px;
+     color: #555;
+     font-weight:  500;
+     margin-bottom:  10px;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .radio-box  {
+    margin-bottom:  20px;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .radio-box label  {
+    margin-right: 23px;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .radio-box label:last-of-type  {
+    margin-right: 0;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .radio-box label input:checked + span  {
+    font-weight:  800;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .radio-box label span  {
+    vertical-align:  middle;
+     line-height:  15px;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .input-box  {
+    width: 100%;
+     height:  44px;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .input-box:after  {
+     visibility:  hidden;
+    display: block;
+    font-size:  0;
+    content: ".";
+    clear:  both;
+    height:  0;
+    *zoom: 1;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .input-box .text-b  {
+    float: left;
+     width: 84%;
+     height:  100%;
+     padding-right:  10px;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .input-box .text-b textarea  {
+    width: 100%;
+     height:  100%;
+     border: 1px solid #ddd;
+     font-size:  14px;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .input-box .btn-b  {
+    float: left;
+     width: 16%;
+     height:  100%;
+     background-color: #fff;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .input-box .btn-b button  {
+    width: 100%;
+     height:  100%;
+     text-align:  center;
+     color: #fff;
+     background-color: #3e6eb6;
+     font-size:  15px;
+    -webkit-transition:  all 0.15s ease-in-out;
+    -moz-transition:  all 0.15s ease-in-out;
+    transition:  all 0.15s ease-in-out;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .input-box .btn-b button:hover  {
+    background-color: #244c88;
+}
+@media all and (max-width:999px) {
+    .sub-survey-wrap  {
+    width: 100%;
+     padding: 5px 0px 30px;
+}
+.sub-survey-wrap .inner1200  {
+}
+.sub-survey-wrap .sub-survey-box  {
+}
+.sub-survey-wrap .sub-survey-box .detail-info-b  {
+    width: 100%;
+     padding: 12px 20px 10px;
+}
+.sub-survey-wrap .sub-survey-box .detail-info-b .letter-b  {
+    margin-right: 5px;
+     margin-bottom: 3px;
+}
+.sub-survey-wrap .sub-survey-box .detail-info-b .letter-b:last-of-type  {
+    margin-right: 0;
+     margin-bottom: 0;
+}
+.sub-survey-wrap .sub-survey-box .detail-info-b .letter-b.left  {
+    float: none;
+     display:  inline-block;
+ }
+.sub-survey-wrap .sub-survey-box .detail-info-b .letter-b.right  {
+    float: none;
+     display:  inline-block;
+}
+.sub-survey-wrap .sub-survey-box .detail-info-b .letter-b .icon  {
+    width: 15px;
+     height:  14px;
+     margin-right:  2px;
+     background-size: 60px auto;
+     margin-top: -2px;
+}
+.sub-survey-wrap .sub-survey-box .detail-info-b .letter-b .icon.icon1  {
+    background-position: 0 0;
+}
+.sub-survey-wrap .sub-survey-box .detail-info-b .letter-b .icon.icon2  {
+    background-position: -15px 0;
+}
+.sub-survey-wrap .sub-survey-box .detail-info-b .letter-b .icon.icon3  {
+    background-position: -30px 0;
+}
+.sub-survey-wrap .sub-survey-box .detail-info-b .letter-b .icon.icon4  {
+    background-position: -45px 0;
+}
+.sub-survey-wrap .sub-survey-box .detail-info-b .letter-b .txt  {
+    font-size: 12px;
+     font-weight:  500;
+     color: #555;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box  {
+    padding: 15px 20px 14px;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .icon-box  {
+    display:  none;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b h3  {
+    font-size:  15px;
+     color: #3e6eb6;
+     font-weight:  800;
+     margin-bottom:  10px;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .radio-box  {
+    margin-bottom:  20px;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .radio-box:after  {
+     visibility:  hidden;
+    display: block;
+    font-size:  0;
+    content: ".";
+    clear:  both;
+    height:  0;
+    *zoom: 1;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .radio-box label  {
+    margin-right: 0px;
+     float: left;
+     margin-top: 5px;
+     left;
+     width: 50%;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .radio-box label:first-of-type  {
+    margin-top: 0;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .radio-box label:nth-of-type(2)  {
+    margin-top: 0;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .radio-box label span  {
+    font-size: 13px;
+     line-height:  15px;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .input-box  {
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .input-box .text-b  {
+    width: 75%;
+     padding-right:  5px;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .input-box .text-b textarea  {
+    font-size: 12px;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .input-box .btn-b  {
+    width: 25%;
+}
+.sub-survey-wrap .sub-survey-box .survey-content-box .content-b .input-box .btn-b button  {
+    font-size: 13px;
+}
+}
+
+
+/* 만족도 결과 */
+div#researchRusult {position: absolute;left: 59%;top: 40%;width: 400px;height: auto;background: #ffffff;overflow: hidden;border: 1px solid #acc3da;padding: 20px;}
+div#researchRusult h4 {float: left;margin: 24px 0 8px 0px;padding: 0 0 7px 0px;width: 100%;font-size: 17px;font-weight: 500;letter-spacing: -1px;color: #005baa;line-height: 190%;margin-bottom: 19px;border-bottom: 1px solid #eee;text-align:  center;}
+div#researchRusult h4 span {font-weight: 400;font-size: 0.85em;letter-spacing: -0.5px;}
+
+.pointBtn {position: absolute;right: 44px;top: 13px;font-weight: bold;margin: 0;padding: 0;}
+ .pointBtn a {color: #aaa;text-decoration: underline;font-size: 12px;font-weight:  500;}
+#pointView {position: absolute;left: 18px;top: 49px;padding: 28px 25px 15px;width: 360px;background: #fafafa;z-index: 10000;box-shadow: 0px 1px 3px rgba(120,120,120,0.3);}
+#pointView p.Pagepoint {border-bottom: 1px dotted #ddd;margin-bottom: 5px;font-size: 14px;/* font-weight: 500; */color: #666;padding-bottom: 13px;line-height:  1.4;}
+#pointView p.Pagepoint strong{font-weight: 600;}
+#pointView p.btn_close02 {clear: both; width: 45px; margin: 0 auto;}
+ul.graph li {clear: both;height: 19px;/* width: 386px; */margin: 0 0 13px 0;overflow: hidden;}
+ul.graph li div {float: left;/* width: 386px; */}
+ul.graph li div dl dt {float: left; width: 79px; font-weight: bold; padding: 2px 0 0 0; color: #5c616f;}
+ul.graph li div dl dd {float: left;width: 270px;margin-left: 68px;}
+div#researchRusult p.btn_close {position: absolute;right: 0;top: 6px;padding: 5px;margin: 0;}
+.ALink {text-decoration: none;color: #444;margin-right: 10px;font-size: 14px;font-weight: 500;/* background-color: #ddd; */}
+.listNone{display: none;}
+.closeImg{width: 20px; height: 20px;}
+
+/* 그래프 */
+ul.graph {float: left; width: 330px;}
+.hGraph ul {margin: 0 0px 0 12px;padding: 1px 0 0 0;/* border: 1px solid #ddd; */border-top: 0;border-right: 0;font-size: 11px;font-family: Tahoma, Geneva, sans-serif;list-style: none;}
+.hGraph li {position: relative; margin: 10px 0; white-space: nowrap; vertical-align: top;}
+.hGraph .gTerm {position: absolute;width: 45px;top: 0;left: 1px;line-height: 20px;text-align: left;color: #767676;font-weight: 500;font-size: 12px;}
+.hGraph .gBar {position: relative;display: inline-block;height: 20px;/* border: 1px solid #ccc; */border-left: 0;background: #005baa;color: #fff;padding: 2px 0 0 5px;font-size: 10px;}
+
+
+/* QR */
+.qrbox{padding: 4px 10px 5px 77px;}
+.qrbox .qrImgBox{float: left; font-size: 14px;}
+.qrbox .qrImgBox img{border: 0; vertical-align: middle; max-width: 100%;}
+.qrbox .inforMation{ float: left; padding-top: 30px; font-size: 15px; color: #555; font-weight: 500; margin-bottom: 10px;}
+
+/* 결과버튼 */
+.survey-content-box .content-b .divRight {float: right; margin-top: 10px;}
+
+
+@media all and (max-width:910px){
+	
+	.qrbox{padding: 10px 9px 10px 31px;}
+	.qrbox .qrImgBox{float: none; width: 100%; text-align: center;}
+	.qrbox .inforMation{padding-top: 0px; font-size: 13px;}
+	
+	.qrCodeSurveyWrap {margin: 30px 0 0px;}
+	.qrCodeSurveyWrap:after { visibility: hidden;display:block;font-size: 0;content:".";clear: both;height: 0;*zoom:1;}
+
+	/* 만족도 결과 */
+	div#researchRusult {left: 25%;top: 50%;width: 350px;}
+	#pointView {width: 320px;}
+
+	#pointView p.Pagepoint {}
+	#pointView p.Pagepoint br {display:none}
+
+
+}

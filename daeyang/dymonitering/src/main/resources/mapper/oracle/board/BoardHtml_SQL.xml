@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BoardHtml"> 
+  	
+
+  	
+  	<select id="BIH_getData" resultType="BoardHtml" parameterType="String">
+		SELECT * FROM b_board_intro_html
+		WHERE BIH_USE_YN	=	'Y'
+		AND   BIH_KEYNO  =	#{BIH_KEYNO}
+    </select> 
+    
+    <insert id="BIH_insert" parameterType="BoardHtml">
+	<![CDATA[
+		INSERT INTO b_board_intro_html(
+				BIH_KEYNO,
+				BIH_MN_KEYNO,
+				BIH_BT_KEYNO,
+				BIH_CONTENTS,
+				BIH_REGNM,
+				BIH_REGDT,
+				BIH_USE_YN,
+				BIH_DIV_LOCATION
+				)
+		VALUES(
+				BIH_SEQ.NEXTVAL,
+				#{BIH_MN_KEYNO},
+				#{BIH_BT_KEYNO},
+				#{BIH_CONTENTS},
+				#{BIH_REGNM},
+				SYSDATE,
+				'Y',
+				#{BIH_DIV_LOCATION}
+				)
+		]]>
+	</insert>
+	
+	<update id="BIH_update" parameterType="BoardHtml">
+	<![CDATA[
+		UPDATE b_board_intro_html 
+		SET		BIH_CONTENTS		= #{BIH_CONTENTS},
+				BIH_MODDT			= SYSDATE,
+				BIH_DIV_LOCATION	= #{BIH_DIV_LOCATION}
+		WHERE   BIH_KEYNO			= #{BIH_KEYNO}
+		]]>
+	</update>
+	
+	<update id="BIH_use_update" parameterType="BoardHtml">
+    	UPDATE b_board_intro_html 
+		SET		BIH_USE_YN			= #{BIH_USE_YN},
+				BIH_MODDT			= SYSDATE
+		WHERE   BIH_KEYNO			= #{BIH_KEYNO}
+    </update>
+	
+	<select id="BIH_getData_pramMenukey" resultType="BoardHtml" parameterType="String">
+		SELECT * FROM b_board_intro_html
+		WHERE BIH_MN_KEYNO = #{BIH_MN_KEYNO}
+    </select>
+    
+    <select id="BIH_getData_pramMenukey_use" resultType="BoardHtml" parameterType="String">
+		SELECT * FROM b_board_intro_html
+		WHERE BIH_MN_KEYNO = #{BIH_MN_KEYNO}
+		AND   BIH_USE_YN   = 'Y'
+    </select>
+	
+</mapper>
+ 

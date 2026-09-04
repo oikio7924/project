@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="TourProgram">
+
+	<sql id="TP_getDataListBody">
+		FROM (
+			SELECT	AB.*
+					, ROW_NUMBER() OVER (
+		    		<choose>
+				 		<when test="orderBy == 1">
+				 		ORDER BY	KEYNO ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 2">
+				 		ORDER BY	TP_RESERVED_DATE ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 3">
+				 		ORDER BY	TP_NAME			 ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 4">
+				 		ORDER BY	TP_PHONE1		 ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 5">
+				 		ORDER BY	REGDT			 ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 6">
+				 		ORDER BY	TP_STATUS		 ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 7">
+				 		ORDER BY	TP_PLACE		 ${sortDirect}
+				 		</when>
+				 		<otherwise>
+				 		ORDER BY 	TP_KEYNO DESC
+				 		</otherwise>
+				 	</choose>
+			 		) RNUM
+			FROM (
+				SELECT  TO_NUMBER(SUBSTR(TP_KEYNO,-10)) KEYNO,
+						TO_CHAR(TP_REGDT,'YYYY-MM-dd HH24:mi:ss') REGDT, TP.*
+				FROM t_tourism_program TP
+				WHERE   TP_TYPE = 	#{TP_TYPE}
+				AND		TP_DELYN = 'N'
+			) AB
+			WHERE 1=1
+		
+		<if test="searchList != null">
+			<foreach collection="searchList" item="item">
+		 		<choose>
+		 			<when test='item.searchIndex.equals("1")'>
+	 		AND		KEYNO  						LIKE '%' || #{item.searchKeyword} || '%'						
+		 			</when>
+		 			<when test='item.searchIndex.equals("2")'>
+	 		AND		TP_RESERVED_DATE			LIKE '%' || #{item.searchKeyword} || '%'					
+		 			</when>
+		 			<when test='item.searchIndex.equals("3")'>
+	 		AND		TP_NAME			  			LIKE '%' || #{item.searchKeyword} || '%'						
+		 			</when>
+		 			<when test='item.searchIndex.equals("4")'>
+			AND		TP_PHONE1					LIKE '%' || #{item.searchKeyword} || '%'				
+		 			</when>
+		 			<when test='item.searchIndex.equals("5")'>
+	 		AND		REGDT			 			LIKE '%' || #{item.searchKeyword} || '%'						
+		 			</when>
+		 			<when test='item.searchIndex.equals("6")'>
+	 		AND		TP_STATUS			 		=  #{item.searchKeyword}					
+		 			</when>
+		 			<when test='item.searchIndex.equals("7")'>
+	 		AND		TP_PLACE			 		LIKE '%' || #{item.searchKeyword} || '%'						
+		 			</when>
+		 			
+		 			<when test='item.searchIndex.equals("all")'>
+	 		AND (
+	 				KEYNO  							LIKE '%' || #{item.searchKeyword} || '%'	OR
+	 				TP_RESERVED_DATE				LIKE '%' || #{item.searchKeyword} || '%' 	OR
+	 				TP_NAME			 				LIKE '%' || #{item.searchKeyword} || '%'  	OR
+	 				TP_PHONE1			 			LIKE '%' || #{item.searchKeyword} || '%'  	OR
+	 				REGDT				 			LIKE '%' || #{item.searchKeyword} || '%'	OR
+	 				TP_STATUS				 		=  #{item.searchKeyword}					OR
+	 				TP_PLACE			 			LIKE '%' || #{item.searchKeyword} || '%'	
+	 		)							
+		 			</when>
+		 		</choose>
+		 	</foreach>
+	 	</if>
+		)AA
+		
+	</sql>
+	
+	<select	id="TP_getDataListCnt" resultType="int">
+		SELECT COUNT(*) 
+		<include refid="TP_getDataListBody"/>
+	</select>
+	
+	
+	<select	id="TP_getDataList" resultType="HashMap">
+		SELECT	*
+		<include  refid="TP_getDataListBody"/>
+		WHERE 1=1
+		<if test="recordCountPerPage != 0">
+		AND 	RNUM BETWEEN  #{firstIndex}+1 AND #{lastIndex} 
+		</if>
+	</select>
+	
+	<select id="TP_getDetailInfo" resultType="HashMap">
+		SELECT 		TO_CHAR(TP_REGDT,'YYYY-MM-dd HH24:mi:ss') TP_REGDT
+					, DECODE(TP_HAESEOL_YN,'Y','필요','불필요') TP_HAESEOL_YN
+					, DECODE(TP_COURSE_YN,'Y','필요','불필요') TP_COURSE_YN
+					, DECODE(TP_PICUP_YN,'Y','필요','불필요') TP_PICUP_YN
+					, TP.*, CS.SC_CODENM
+					, (SELECT COUNT(*)+1 FROM t_tourism_program_sub WHERE TP.TP_KEYNO = TPS_TP_KEYNO) CHILDCNT
+		FROM t_tourism_program TP
+		LEFT JOIN s_common_code_sub CS
+		ON  		TP_DIVISION = CS.SC_KEYNO
+		WHERE 		TP_KEYNO = #{TP_KEYNO}
+	</select>
+	
+	<select id="TP_getSubList" resultType="HashMap">
+		SELECT 		TPS.*, CS.SC_CODENM
+		FROM t_tourism_program_sub TPS
+		LEFT JOIN s_common_code_sub CS
+		ON   		TPS.TPS_DIVISION = CS.SC_KEYNO
+		WHERE 		TPS_TP_KEYNO = #{TP_KEYNO}
+	</select>
+
+	<insert id="TP_insertData">
+		INSERT INTO t_tourism_program
+		(
+			 TP_KEYNO
+			,TP_TYPE
+			,TP_NAME
+			,TP_PHONE1
+			,TP_EMAIL
+			,TP_REGDT
+			,TP_POST
+			,TP_ADDR1
+			,TP_ADDR2
+			,TP_PHONE2
+			,TP_STATUS
+			,TP_GENDER
+			,TP_BIRTH
+			,TP_PLACE
+			,TP_DIVISION
+			,TP_RESERVED_DATE
+			,TP_COUNT
+			,TP_AREA
+			,TP_HAESEOL_YN
+			,TP_COURSE_YN
+			,TP_PICUP_YN
+			,TP_PLCUP_PLACE
+			,TP_RESERVED_TIME
+			,TP_USE_TIME
+			,TP_COMMENT
+			,TP_IN_NAME
+			,TP_GROUP
+			,TP_IN_PHONE1
+			,TP_IN_PHONE2
+			,TP_PASSWARD
+		)
+		VALUES
+		(
+			 #{TP_KEYNO}
+			,#{TP_TYPE}
+			,#{TP_NAME}
+			,#{TP_PHONE1}
+			,#{TP_EMAIL}
+			,SYSDATE
+			,#{TP_POST}
+			,#{TP_ADDR1}
+			,#{TP_ADDR2}
+			,#{TP_PHONE2}
+			,#{TP_STATUS}
+			,#{TP_GENDER}
+			,#{TP_BIRTH}
+			,#{TP_PLACE}
+			,#{TP_DIVISION}
+			,#{TP_RESERVED_DATE}
+			,#{TP_COUNT}
+			,#{TP_AREA}
+			,#{TP_HAESEOL_YN}
+			,#{TP_COURSE_YN}
+			,#{TP_PICUP_YN}
+			,#{TP_PLCUP_PLACE}
+			,#{TP_RESERVED_TIME}
+			,#{TP_USE_TIME}
+			,#{TP_COMMENT}
+			,#{TP_IN_NAME}
+			,#{TP_GROUP}
+			,#{TP_IN_PHONE1}
+			,#{TP_IN_PHONE2}
+			,#{TP_PASSWARD}
+		)
+	
+	</insert>
+	
+	<insert id="TPS_insertData">
+		INSERT ALL
+		<foreach collection="subDataList" item="item">
+			INTO T_TOURISM_PROGRAM_SUB
+			(
+				 TPS_TP_KEYNO
+				,TPS_PHONE
+				,TPS_NAME
+				,TPS_DIVISION
+				,TPS_REGDT
+			)
+			VALUES
+			(
+				 #{TPS_TP_KEYNO}
+				,#{item.TPS_PHONE}
+				,#{item.TPS_NAME}
+				,#{item.TPS_DIVISION}
+				,SYSDATE
+			)
+		</foreach> 
+		SELECT * FROM dual	
+	</insert>
+	
+	<select id="get_applyCnt" resultType="int">
+		SELECT NVL(SUM(APPLYCNT),0)
+		FROM(
+			SELECT (SELECT COUNT(*)+1 FROM t_tourism_program_sub WHERE TP.TP_KEYNO = TPS_TP_KEYNO) APPLYCNT
+			FROM t_tourism_program TP
+			WHERE TP_TYPE = #{TP_TYPE}
+			AND	TP_RESERVED_DATE = #{TP_RESERVED_DATE}
+			AND TP_DELYN = 'N'
+		)	
+	</select>
+		
+	<select id="get_applyData" resultType="HashMap">
+		SELECT 		 TO_CHAR(TP_REGDT,'YYYY-MM-dd HH24:mi:ss') TP_REGDT
+					, DECODE(TP_HAESEOL_YN,'Y','필요','불필요') TP_HAESEOL_YN
+					, DECODE(TP_COURSE_YN,'Y','필요','불필요') TP_COURSE_YN
+					, DECODE(TP_PICUP_YN,'Y','필요','불필요') TP_PICUP_YN
+					, TP.*
+					, CS.SC_CODENM
+					, (SELECT COUNT(*)+1 FROM t_tourism_program_sub WHERE TP.TP_KEYNO = TPS_TP_KEYNO) CHILDCNT
+		FROM t_tourism_program TP
+		LEFT JOIN s_common_code_sub CS
+		ON  		TP_DIVISION = CS.SC_KEYNO
+		WHERE TP_NAME = #{TP_NAME} AND TP_PHONE1 = #{TP_PHONE1} AND TP_TYPE = #{TP_TYPE} AND TP_DELYN = 'N'
+	</select>
+	
+	<select id="get_applySubList" resultType="HashMap">
+		SELECT 		NVL(TPS_NAME,' ') TPS_NAME, NVL(TPS_PHONE,' ') TPS_PHONE, CS.SC_CODENM
+		FROM t_tourism_program_sub TPS
+		LEFT JOIN s_common_code_sub CS
+		ON  		TPS_DIVISION = CS.SC_KEYNO
+		WHERE 		TPS_TP_KEYNO = #{TP_KEYNO}
+	</select>
+		
+	<update id="del_applyData">
+		UPDATE t_tourism_program
+		SET 	TP_DELYN = 'Y'
+		WHERE 	TP_KEYNO = #{TP_KEYNO}
+	</update>
+	
+	<delete id="delete_subData">
+		DELETE FROM t_tourism_program_sub
+		WHERE TPS_TP_KEYNO = #{TP_KEYNO}
+	</delete>
+		
+	<update id="update_applyData">
+		UPDATE t_tourism_program
+		SET 	 TP_NAME              	=			#{TP_NAME}
+				,TP_PHONE1            	=			#{TP_PHONE1}
+				,TP_EMAIL             	=			#{TP_EMAIL}
+				,TP_POST              	=			#{TP_POST}
+				,TP_ADDR1             	=			#{TP_ADDR1}
+				,TP_ADDR2             	=			#{TP_ADDR2}
+				,TP_PHONE2            	=			#{TP_PHONE2}
+				,TP_STATUS            	=			#{TP_STATUS}
+				,TP_GENDER            	=			#{TP_GENDER}
+				,TP_BIRTH             	=			#{TP_BIRTH}
+				,TP_PLACE             	=			#{TP_PLACE}
+				,TP_DIVISION          	=			#{TP_DIVISION}
+				,TP_RESERVED_DATE     	=			#{TP_RESERVED_DATE}
+				,TP_COUNT             	=			#{TP_COUNT}
+				,TP_AREA              	=			#{TP_AREA}
+				,TP_HAESEOL_YN        	=			#{TP_HAESEOL_YN}
+				,TP_COURSE_YN         	=			#{TP_COURSE_YN}
+				,TP_PICUP_YN          	=			#{TP_PICUP_YN}
+				,TP_PLCUP_PLACE       	=			#{TP_PLCUP_PLACE}
+				,TP_RESERVED_TIME     	=			#{TP_RESERVED_TIME}
+				,TP_USE_TIME          	=			#{TP_USE_TIME}
+				,TP_COMMENT           	=			#{TP_COMMENT}
+				,TP_IN_NAME           	=			#{TP_IN_NAME}
+				,TP_GROUP             	=			#{TP_GROUP}
+				,TP_IN_PHONE1         	=			#{TP_IN_PHONE1}
+				,TP_IN_PHONE2         	=			#{TP_IN_PHONE2}
+		WHERE 	TP_KEYNO = #{TP_KEYNO}
+	</update>	
+	
+	<select id="get_TP_ListCnt" resultType="int">
+     	SELECT COUNT(*)
+		FROM (
+			SELECT *
+			FROM t_tourism_program
+			WHERE TP_TYPE = #{TP_TYPE}
+			AND   TP_DELYN = 'N'
+		)
+    </select>
+    
+    <select id="get_TP_List" resultType="HashMap">
+     	SELECT  	TO_CHAR(C.TP_REGDT,'YYYY-MM-dd') TP_REGDT
+     			, SUBSTR(C.TP_NAME,1,1) || LPAD('*',LENGTH(C.TP_NAME)-1,'*') TP_NAME
+     			, LPAD('*',3,'*') || '-' || LPAD('*',4,'*') || '-' || LPAD('*',1,'*') || SUBSTR(C.TP_PHONE1,-3) TP_PHONE1
+     			, C.*
+		FROM (
+			SELECT ROWNUM NUM, B.*
+			FROM (
+				SELECT ROW_NUMBER() OVER (ORDER BY A.TP_REGDT) RNUM, A.*
+			    FROM(
+					 	SELECT *
+						FROM t_tourism_program
+						WHERE TP_TYPE = #{TP_TYPE}
+						AND   TP_DELYN = 'N'
+				) A
+				ORDER BY RNUM DESC
+			) B	
+		) C
+		<if test=" recordCountPerPage != 0">
+		WHERE NUM  BETWEEN  #{firstIndex} AND #{lastIndex}
+		</if>
+    </select>
+	
+	<update id="change_status">
+		UPDATE t_tourism_program
+		SET  TP_STATUS = #{TP_STATUS}
+		WHERE TP_KEYNO = #{TP_KEYNO}
+	</update>
+	
+	<select id="TP_PassWord" resultType="String">
+		SELECT TP_PASSWARD
+		FROM t_tourism_program
+		WHERE TP_KEYNO = #{TP_KEYNO} 
+	</select>
+
+</mapper>
+ 

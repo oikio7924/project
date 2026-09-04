@@ -1,0 +1,414 @@
+<?xml version ="1.0" encoding ="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace ="Resources">
+	<resultMap id="Resources_MAP" type="HashMap">
+		<result property="RM_DATA" column="RM_DATA" jdbcType="CLOB" javaType="java.lang.String"/>
+		<result property="RMH_DATA" column="RMH_DATA" jdbcType="CLOB" javaType="java.lang.String"/>
+	</resultMap>
+	
+	<insert id="RM_insert" parameterType="Resources">
+          INSERT INTO s_resources_manager(
+          	  RM_KEYNO
+			, RM_MN_HOMEDIV_C
+			, RM_SCOPE
+			, RM_TITLE
+			, RM_DATA
+			, RM_REGDT
+			, RM_REGNM
+			, RM_FILE_NAME
+			, RM_TYPE
+			, RM_ORDER
+			) 
+         VALUES (
+         	  #{RM_KEYNO}
+			, #{RM_MN_HOMEDIV_C}
+			, #{RM_SCOPE}
+			, #{RM_TITLE}
+			, #{RM_DATA}
+			, SYSDATE
+			, #{RM_REGNM}
+			, #{RM_FILE_NAME}
+			, #{RM_TYPE}
+			, #{RM_ORDER}
+	       )
+	</insert>
+	
+	<insert id="RM_update" parameterType="Resources">
+         UPDATE s_resources_manager 
+         SET
+	            RM_DATA	 		= 	#{RM_DATA},
+	            RM_TITLE	 	= 	#{RM_TITLE},
+	            RM_FILE_NAME	= 	#{RM_FILE_NAME},
+				RM_MODDT	 	= 	SYSDATE,
+				RM_MODNM	 	=	#{RM_MODNM}
+		 WHERE 	RM_KEYNO 		= 	#{RM_KEYNO}
+	</insert>
+	
+	<update id="RM_setOrderSetting" parameterType="Resources">
+        	UPDATE s_resources_manager
+			SET 	RM_ORDER 			= RM_ORDER + 1
+			WHERE   	RM_TYPE 			= #{RM_TYPE}
+			<if test="RM_MN_HOMEDIV_C != null">
+			AND 	RM_MN_HOMEDIV_C 	= #{RM_MN_HOMEDIV_C}
+			</if>
+			AND   	RM_DEL_YN 			= 'N'
+			AND  <![CDATA[ RM_ORDER >= #{RM_ORDER}]]>
+			AND   	RM_KEYNO 			!= #{RM_KEYNO}
+	</update>
+	
+	<update id="RM_setOrder">
+        UPDATE s_resources_manager
+		SET    RM_ORDER = #{RM_ORDER}
+		WHERE  RM_KEYNO = #{RM_KEYNO}
+	</update>
+	
+	
+	<!-- 히스토리 비교 데이터 -->
+	<select id="RMH_compareData" parameterType="Resources" resultType="Resources">
+		<if test='RM_KEYNO != "undefined"'>
+			SELECT 		RM_DATA 
+			FROM s_resources_manager 
+			WHERE 		RM_KEYNO	=	#{RM_KEYNO}
+			UNION ALL
+		</if>
+		<![CDATA[
+		(
+			SELECT RMH_DATA RM_DATA 
+			FROM(
+				SELECT      RMH_DATA 
+							,ROW_NUMBER() OVER(ORDER BY RMH_STDT DESC) AS RN
+				FROM s_resources_manager_history
+				WHERE		RMH_RM_KEYNO	= (
+												SELECT RMH_RM_KEYNO 
+												FROM s_resources_manager_history 
+												WHERE RMH_KEYNO	=  #{RMH_KEYNO}
+											  )
+				AND			RMH_DEL_YN		=	'N'
+		        AND			RMH_KEYNO		<=   #{RMH_KEYNO}
+				ORDER BY	RMH_ENDT DESC
+		      )
+       		WHERE RN <= 2
+			
+		)
+		]]>
+	</select>
+
+	<select id="getTilesList" resultType="HashMap" parameterType="HashMap">
+		SELECT   NVL2(RM_FILE_NAME,('/resources/publish/'||#{path}||'/'||RM_TYPE||'/'||RM_FILE_NAME||'.'||RM_TYPE),'') RM_PATH
+				,RM.RM_ORDER RM_ORDER2
+				,RM.*
+				,(SELECT MAX(RMH_VERSION) FROM s_resources_manager_history WHERE RM.RM_KEYNO = RMH_RM_KEYNO) AS VERSION
+		FROM s_resources_manager RM
+		WHERE RM_MN_HOMEDIV_C = (SELECT MN_HOMEDIV_C
+								 FROM s_menu_manager
+								 WHERE MN_KEYNO = #{MN_KEYNO}
+							    )
+		AND   RM_TYPE != 'layout'
+		AND   RM_DEL_YN = 'N'
+		AND   RM_SCOPE IN 
+	    <foreach collection="scopeList" item="item" open="(" close=")" separator=",">
+		#{item}
+		</foreach>
+		
+		UNION ALL
+		
+		SELECT   NVL2(RM_FILE_NAME,('/resources/publish/'||#{path}||'/'||RM_TYPE||'/'||RM_FILE_NAME||'.'||RM_TYPE),'') RM_PATH
+				,RM.RM_ORDER RM_ORDER2
+				,RM.*
+				,(SELECT MAX(RMH_VERSION) FROM s_resources_manager_history WHERE RM.RM_KEYNO = RMH_RM_KEYNO) AS VERSION
+		FROM s_resources_manager RM
+		WHERE RM_KEYNO IN (	 SELECT RMS_RM_KEYNO
+							 FROM s_resources_manager_sub
+							 WHERE RMS_MN_KEYNO = #{MN_KEYNO}
+							 AND  RMS_MN_TYPE = 'N'	
+					    )
+		AND   RM_TYPE != 'layout'
+		AND   RM_DEL_YN = 'N'
+		AND   RM_SCOPE = 'custom'
+		
+		UNION ALL
+		
+		SELECT   NVL2(RM_FILE_NAME,('/resources/publish/'||#{path}||'/'||RM_TYPE||'/'||RM_FILE_NAME||'.'||RM_TYPE),'') RM_PATH
+				,RM.RM_ORDER RM_ORDER2
+				,RM.*
+				,(SELECT MAX(RMH_VERSION) FROM s_resources_manager_history WHERE RM.RM_KEYNO = RMH_RM_KEYNO) AS VERSION
+		FROM s_resources_manager RM
+		WHERE RM_KEYNO IN (	SELECT RMS_RM_KEYNO
+							FROM s_resources_manager_sub
+							WHERE RMS_MN_KEYNO = ( SELECT MN_HOMEDIV_C
+												   FROM s_menu_manager
+												   WHERE MN_KEYNO = #{MN_KEYNO}
+												 )
+							AND  RMS_MN_TYPE = 'A'	
+							    )
+		AND  	 RM_TYPE != 'layout'
+		AND   	 RM_DEL_YN = 'N'
+		AND   	 RM_SCOPE = 'custom'
+		ORDER BY RM_ORDER2
+	</select>
+	
+	<!-- 20190527 -->	
+	<select id="RM_getList" resultType="HashMap" resultMap="Resources_MAP">
+		SELECT 		*
+		FROM s_resources_manager
+		WHERE 		1=1
+		<if test="MN_KEYNO != null and MN_KEYNO != ''">
+		AND 		RM_MN_HOMEDIV_C = #{MN_KEYNO}
+		</if>
+		<if test="SCOPE != null and SCOPE != ''">
+		AND   		RM_SCOPE 		= #{SCOPE}
+		</if>
+		<if test="RM_TYPE != null and RM_TYPE != ''">
+		AND   		RM_TYPE 	= #{RM_TYPE}
+		</if>
+		AND   		RM_DEL_YN 	= 'N'
+		ORDER BY 	RM_ORDER 
+	</select>
+	
+	<select id="RM_getScope" resultType="String">
+		SELECT 		RM_SCOPE
+		FROM s_resources_manager
+		WHERE 		1=1
+		<if test="MN_KEYNO != null">
+		AND			RM_MN_HOMEDIV_C = #{MN_KEYNO}
+		</if>
+		AND   		RM_TYPE 		= #{RM_TYPE}
+		AND   		RM_DEL_YN  = 'N'
+		GROUP BY 	RM_SCOPE 
+	</select>
+	
+	<select id="RM_getData" resultType="Hashmap" resultMap="Resources_MAP">
+		SELECT B.RM_DATA, A.* FROM
+			 (SELECT DISTINCT  (SELECT UI_NAME FROM u_userinfo WHERE UI_KEYNO = RM.RM_REGNM) RM_REGNM
+					, (SELECT UI_NAME FROM u_userinfo WHERE UI_KEYNO = RM.RM_MODNM) RM_MODNM
+					, TO_CHAR(RM.RM_REGDT, 'YYYY-MM-DD HH24:MI:SS') RM_REGDT
+					, TO_CHAR(RM.RM_MODDT, 'YYYY-MM-DD HH24:MI:SS') RM_MODDT
+					, RM.RM_KEYNO
+				    , RM_MN_HOMEDIV_C
+				    , RM_SCOPE
+				    , RM_TITLE
+				    , RM_FILE_NAME
+				    , MAX(RMH.RMH_VERSION) OVER() "viewVersion"
+			FROM s_resources_manager RM
+			LEFT JOIN s_resources_manager_history RMH
+			ON 			RM.RM_KEYNO = RMH.RMH_RM_KEYNO
+			WHERE 		RM_DEL_YN = 'N'
+			AND  		RM_KEYNO = #{RM_KEYNO} ) AJOIN s_resources_manager B
+		ON A.RM_KEYNO = B.RM_KEYNO
+	</select>
+	
+	<select id="RM_getDataByDistribute" resultType="HashMap" resultMap="Resources_MAP">
+		SELECT 	  (SELECT UI_NAME FROM u_userinfo WHERE UI_KEYNO = RM.RM_REGNM) RM_REGNM
+				, (SELECT UI_NAME FROM u_userinfo WHERE UI_KEYNO = RM.RM_MODNM) RM_MODNM
+				, TO_CHAR(RM.RM_REGDT, 'YYYY-MM-DD HH24:MI:SS') RM_REGDT
+				, TO_CHAR(RM.RM_MODDT, 'YYYY-MM-DD HH24:MI:SS') RM_MODDT
+				, RM.RM_KEYNO
+			    , RM_MN_HOMEDIV_C
+			    , RM_SCOPE
+			    , RM_TITLE
+			    , RM_DATA
+			    , RM_FILE_NAME
+		FROM s_resources_manager RM
+		WHERE 	RM_DEL_YN = 'N'
+		<choose>
+			<when test='RM_KEYNO == null'>
+				<if test='RM_MN_HOMEDIV_C != null'>
+		AND		RM_MN_HOMEDIV_C = #{RM_MN_HOMEDIV_C}
+				</if>
+		AND  	RM_TYPE = #{RM_TYPE}
+			</when>
+			<otherwise>
+		AND  	RM_KEYNO = #{RM_KEYNO}	
+			</otherwise>
+		</choose>
+			<if test='RM_SCOPE != null'>
+		AND RM_SCOPE = #{RM_SCOPE}
+			</if>
+	</select>
+	
+	<select id="RM_getLayoutData" resultType="HashMap" resultMap="Resources_MAP">
+	SELECT B.RM_DATA, A.* FROM
+		( SELECT DISTINCT (SELECT UI_NAME FROM u_userinfo WHERE UI_KEYNO = RM.RM_REGNM) RM_REGNM
+				, (SELECT UI_NAME FROM u_userinfo WHERE UI_KEYNO = RM.RM_MODNM) RM_MODNM
+				, TO_CHAR(RM.RM_REGDT, 'YYYY-MM-DD HH24:MI:SS') RM_REGDT
+				, TO_CHAR(RM.RM_MODDT, 'YYYY-MM-DD HH24:MI:SS') RM_MODDT
+				, RM.RM_KEYNO
+			    , RM_MN_HOMEDIV_C
+			    , RM_SCOPE
+			    , RM_TITLE
+			    , RM_FILE_NAME
+			    , MAX(RMH.RMH_VERSION) OVER() "viewVersion"
+		FROM s_resources_manager RM
+		LEFT JOIN s_resources_manager_history RMH
+		ON 			RM.RM_KEYNO = RMH.RMH_RM_KEYNO
+		WHERE 		RM_DEL_YN = 'N'
+		AND 		RM_MN_HOMEDIV_C = #{RM_MN_HOMEDIV_C}
+		AND 		RM_TYPE = #{RM_TYPE}
+		AND 		RM_SCOPE = #{RM_SCOPE} ) AJOIN s_resources_manager B
+		ON A.RM_KEYNO = B.RM_KEYNO
+	</select>
+	
+	<select id="RM_getLayoutDataByDistribute" resultType="Resources">
+		SELECT 	  (SELECT UI_NAME FROM u_userinfo WHERE UI_KEYNO = RM.RM_REGNM) RM_REGNM
+				, (SELECT UI_NAME FROM u_userinfo WHERE UI_KEYNO = RM.RM_MODNM) RM_MODNM
+				, TO_CHAR(RM.RM_REGDT, 'YYYY-MM-DD HH24:MI:SS') RM_REGDT
+				, TO_CHAR(RM.RM_MODDT, 'YYYY-MM-DD HH24:MI:SS') RM_MODDT
+				, RM.RM_KEYNO
+			    , RM_MN_HOMEDIV_C
+			    , RM_SCOPE
+			    , RM_TITLE
+			    , RM_DATA
+			    , RM_FILE_NAME
+		FROM s_resources_manager RM
+		WHERE 	RM_DEL_YN = 'N'
+		AND RM_MN_HOMEDIV_C = #{RM_MN_HOMEDIV_C}
+		AND RM_TYPE = #{RM_TYPE}
+		<if test='RM_SCOPE != null'>
+		AND RM_SCOPE = #{RM_SCOPE}
+		</if>
+	</select>
+	
+	<select id="get_historyVersion" resultType="double">
+		SELECT NVL(MAX(RMH_VERSION),0)
+		FROM s_resources_manager_history
+		WHERE RMH_RM_KEYNO = #{RM_KEYNO}
+	</select>
+	
+	<select id="get_historyDate" resultType="String">
+		SELECT 	CASE WHEN RM_MODDT IS NULL THEN RM_REGDT ELSE RM_MODDT END REGDT
+		FROM s_resources_manager
+		WHERE 	RM_KEYNO 	=  #{RM_KEYNO}
+		AND   	RM_DEL_YN 	= 'N'
+	</select>
+	
+	<!-- 히스토리 등록 -->
+	<insert id ="RMH_insert" parameterType="Resources">
+		INSERT INTO s_resources_manager_history(
+			 RMH_KEYNO
+			,RMH_RM_KEYNO
+			,RMH_DATA
+			,RMH_STDT
+			,RMH_ENDT
+			,RMH_MODNM
+			,RMH_VERSION
+			,RMH_COMMENT
+			)
+		VALUES(
+			 #{RMH_KEYNO}
+			,#{RMH_RM_KEYNO}
+			,#{RMH_DATA}
+			,TO_DATE(#{RMH_STDT},'YYYY-MM-DD HH24:MI:SS')
+			,SYSDATE
+			,#{RMH_MODNM}
+			,#{RMH_VERSION}
+			,#{RMH_COMMENT}
+			)
+	</insert>
+	
+	<!-- 히스토리 리스트 -->
+	<select id="RMH_getList" resultType="HashMap" resultMap="Resources_MAP">
+			SELECT 		 TO_CHAR(A.RMH_STDT, 'YYYY-MM-DD HH24:MI:SS') RMH_STDT
+				 		, TO_CHAR(A.RMH_ENDT, 'YYYY-MM-DD HH24:MI:SS') RMH_ENDT
+						, B.UI_ID RMH_MODNM
+						, A.RMH_KEYNO
+						, A.RMH_RM_KEYNO
+						, A.RMH_DATA
+						, A.RMH_VERSION
+						, A.RMH_COMMENT
+			FROM s_resources_manager_history A
+			LEFT JOIN u_userinfo B
+			ON			A.RMH_MODNM = B.UI_KEYNO
+			WHERE		RMH_RM_KEYNO	=	#{RM_KEYNO}
+			AND			RMH_DEL_YN		=	'N'
+			ORDER BY	RMH_ENDT DESC
+	</select>
+	
+	<!-- 히스토리 데이터 -->
+	<select id="RMH_getData" parameterType="Resources" resultType="Resources">
+		SELECT 		*
+		FROM s_resources_manager_history
+		WHERE		RMH_KEYNO	=	#{RMH_KEYNO}
+	</select>
+	
+	<!-- 20190531 -->
+	
+	<!-- 서브테이블 갯수 조회 -->
+	<select id ="RMS_selectCount" resultType="Integer">
+		SELECT COUNT(*)
+		FROM s_resources_manager_sub
+		WHERE 	RMS_RM_KEYNO   =  #{RMS_RM_KEYNO}
+	</select>
+	
+	<!-- 서브테이블 메뉴키 조회 -->
+	<select id ="RMS_selectMenuKey" resultType="HashMap">
+		WITH V_TEMP1 AS (
+			SELECT 	RMS_RM_KEYNO, LISTAGG(RMS_MN_KEYNO,',') WITHIN GROUP (ORDER BY RMS_MN_KEYNO) MENUKEYS
+			FROM s_resources_manager_sub
+			WHERE 	RMS_RM_KEYNO   	= #{RMS_RM_KEYNO}
+			GROUP BY RMS_RM_KEYNO
+		)
+		,	V_TEMP2 AS (
+			SELECT 	*
+			FROM s_resources_manager_sub
+			WHERE 	RMS_RM_KEYNO   	= #{RMS_RM_KEYNO}
+		)
+		SELECT V1.MENUKEYS, V2.RMS_MN_TYPE
+		FROM v_temp1 V1
+		INNER JOIN v_temp2 V2
+		ON V1.RMS_RM_KEYNO = V2.RMS_RM_KEYNO
+		GROUP BY V1.MENUKEYS, V2.RMS_MN_TYPE
+	</select>
+	
+	<!-- 서브테이블 삭제 -->
+	<delete id ="RMS_delete">
+		DELETE FROM s_resources_manager_sub
+		WHERE 	RMS_RM_KEYNO   = #{RMS_RM_KEYNO}
+	</delete>
+	
+	<!-- 서브테이블 등록 -->
+	<insert id ="RMS_insert">
+		INSERT INTO s_resources_manager_sub(
+			  RMS_RM_KEYNO
+			, RMS_MN_KEYNO
+			, RMS_MN_TYPE
+			)
+		VALUES(
+			  #{RMS_RM_KEYNO}
+			 ,#{RMS_MN_KEYNO}
+			 ,#{RMS_MN_TYPE}
+			)
+	</insert>
+	
+	<!-- 해당 메뉴 삭제 시 리소스 전체 삭제 -->
+	<update id ="RM_deleteByMNKey">
+		UPDATE s_resources_manager
+		SET RM_DEL_YN = 'Y'
+		WHERE 	RM_MN_HOMEDIV_C = #{RM_MN_HOMEDIV_C}
+	</update>
+	
+	<!-- 해당 메뉴 삭제 시 리소스 히스토리 전체 삭제 -->
+	<update id ="RMH_deleteByMNKey">
+		UPDATE s_resources_manager_history
+		SET RMH_DEL_YN = 'Y'
+		WHERE 	RMH_RM_KEYNO = #{RM_KEYNO}
+	</update>
+	
+	<!-- 리소스 삭제 -->
+	<update id ="RM_delete">
+		UPDATE s_resources_manager
+		SET 	 RM_DEL_YN = 'Y'
+				,RM_ORDER  = '0'
+		WHERE 	RM_KEYNO   = #{RM_KEYNO}
+	</update>
+	
+	    <!-- 리소스 복사하기 위한 리스트 조회 -->
+    <select id="get_resourceDataListBysitePath" resultType="Resources" resultMap="Resources_MAP">
+        SELECT RM.RM_SCOPE, RM.RM_TITLE, RM.RM_FILE_NAME, RM.RM_DATA, RM.RM_ORDER, RM.RM_TYPE
+        FROM s_resources_manager RM
+        LEFT JOIN s_home_manager  HM
+        ON RM.RM_MN_HOMEDIV_C = HM.HM_MN_HOMEDIV_C
+        WHERE HM.HM_SITE_PATH = #{SITE_PATH}
+        AND RM_TYPE = #{TYPE}
+        AND RM_DEL_YN = 'N'
+    </select>
+</mapper>

@@ -1,0 +1,486 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Organization">
+	<resultMap id="ORGAN_MAP" type="HashMap">
+		<result property="DN_CONTENTS" column="DN_CONTENTS" jdbcType="CLOB" javaType="java.lang.String"/>
+		<result property="DU_CONTENTS" column="DU_CONTENTS" jdbcType="CLOB" javaType="java.lang.String"/>
+	</resultMap>
+	<!-- 조직도 리스트  -->
+	<select id="DN_getList" resultType="OrganDto" parameterType="OrganDto">
+	
+		SELECT  CASE WHEN (((REPLACE(DN.DN_MAINKEY,' ','') IS NULL OR REPLACE(DN.DN_MAINKEY,' ','') = '')) AND DN.DN_LEV = '2') THEN 0 ELSE 1 END AS orderNo
+				, DN.*
+				, DN2.DN_NAME AS DN_MAINNAME
+				, (SELECT COUNT(*) 	FROM t_department_user_manager WHERE DU_DN_KEYNO =DN.DN_KEYNO AND DU_DEL_YN	= 'N') DN_COUNT
+				, (SELECT COUNT(*) FROM t_department_manager WHERE DN_MAINKEY = DN.DN_KEYNO AND DN_DEL_YN = 'N' AND DN_TEMP = 'N')	DN_COUNT_DEPARTMENT
+		FROM t_department_manager DN
+		LEFT JOIN t_department_manager DN2
+		ON (DN.DN_MAINKEY = DN2.DN_KEYNO AND DN2.DN_DEL_YN='N')
+		WHERE DN.DN_DEL_YN = 'N'
+		<if test="DN_KEYNO != null and DN_KEYNO != ''">
+		AND			DN.DN_KEYNO	=	#{DN_KEYNO}
+		</if>
+		<if test="DN_MAINKEY != null or DN_MAINKEY == ''">
+		AND			DN.DN_MAINKEY	=	#{DN_MAINKEY}
+		</if>		
+		<if test="DN_HOMEDIV_C != null or DN_HOMEDIV_C == ''">
+		AND			DN.DN_HOMEDIV_C	=	#{DN_HOMEDIV_C}
+		</if>
+		<if test='DIV_KEY != null and DIV_KEY != ""'>
+				AND DN.DN_MAINKEY IS NOT NULL
+		</if>
+		ORDER BY orderNo
+	</select>
+	
+	<!-- 메인키 -->
+	<select id="DN_MainKey" resultType="String">
+		SELECT	DN_MAINKEY
+        FROM t_department_manager
+        WHERE 	DN_DEL_YN 	=	'N'
+        AND 	DN_KEYNO	=	#{DN_KEYNO}
+	</select>
+	
+	<!-- 메인키 일치하는 리스트  -->
+	<select id="DN_MainList" resultType="OrganDto">
+		SELECT *
+		FROM t_department_manager
+		WHERE DN_DEL_YN = 'N'
+		<choose>
+		<when test="DN_MAINKEY !=null and DN_LEV != '2'">
+		AND DN_MAINKEY =
+		#{DN_MAINKEY}
+		</when>
+		<otherwise>
+		AND DN_MAINKEY IS NULL
+		</otherwise>
+		</choose>
+		AND DN_HOMEDIV_C = #{DN_HOMEDIV_C}
+	</select>
+	
+	<!-- 루트 리스트 -->
+	<select id="DN_getRoot" resultType="OrganTree">
+		SELECT 	DN.*
+		FROM t_department_manager DN
+		WHERE 	DN_DEL_YN = 'N'
+		AND		(REPLACE(DN_MAINKEY,' ','') IS NULL OR REPLACE(DN_MAINKEY,' ','') = '')
+		AND DN_LEV='1'
+		<if test="DN_HOMEDIV_C != null and DN_HOMEDIV_C != ''">
+		AND		DN.DN_HOMEDIV_C	=	#{DN_HOMEDIV_C}
+		</if>
+	</select>
+	
+	<!-- 자식 리스트 -->
+	<select id="DN_getChild" resultType="OrganTree" parameterType="String">
+		SELECT 	DN.*
+		FROM t_department_manager DN
+		WHERE 	DN_DEL_YN 	=	'N'
+		AND		DN_MAINKEY	=	#{DN_KEYNO} 
+		ORDER BY DN_LEV	
+	</select>
+	
+	<!-- 최상위조직 갯수 -->
+	<select id="DN_MainCNT" resultType="int">
+		  SELECT COUNT(*)
+		  FROM t_department_manager
+		  WHERE  DN_MAINKEY	=	#{DN_MAINKEY}
+		  AND	DN_HOMEDIV_C = #{DN_HOMEDIV_C}
+		  AND	DN_DEL_YN = 'N' 
+	</select>
+	
+	<!-- 조직 추가  -->
+	<insert id="DN_insert" parameterType="OrganDto">
+		<selectKey resultType="int" keyProperty="DN_LEV" order="BEFORE">
+		    SELECT NVL(MAX(DN_LEV),0)+1
+			FROM t_department_manager
+			WHERE	DN_DEL_YN	=	'N'
+			AND		DN_MAINKEY	=	#{DN_MAINKEY}
+			AND		DN_HOMEDIV_C =	#{DN_HOMEDIV_C}
+		</selectKey>
+		INSERT INTO t_department_manager (
+				  DN_KEYNO
+				, DN_NAME
+				, DN_MAINKEY
+				, DN_CONTENTS
+				, DN_TEMP
+				, DN_LEV
+				, DN_HOMEDIV_C
+		)
+		VALUES (
+				  #{DN_KEYNO}
+				, #{DN_NAME}
+				, #{DN_MAINKEY}
+				, #{DN_CONTENTS}
+				, #{DN_TEMP}
+				, #{DN_LEV}
+				, #{DN_HOMEDIV_C}
+		)
+	</insert>
+	
+		<insert id="DN_Temp_insert" parameterType="OrganDto">
+	INSERT INTO t_department_manager (
+		DN_KEYNO
+		, DN_NAME
+		, DN_TEMP
+		, DN_LEV
+		, DN_HOMEDIV_C
+		)
+		VALUES (
+		#{DN_KEYNO}
+		,'임시부서'
+		, 'Y'
+		, '2'
+		,#{DN_HOMEDIV_C}
+		)
+	</insert>
+	
+		<select id="DN_Temp_select" parameterType="OrganDto" resultType="int">
+	SELECT COUNT(*) FROM t_department_manager WHERE DN_MAINKEY IS NULL AND DN_LEV = '2' AND DN_HOMEDIV_C = #{DN_HOMEDIV_C}
+	</select>
+	
+	<!-- 조직 수정  -->
+	<update id="DN_update" parameterType="OrganDto">
+		UPDATE t_department_manager
+		SET		  DN_NAME		=	#{DN_NAME}
+				, DN_MAINKEY	=	#{DN_MAINKEY}
+				, DN_CONTENTS	=	#{DN_CONTENTS}
+				, DN_TEMP		=	#{DN_TEMP}
+		WHERE	  DN_KEYNO		=	#{DN_KEYNO}
+	</update>
+	<!-- 조직 수정시 순서변경  -->
+	<update id="DN_updateLEV" parameterType="OrganDto">
+		UPDATE t_department_manager
+		SET	   		DN_LEV		    = #{DN_LEV}
+		WHERE	 	DN_KEYNO		=	#{DN_KEYNO}
+	</update>
+	
+	<!-- 조직 삭제 -->
+	<update id="DN_delete" parameterType="OrganDto">
+		UPDATE t_department_manager
+		SET		  DN_DEL_YN		=	'Y',
+				  DN_LEV		=	'0'
+		WHERE	  DN_KEYNO		=	#{DN_KEYNO}
+	</update>
+	<!-- 조직 삭제 순서 변경 -->
+	<update id="DN_deleteLEV" parameterType="OrganDto">
+    	UPDATE t_department_manager A
+		SET  DN_LEV = DN_LEV - 1
+		WHERE DN_DEL_YN = 'N'
+		AND	  DN_MAINKEY	 =		#{DN_MAINKEY}
+		<![CDATA[
+		AND	  DN_LEV 		 > 		#{DN_LEV}
+		]]>
+    </update>
+    
+    		<!-- 하위조직 삭제 -->
+	<update id="DN_Sub_delete" parameterType="OrganDto">
+		UPDATE t_department_manager
+		SET DN_DEL_YN = 'Y',
+		DN_LEV = '0'
+		WHERE DN_MAINKEY = #{DN_KEYNO}
+	</update>
+		
+	<!--조직원 리스트  -->
+	<select id="DU_getList" resultType="OrganDto" parameterType="OrganDto">
+		<![CDATA[
+		SELECT 	 REPLACE(DU_CONTENTS,chr(13)||chr(10),'<br>') CONTENTS_BR
+				,REPLACE(DU_TEL,chr(13)||chr(10),'<br>') TEL_BR
+		]]>
+				,DU.*
+		FROM t_department_user_manager DU
+		WHERE 	DU_DEL_YN	=	'N'
+		<if test="DN_KEYNO != null and DN_KEYNO != ''">
+		AND		DU_DN_KEYNO	=	#{DN_KEYNO}
+		</if>
+		ORDER BY DU_LEV
+	</select>
+	
+	<!-- 조직원 추가  -->
+	<insert id="DU_insert" parameterType="OrganDto">
+		<selectKey resultType="int" keyProperty="DU_LEV" order="BEFORE">
+		    SELECT NVL(MAX(DU_LEV),0)+1
+			FROM t_department_user_manager
+			WHERE	DU_DEL_YN	=	'N'
+			AND		DU_DN_KEYNO	=	#{DU_DN_KEYNO}
+		</selectKey>
+		INSERT INTO t_department_user_manager (
+				  DU_KEYNO
+				, DU_NAME
+				, DU_DN_KEYNO
+				, DU_ROLE
+				, DU_LEV
+				, DU_TEL
+				, DU_CONTENTS
+		)
+		VALUES (
+				  #{DU_KEYNO}
+				, #{DU_NAME}
+				, #{DU_DN_KEYNO}
+				, #{DU_ROLE}
+				, #{DU_LEV}
+				, #{DU_TEL}
+				, #{DU_CONTENTS}
+		)
+	</insert>
+	
+	<!-- 조직원 수정  -->
+	<update id="DU_update" parameterType="OrganDto">
+		UPDATE t_department_user_manager
+		SET		  DU_NAME		=	#{DU_NAME}
+				, DU_ROLE		=	#{DU_ROLE}
+				, DU_TEL		=	#{DU_TEL}
+				, DU_CONTENTS	=	#{DU_CONTENTS}
+	<if test='DU_DN_KEYNO != null or DU_DN_KEYNO != "" '>, DU_DN_KEYNO = #{DU_DN_KEYNO}</if>
+		WHERE	  DU_KEYNO		=	#{DU_KEYNO}
+	</update>
+	
+	<!-- 조직원 삭제 -->
+	<update id="DU_delete" parameterType="OrganDto">
+		UPDATE t_department_user_manager
+		SET		  DU_DEL_YN		=	'Y'
+		WHERE	  DU_KEYNO		=	#{DU_KEYNO}
+	</update>
+	<!-- 조직 삭제 순서 변경 -->
+	<update id="DU_deleteLEV" parameterType="OrganDto">
+    	UPDATE t_department_user_manager A
+		SET  DU_LEV = DU_LEV - 1
+		WHERE DU_DEL_YN = 'N'
+		AND	  DU_DN_KEYNO	 =		#{DU_DN_KEYNO}
+		<![CDATA[
+		AND	  DU_LEV 		 > 		#{DU_LEV}
+		]]>
+    </update>
+		
+	
+	
+	<!-- 조직원 순서 변경(드래그) -->
+	<update id="DU_updateLev" parameterType="hashmap">
+		UPDATE t_department_user_manager
+		SET		<foreach collection="list" item="item" open="DU_LEV	=	CASE" close="END" separator=" ">
+				WHEN DU_KEYNO = #{item.DU_KEYNO} THEN #{item.DU_LEV}
+				</foreach>
+	    WHERE	DU_KEYNO IN
+	    <foreach collection="list" item="item" open="(" close=")" separator=",">
+			#{item.DU_KEYNO}
+		</foreach>
+	</update>
+	
+	<!-- 조직원 순서 변경(셀렉트) -->
+	<update id="DU_updateLev2" parameterType="OrganDto">
+    	
+    	UPDATE t_department_user_manager A
+		SET  DU_LEV = 
+		(
+			CASE 
+				 WHEN	DU_KEYNO = #{DU_KEYNO} THEN #{DU_LEV_AFTER}
+				 <![CDATA[
+				 WHEN	DU_LEV >= #{DU_LEV_AFTER} AND DU_LEV <= #{DU_LEV} THEN DU_LEV + 1
+				 WHEN	DU_LEV >= #{DU_LEV} AND DU_LEV <= #{DU_LEV_AFTER} THEN DU_LEV - 1
+				 ]]>
+				 ELSE	DU_LEV 
+			END  
+		)
+		WHERE DU_DEL_YN = 'N'
+		AND	  DU_DN_KEYNO	=	#{DU_DN_KEYNO}
+    </update>
+    
+	<!-- 조직 순서 변경(셀렉트) -->
+	<update id="DN_updateLev2" parameterType="OrganDto">
+    	
+    	UPDATE t_department_manager A
+		SET  DN_LEV = 
+		(
+			CASE 
+				 WHEN	DN_KEYNO = #{DN_KEYNO} THEN #{DN_LEV_AFTER}
+				 <![CDATA[
+				 WHEN	TO_NUMBER(DN_LEV) >= #{DN_LEV_AFTER} AND TO_NUMBER(DN_LEV) <= #{DN_LEV} THEN TO_NUMBER(DN_LEV) + 1
+				 WHEN	TO_NUMBER(DN_LEV) >= #{DN_LEV} AND TO_NUMBER(DN_LEV) <= #{DN_LEV_AFTER} THEN TO_NUMBER(DN_LEV) - 1
+				 ]]>
+				 ELSE	TO_NUMBER(DN_LEV) 
+			END  
+		)
+		WHERE 	DN_DEL_YN = 'N'
+		AND	  	DN_MAINKEY	=	#{DN_MAINKEY}
+		AND		DN_HOMEDIV_C	=	#{DN_HOMEDIV_C}
+    </update>
+	
+    <!--조직원 리스트2  -->
+    <select id="DU_getList2" resultType="OrganDto" parameterType="OrganDto">
+        SELECT *
+        FROM t_department_user_manager DU
+        RIGHT JOIN  (SELECT     *
+                    FROM t_department_manager
+                    WHERE   DN_HOMEDIV_C = #{DN_HOMEDIV_C}) DM
+        ON DU.DU_DN_KEYNO = DM.DN_KEYNO
+        WHERE DU_KEYNO IS NOT NULL
+        ORDER BY DU_LEV
+    </select>
+    
+    <select id="DN_getOrganAllList" resultType="HashMap" resultMap="ORGAN_MAP">
+		SELECT  DN.DN_KEYNO,
+				DN.DN_NAME,
+				DN.DN_TEMP,
+				TRIM(DN_LEV) DN_LEV,
+				NVL2(TRIM(DN_MAINKEY), TRIM(DN_MAINKEY), 'DN_0000000000') MAINKEY, 
+				(SELECT COUNT(*) FROM t_department_manager WHERE DN.DN_KEYNO = DN_MAINKEY) CHILD_CNT
+		FROM t_department_manager DN
+		WHERE DN_DEL_YN = 'N'
+		AND DN_HOMEDIV_C = #{DN_HOMEDIV_C}
+		ORDER BY DN_MAINKEY, DN_LEV 
+	</select>
+	
+    <select id="DN_getDepartmentName" resultType="String">
+		SELECT DN_NAME
+		FROM t_department_manager
+		WHERE DN_KEYNO = #{DN_KEYNO}
+		AND   DN_DEL_YN = 'N'
+	</select>
+	
+	<sql id="DU_selectListBody">
+		FROM ( 
+			SELECT A.*, DN_NAME, ROW_NUMBER() OVER(
+				<choose>
+		 		<when test="orderBy == 1">
+		 		ORDER BY	COUNT ${sortDirect}
+		 		</when>
+		 		<when test="orderBy == 2">
+		 		ORDER BY	DU_NAME ${sortDirect}
+		 		</when>
+		 		<when test="orderBy == 3">
+		 		ORDER BY	DN_NAME ${sortDirect}
+		 		</when>
+		 		<when test="orderBy == 4">
+		 		ORDER BY	DU_ROLE ${sortDirect}
+		 		</when>
+		 		<when test="orderBy == 5">
+		 		ORDER BY	DU_CONTENTS ${sortDirect}
+		 		</when>
+		 		<otherwise>
+		 		ORDER BY 	COUNT ASC
+		 		</otherwise>
+	 		</choose>
+			) RNUM
+			FROM ( 
+				SELECT B.*, ROWNUM AS COUNT
+				FROM (
+					SELECT *
+					FROM t_department_user_manager
+					WHERE DU_DEL_YN='N') B
+					WHERE 1=1
+					AND DU_DN_KEYNO IN (SELECT DN_KEYNO
+										FROM t_department_manager
+										WHERE DN_DEL_YN='N'
+										<if test='DN_HOMEDIV_C != null and DN_HOMEDIV_C != "" '>
+										AND DN_HOMEDIV_C=#{DN_HOMEDIV_C}
+										</if>
+										)
+					ORDER BY COUNT DESC
+				) A
+				LEFT JOIN t_department_manager ON DU_DN_KEYNO= DN_KEYNO
+				WHERE 1=1	
+				<if test="searchList != null">
+			 	<foreach collection="searchList" item="item">
+			 		<choose>
+			 			<when test='item.searchIndex.equals("1")'>
+		 		AND		COUNT 				LIKE '%' || #{item.searchKeyword} || '%'			
+			 			</when>
+			 			<when test='item.searchIndex.equals("2")'>
+		 		AND		DU_NAME				LIKE '%' || #{item.searchKeyword} || '%'					
+			 			</when>
+			 			<when test='item.searchIndex.equals("3")'>
+		 		AND		DN_NAME 			LIKE '%' || #{item.searchKeyword} || '%'				
+			 			</when>
+			 			<when test='item.searchIndex.equals("4")'>
+		 		AND		DU_ROLE				LIKE '%' || #{item.searchKeyword} || '%'					
+			 			</when>
+			 			<when test='item.searchIndex.equals("5")'>
+		 		AND		DU_CONTENTS 		LIKE '%' || #{item.searchKeyword} || '%'					
+			 			</when>
+			 			<when test='item.searchIndex.equals("all")'>
+		 		AND (
+		 				COUNT 				LIKE '%' || #{item.searchKeyword} || '%' 	OR
+		 				DU_NAME				LIKE '%' || #{item.searchKeyword} || '%' 	OR
+		 				DN_NAME 			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+		 				DU_ROLE				LIKE '%' || #{item.searchKeyword} || '%'	OR
+		 				DU_CONTENTS 		LIKE '%' || #{item.searchKeyword} || '%'
+		 		)							
+			 			</when>
+			 		</choose>
+			 	</foreach>
+			 	</if>
+			)AA
+		
+	</sql>
+	
+	<select id="DU_selectList" resultMap="ORGAN_MAP">
+		SELECT *
+		<include  refid="DU_selectListBody"/>
+		
+		<if test=" recordCountPerPage != 0">
+		 WHERE 1=1
+			AND RNUM BETWEEN  #{firstIndex}+1 AND #{lastIndex} 
+		</if>
+		
+	</select>
+	
+	<select id="DU_selectListCnt" resultType="int">
+		SELECT	COUNT(*)
+		<include  refid="DU_selectListBody"/>
+	</select>
+	
+	<delete id="delete_NotTempList">
+		DELETE FROM t_department_manager
+		WHERE DN_HOMEDIV_C = #{DN_HOMEDIV_C}
+		AND   NOT (DN_MAINKEY IS NULL AND DN_TEMP = 'Y')
+	</delete>
+
+	<delete id="delete_NotTempMemeberList">
+		DELETE DU 
+		FROM t_department_user_manager AS DU  LEFT JOIN t_department_manager AS DN ON DU.DU_DN_KEYNO = DN.DN_KEYNO
+		WHERE DN.DN_HOMEDIV_C = #{DN_HOMEDIV_C}
+	</delete>
+
+
+	<!-- 조직 추가 -->
+	<insert id="DN_excelInsert" parameterType="OrganDto">
+		INSERT INTO t_department_manager (
+			 DN_KEYNO
+			,DN_NAME
+			,DN_MAINKEY
+			,DN_CONTENTS
+			,DN_TEMP
+			,DN_LEV
+			,DN_HOMEDIV_C
+		)VALUES (
+			 #{DN_KEYNO}
+		 	,#{DN_NAME}
+		 	,#{DN_MAINKEY}
+		 	,#{DN_CONTENTS}
+		 	,#{DN_TEMP}
+		 	,#{DN_LEV}
+		 	,#{DN_HOMEDIV_C}
+		)
+	</insert>
+	
+	<!-- 조직원 추가 -->
+	<insert id="DU_excelInsert" parameterType="OrganDto">
+		INSERT INTO t_department_user_manager (
+			DU_KEYNO
+		  , DU_NAME
+		  , DU_DN_KEYNO
+		  , DU_ROLE
+		  , DU_LEV
+		  , DU_TEL
+		  , DU_CONTENTS
+		)
+		VALUES (
+		    #{DU_KEYNO}
+		  , #{DU_NAME}
+		  , #{DU_DN_KEYNO}
+		  , #{DU_ROLE}
+		  , #{DU_LEV}
+		  , #{DU_TEL}
+		  , #{DU_CONTENTS}
+		)
+	</insert>
+	
+</mapper>

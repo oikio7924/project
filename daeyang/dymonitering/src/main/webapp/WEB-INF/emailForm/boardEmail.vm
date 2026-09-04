@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+
+<body>
+	<div style="border: 1px solid #eee;width:585px; height:100%; margin:50px auto; position:relative; text-align:center;">
+    	<div style="position:absolute; top:2.5%; left:2%; width:96%; height:1px; background-color:#444;"></div>
+    	<div style="position:absolute; bottom:2.5%; left:2%; width:96%; height:1px; background-color:#cfcfd0;"></div>
+    	<div style="position:absolute; top:2.5%; right:2%; width:1px; height:95%; background-color:#444;">
+    		<div style="position:absolute; bottom:0; left:0; width:1px; height:66px; background-color:#cfcfd0;"></div>
+    	</div>
+    	<div style="position:absolute; top:2.5%; left:2%; width:1px; height:95%; background-color:#444;">
+    		<div style="position:absolute; bottom:0; left:0; width:1px; height:66px; background-color:#cfcfd0;}"></div>
+    	</div>
+        <div>
+        	<div style="background-color:#efeeed; padding:30px 0 20px;">
+            	<img src="${domain}/resources/img/logo/logo.png" alt="로고">
+            </div>
+            <div style="background-color:#fff; padding:30px 0;">
+            	<h1 style="font-size: 23px;font-weight: bold;letter-spacing: -2px;font-family: 맑은고딕;">${emailTitle}
+                </h1>
+                <p style="font-size: 17px;letter-spacing: -1px;font-family: 맑은고딕;">게시물 제목 :: ${boardName}</p>
+            </div>
+            <div style="background-color:#4c4c4e; padding:20px 0 30px;">
+            	<a href="${boardUrl}" alt="Tx CMS" style="background: none;color: #fff;font-size: 16px;letter-spacing: -1px;cursor: pointer;border: none;font-weight: bold;font-family: 맑은고딕;">게시물 확인</a>
+            </div>
+        </div>
+    </div>	    
+</body>
+</html>

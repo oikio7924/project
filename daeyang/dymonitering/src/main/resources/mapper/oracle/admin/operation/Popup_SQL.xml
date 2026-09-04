@@ -1,0 +1,656 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Popup"> 
+	<resultMap id="PopMap" type="HashMap">
+		<result property="PI_CONTENTS" column="PI_CONTENTS" jdbcType="CLOB" javaType="java.lang.String"/>
+		<result property="PIS_FORM" column="PIS_FORM" jdbcType="CLOB" javaType="java.lang.String"/>
+		<result property="PISH_DATA" column="PISH_DATA" jdbcType="CLOB" javaType="java.lang.String"/>		
+	</resultMap>
+
+	<!-- 팝업 메인페이지  -->
+	 <select id="PI_getListCnt_1" resultType="int">
+			SELECT	COUNT(*)
+			FROM t_popupinfo
+            WHERE PI_DEL = 'N'
+            <if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		PI_TITLE 				LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		PI_STARTDAY 				LIKE '%' || #{item.searchKeyword} || '%'					
+ 		OR		PI_ENDDAY				LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				PI_TITLE 				LIKE '%' || #{item.searchKeyword} || '%' OR
+ 				PI_STARTDAY 				LIKE '%' || #{item.searchKeyword} || '%'  	OR					
+ 				PI_ENDDAY				LIKE '%' || #{item.searchKeyword} || '%'	
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+			ORDER BY PI_CHECK DESC
+    </select>
+    
+    <select id="PI_getList_1" resultType="hashmap">
+    SELECT * FROM (
+		SELECT A.*, ROW_NUMBER() OVER (
+				<choose>
+	 		<when test="orderBy == 1">
+	 		ORDER BY	PI_TITLE ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 2">
+	 		ORDER BY	PI_ENDDAY ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 3">
+	 		ORDER BY	PI_LINK ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 4">
+	 		ORDER BY	PI_TYPE_TEXT ${sortDirect}
+	 		</when>
+	 		<otherwise>
+	 		ORDER BY 	PI_CHECK DESC
+	 		</otherwise>
+ 				</choose>
+		) RNUM
+		FROM (
+			SELECT P.*, CASE WHEN PI_TYPE = 'A' THEN '이미지형'
+						WHEN PI_TYPE = 'B' THEN '텍스트형'
+						ELSE PI_TYPE
+						END  AS PI_TYPE_TEXT
+			FROM t_popupinfo P
+			WHERE PI_DEL = 'N') A
+			WHERE 1=1
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		PI_TITLE 				LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		PI_STARTDAY 				LIKE '%' || #{item.searchKeyword} || '%'					
+ 		OR		PI_ENDDAY				LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				PI_TITLE 				LIKE '%' || #{item.searchKeyword} || '%' OR
+ 				PI_STARTDAY 				LIKE '%' || #{item.searchKeyword} || '%'  	OR					
+ 				PI_ENDDAY				LIKE '%' || #{item.searchKeyword} || '%'	
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+	 	) AA
+	 	<if test=" recordCountPerPage != 0"> 
+		WHERE 1=1
+		AND 	RNUM BETWEEN  #{firstIndex}+1 AND #{lastIndex} 
+		</if>
+
+    </select>
+
+
+
+	<!-- 등록된 팝업 중 수정하기 위해 찾는 팝업 -->
+	<select id="PI_select" parameterType="PopupDTO" resultMap="PopMap">
+           SELECT       
+         		P.PI_STARTDAY AS PI_STARTDAY,
+          	 	P.PI_ENDDAY AS PI_ENDDAY,
+<!--          		TO_CHAR(TO_DATE(P.PI_STARTDAY, 'YYYY-MM-DD'),'YYYY-MM-DD') AS PI_STARTDAY, -->
+<!--           	 	TO_CHAR(TO_DATE(P.PI_ENDDAY, 'YYYY-MM-DD'),'YYYY-MM-DD') AS PI_ENDDAY, -->
+						P.*,S.FS_ORINM
+			FROM t_popupinfo P
+			LEFT JOIN s_common_file_sub S
+			ON			P.PI_FS_KEYNO	=	S.FS_KEYNO
+			WHERE 		PI_KEYNO = #{PI_KEYNO}
+	</select>
+	
+	
+	
+	<select id="PI_getListWidthURL" resultMap="PopMap" parameterType="hashmap">
+	-- LOG OFF
+		<![CDATA[
+			SELECT		A.*,PI_DIVISION AS PID
+			FROM (
+				SELECT 		P.*, S.*
+							, (FS_FOLDER || FS_CHANGENM || '.' || FS_EXT) AS THUMBNAIL_PATH
+	    					, S.FS_PUBLIC_PATH THUMBNAIL_PUBLIC_PATH 
+				FROM t_popupinfo P
+				LEFT JOIN s_common_file_sub S
+				ON			P.PI_FS_KEYNO = S.FS_KEYNO
+				LEFT JOIN t_popupinfo_sub PS
+				ON			P.PI_KEYNO = PS.PC_PI_KEYNO
+				WHERE		P.PI_MN_TYPE 	= 	'N'
+				AND	 		PS.PC_SUBKEY = 
+							(
+								SELECT MN_KEYNO
+							    FROM s_menu_manager
+							    WHERE ( MN_URL = #{MN_URL} OR MN_FORWARD_URL = #{MN_URL} )
+							    AND 	MN_PAGEDIV_C != 'SC_HFAIU'
+							    AND	  MN_DEL_YN	=	'N'
+							)
+	            UNION ALL
+	            
+	            SELECT		P.*, S.*
+							, (FS_FOLDER || FS_CHANGENM || '.' || FS_EXT) AS THUMBNAIL_PATH
+	    					, S.FS_PUBLIC_PATH THUMBNAIL_PUBLIC_PATH 
+	            FROM t_popupinfo P
+	            LEFT JOIN s_common_file_sub S
+				ON			P.PI_FS_KEYNO = S.FS_KEYNO
+				LEFT JOIN t_popupinfo_sub PS
+				ON			P.PI_KEYNO = PS.PC_PI_KEYNO
+	            WHERE		P.PI_MN_TYPE 	= 	'A'
+	            AND	 		PS.PC_SUBKEY = 
+	            			(
+								SELECT MN_HOMEDIV_C
+							    FROM s_menu_manager
+							    WHERE ( MN_URL = #{MN_URL} OR MN_FORWARD_URL = #{MN_URL})
+							    AND 	MN_PAGEDIV_C != 'SC_HFAIU'
+							    AND	  MN_DEL_YN	=	'N'
+							)
+			) A
+			WHERE	PI_CHECK	=	'Y'
+			]]>
+			<if test="PI_STARTDAT != null">
+			<![CDATA[
+ 				AND		PI_STARTDAY <= TO_CHAR(SYSDATE,'YYYY-MM-DD') 
+ 	            AND		PI_ENDDAY >= TO_CHAR(SYSDATE,'YYYY-MM-DD') 
+	        ]]> 
+	        </if>
+<!--  			AND		PI_DIVISION = #{PI_DIVISION} -->
+
+			AND		(
+					
+					(
+						PI_DIVISION = 'W'
+						<if test="key != null">
+							AND			PI_KEYNO NOT IN 
+							<foreach collection="key" item="item" open="(" close=")" separator=",">
+								#{item}
+							</foreach>
+						</if>
+					)
+					<if test='key_b == "Y"'>
+					OR	PI_DIVISION = 'B'
+					</if>
+			)
+			ORDER BY PI_KEYNO
+	</select>
+  	
+	<!-- 팝업 등록 -->
+	<insert id="PI_insert" parameterType="PopupDTO">
+		INSERT INTO t_popupinfo(
+			PI_KEYNO,
+			PI_FS_KEYNO,
+			PI_TITLE,
+			PI_TOP_LOC,
+			PI_LEFT_LOC,
+			PI_STARTDAY,	
+			PI_ENDDAY,	
+			PI_CONTENTS,
+			PI_WIDTH,
+			PI_HEIGHT,
+			PI_LINK,
+			PI_CHECK,
+			PI_LEVEL,
+			PI_MN_TYPE,
+			PI_BACKGROUND_COLOR,
+			PI_TITLE_COLOR,
+			PI_COMMENT_COLOR,
+			PI_TYPE,
+			PI_TITLE2,
+			PI_DIVISION,
+			PI_COMMENT,
+		    PI_RESIZE_CHECK
+			)
+		VALUES(
+			#{PI_KEYNO},
+			#{PI_FS_KEYNO},
+			#{PI_TITLE},
+			#{PI_TOP_LOC},
+			#{PI_LEFT_LOC},
+			#{PI_STARTDAY},
+			#{PI_ENDDAY},	
+			#{PI_CONTENTS},
+			#{PI_WIDTH},			
+			#{PI_HEIGHT},
+			#{PI_LINK},
+			#{PI_CHECK},
+			1,
+			#{PI_MN_TYPE},
+            #{PI_BACKGROUND_COLOR},
+            #{PI_TITLE_COLOR},
+            #{PI_COMMENT_COLOR},
+            #{PI_TYPE},
+            #{PI_TITLE2},
+            #{PI_DIVISION},
+            #{PI_COMMENT},
+            #{PI_RESIZE_CHECK}
+			)
+	</insert>
+	
+    <!-- 팝업 삭제 -->    
+    <update id="PI_delete" parameterType="hashmap">
+   
+        UPDATE t_popupinfo 
+        SET PI_DEL='Y' , PI_CHECK ='N' 
+        WHERE PI_KEYNO =	#{PI_KEYNO}
+    </update>
+    
+    <!-- 팝업 사용여부 -->    
+    <update id="PI_choice" parameterType="PopupDTO">
+        UPDATE t_popupinfo 
+        SET 	PI_CHECK	=	#{PI_CHECK} 
+        WHERE 	PI_KEYNO	=	#{PI_KEYNO} 
+    </update>
+    
+    <!-- 사용여부 Y -->
+    <update id="PI_choiceY" parameterType="PopupDTO">
+    	
+<!--     	<selectKey resultType="Integer" keyProperty="PI_LEVEL" order="BEFORE"> -->
+<!-- 		    SELECT 		NVL(MAX(PI_LEVEL),0)+1 -->
+<!-- 			FROM t_popupinfo -->
+<!-- 			LEFT JOIN s_menu_manager  M -->
+<!-- 			ON 			PI_MN_KEYNO 	= M.MN_KEYNO -->
+<!-- 			WHERE		PI_CHECK		=	'Y' -->
+<!-- 			AND			PI_DEL			=	'N' -->
+<!-- 			AND   		M.MN_HOMEDIV_C 	= #{PI_HOME_KEY} -->
+<!-- 		</selectKey> -->
+   		UPDATE t_popupinfo
+    	SET		   PI_CHECK		=	#{PI_CHECK}
+    	WHERE	   PI_KEYNO		=	#{PI_KEYNO}
+    </update>
+     <!-- 사용여부 N -->
+    <update id="PI_choiceN" parameterType="PopupDTO">
+    	
+   		UPDATE t_popupinfo
+    	SET 	PI_CHECK		=	'N'
+    	WHERE	PI_KEYNO		=	#{PI_KEYNO} 	
+    </update>
+    
+    <!-- 팝업 수정 --> 
+    <update id="PI_update" parameterType="PopupDTO">
+    
+    	UPDATE t_popupinfo
+        SET    PI_FS_KEYNO           =    #{PI_FS_KEYNO}
+              ,PI_TITLE              =    #{PI_TITLE}
+              ,PI_CONTENTS           =    #{PI_CONTENTS}
+              ,PI_TOP_LOC            =    #{PI_TOP_LOC}
+              ,PI_LEFT_LOC           =    #{PI_LEFT_LOC}
+              ,PI_WIDTH              =    #{PI_WIDTH}
+              ,PI_HEIGHT             =    #{PI_HEIGHT}
+              ,PI_STARTDAY           =    #{PI_STARTDAY}
+              ,PI_ENDDAY             =    #{PI_ENDDAY}
+              ,PI_LINK               =    #{PI_LINK}       
+              ,PI_MN_TYPE            =    #{PI_MN_TYPE}       
+              ,PI_BACKGROUND_COLOR   =    #{PI_BACKGROUND_COLOR}
+              ,PI_TITLE_COLOR        =    #{PI_TITLE_COLOR}   
+              ,PI_COMMENT_COLOR      =    #{PI_COMMENT_COLOR}  
+              ,PI_TITLE2             =    #{PI_TITLE2}  
+              ,PI_COMMENT            =    #{PI_COMMENT}  
+              ,PI_RESIZE_CHECK            =	#{PI_RESIZE_CHECK}  
+              	  	
+    	WHERE  PI_KEYNO     		 =	#{PI_KEYNO}
+    </update>
+  	
+	<!-- sub 테이블에 추가 -->
+    <insert id="PC_insert" parameterType="Popup_subDTO">
+    	INSERT INTO t_popupinfo_sub(
+    	PC_PI_KEYNO,
+    	PC_MAINKEY,
+    	PC_SUBKEY,
+    	PC_PI_MN_TYPE
+    	)
+    	VALUES(
+    	#{PC_PI_KEYNO},
+    	#{PC_MAINKEY},
+    	#{PC_SUBKEY},
+    	#{PC_PI_MN_TYPE}
+    	)
+    </insert>
+    
+     <!-- 등록된 팝업 중 수정하기 위해 찾는 팝업 메인과 서브 텍스트값 찾기-->
+	<select id="PI_select_one" parameterType="PopupDTO" resultType="hashmap">
+		SELECT 	PS.*, P.*, MN.*
+				, 	CASE WHEN PS.PC_SUBKEY = MN.MN_HOMEDIV_C AND PS.PC_PI_MN_TYPE = 'A' THEN '모든 메뉴'
+					WHEN PS.PC_SUBKEY = MN.MN_HOMEDIV_C AND PS.PC_PI_MN_TYPE = 'N' THEN '메인 화면'
+					ELSE MN.MN_NAME
+					END SUB_NAME
+				, 	CASE WHEN PS.PC_SUBKEY = MN.MN_HOMEDIV_C AND PS.PC_PI_MN_TYPE = 'A' THEN 'A'
+					WHEN PS.PC_SUBKEY = MN.MN_HOMEDIV_C AND PS.PC_PI_MN_TYPE = 'N' THEN 'N'
+					ELSE TO_CHAR(TO_NUMBER(SUBSTR(MN.MN_KEYNO,INSTR(MN.MN_KEYNO,'_',-1)+1)))
+					END MENUKEY
+		FROM t_popupinfo_sub PS
+		LEFT JOIN t_popupinfo P
+		ON 			PS.PC_PI_KEYNO = P.PI_KEYNO
+		LEFT JOIN s_menu_manager MN
+		ON			PS.PC_SUBKEY	=	MN.MN_KEYNO
+		WHERE		PI_KEYNO = #{PI_KEYNO}
+		AND 		PS.PC_MAINKEY = #{PI_HOMEKEY}
+	</select>
+	
+	<!-- 서브 팝업 정보 삭제 -->
+	<delete id="SUB_POPUP_DELETE">
+		DELETE FROM t_popupinfo_sub 
+		WHERE 	PC_PI_KEYNO = #{PC_PI_KEYNO}
+		AND  	PC_MAINKEY = #{PC_MAINKEY}
+	</delete>
+	
+	<!-- 메뉴 리스트별 팝업 띄우기 -->
+    <select id="PI_getSubListCnt" resultType="int">
+			SELECT	COUNT(*)
+			FROM t_popupinfo_sub PS
+			LEFT JOIN t_popupinfo P
+			ON PS.PC_PI_KEYNO = P.PI_KEYNO
+			WHERE P.PI_DEL = 'N'
+	       	AND P.PI_MN_TYPE = #{type_b}
+       		AND PS.PC_SUBKEY = #{Sub_value}
+    </select>
+    <select id="PI_getSubList" resultType="hashmap">
+		SELECT	PS.*,P.*,CASE WHEN P.PI_TYPE = 'A' THEN '이미지형'
+						WHEN P.PI_TYPE = 'B' THEN '텍스트형'
+						ELSE P.PI_TYPE
+						END  AS PI_TYPE_TEXT
+		FROM t_popupinfo_sub PS
+		LEFT JOIN t_popupinfo P
+		ON PS.PC_PI_KEYNO = P.PI_KEYNO
+		WHERE P.PI_DEL = 'N'
+       	AND P.PI_MN_TYPE = #{type_b}
+       	AND PS.PC_SUBKEY = #{Sub_value}
+        ORDER BY PI_CHECK DESC
+    </select>
+    
+            <!-- 팝업 스킨 등록-->
+    <insert id="PIS_insert">
+    	INSERT INTO t_popupinfo_skin
+    	(
+			 PIS_KEYNO
+			,PIS_FORM
+			,PIS_REGDT
+			,PIS_REGNM
+			,PIS_SUBJECT
+			,PIS_DIVISION
+    	)
+    	VALUES
+    	(
+    		 #{PIS_KEYNO}
+			,#{PIS_FORM}
+			,SYSDATE
+			,#{PIS_REGNM}
+			,#{PIS_SUBJECT}
+			,#{PIS_DIVISION}
+    	)
+    </insert>
+    
+        <select id="PIS_getData" resultType="hashmap" resultMap="PopMap">
+     SELECT TO_CHAR(A.PIS_REGDT, 'YYYY-MM-DD HH24:MI:SS') PIS_REGDT
+			,TO_CHAR(A.PIS_MODDT, 'YYYY-MM-DD HH24:MI:SS') PIS_MODDT
+		    , NVL(U.UI_REP_NAME,PIS_REGNM) PIS_REGNM
+		    , NVL(U2.UI_REP_NAME,PIS_MODNM) PIS_MODNM			
+     		,A.*
+     FROM t_popupinfo_skin A
+		    LEFT JOIN u_userinfo U
+		    ON		A.PIS_REGNM	=	U.UI_ID
+		    LEFT JOIN u_userinfo U2
+		    ON		A.PIS_MODNM	=	U2.UI_ID     
+     WHERE PIS_DEL_YN = 'N'
+     	<if test="PIS_KEYNO != null and PIS_KEYNO != ''">
+		AND PIS_KEYNO = #{PIS_KEYNO}
+		</if>
+    </select>
+    
+         	<sql id="PIS_getListBody">
+    FROM ( SELECT A.*, ROW_NUMBER() OVER (
+    			<choose>
+	 		<when test="orderBy == 1">
+	 		ORDER BY	COUNT ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 2">
+	 		ORDER BY	PIS_DIVISION ${sortDirect}
+	 		</when>	 	 		
+	 		<when test="orderBy == 3">
+	 		ORDER BY	PIS_SUBJECT ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 4">
+	 		ORDER BY	PIS_REGNM ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 5">
+	 		ORDER BY	PIS_REGDT ${sortDirect}
+	 		</when>	
+	 		<when test="orderBy == 6">
+	 		ORDER BY	PIS_MODNM ${sortDirect}
+	 		</when>		 			
+	 		<when test="orderBy == 7">
+	 		ORDER BY	PIS_MODDT ${sortDirect}
+	 		</when>		 			
+	 		<when test="orderBy == 8">
+	 		ORDER BY	PIS_USE ${sortDirect}
+	 		</when>		 			
+	 		<otherwise>
+	 		ORDER BY PIS_KEYNO DESC
+	 		</otherwise>
+	 	</choose>
+   			 ) RNUM
+		FROM(
+			SELECT 	 AA.*, ROWNUM AS COUNT
+			FROM( SELECT PIS_KEYNO
+					, PIS_DIVISION
+		    		, SUBSTR(PIS_REGDT,0, 10) PIS_REGDT
+		    		, SUBSTR(PIS_MODDT,0, 10) PIS_MODDT
+		    		, NVL(U.UI_REP_NAME,PIS_REGNM) PIS_UI_NAME
+		    		, NVL(U2.UI_REP_NAME,PIS_MODNM) PIS_MODNM
+		    		, PIS_SUBJECT
+		    		, DECODE((SELECT COUNT(*) FROM s_home_manager WHERE HM_POPUP_SKIN_W = PIS_KEYNO OR HM_POPUP_SKIN_B = PIS_KEYNO), 0, 'N', 'Y') PIS_USE
+		    FROM t_popupinfo_skin P 
+		    LEFT JOIN u_userinfo U
+		    ON		P.PIS_REGNM	=	U.UI_ID
+		    LEFT JOIN u_userinfo U2
+		    ON		P.PIS_MODNM	=	U2.UI_ID		    
+			WHERE PIS_DEL_YN = 'N'
+		)AA
+		) A
+		WHERE 1=1
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT 						LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		PIS_DIVISION				LIKE '%' || #{item.searchKeyword} || '%'						
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		PIS_SUBJECT					LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		PIS_REGNM 					LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		PIS_REGDT 					LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("6")'>
+ 		AND		PIS_MODNM 					LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>	 		
+	 			<when test='item.searchIndex.equals("7")'>
+ 		AND		PIS_MODDT 					LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>	 	
+	 			<when test='item.searchIndex.equals("8")'>
+ 		AND		PIS_USE 					LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>	 		 				 			 				 			
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT 					LIKE '%' || #{item.searchKeyword} || '%' 				OR
+ 				PIS_DIVISION 			LIKE '%' || #{item.searchKeyword} || '%' 				OR
+ 				PIS_SUBJECT 			LIKE '%' || #{item.searchKeyword} || '%' 				OR
+ 				PIS_REGNM				LIKE '%' || #{item.searchKeyword} || '%' 				OR
+ 				PIS_REGDT 				LIKE '%' || #{item.searchKeyword} || '%'				OR
+ 				PIS_MODNM 				LIKE '%' || #{item.searchKeyword} || '%'				OR
+ 				PIS_MODDT 				LIKE '%' || #{item.searchKeyword} || '%'				OR
+ 				PIS_USE 				LIKE '%' || #{item.searchKeyword} || '%'				 				
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+		) B
+	</sql>
+	
+		   <select id="PIS_getListCnt" resultType="int">
+			SELECT	COUNT(*)
+		<include  refid="PIS_getListBody"/>
+    </select>	
+    
+       <select id="PIS_getList" resultMap="ResultMap.rownumHashMap">
+		SELECT	*
+		<include  refid="PIS_getListBody"/>
+		<if test="recordCountPerPage != 0">
+			WHERE RNUM BETWEEN #{firstIndex}+1 AND #{lastIndex}
+		</if> 
+    </select>
+    
+    <select id="PIS_getFormList" resultType="hashmap" parameterType="hashmap" resultMap="PopMap">
+    SELECT PIS_KEYNO, PIS_FORM, PIS_DIVISION, PIS_SUBJECT, 'FORM'||TO_NUMBER(SUBSTR(PIS_KEYNO,-10)) FORM_NAME
+    FROM t_popupinfo_skin
+    WHERE PIS_DEL_YN = 'N'
+         <if test="PIS_DIVISION != null and PIS_DIVISION != ''">
+		AND PIS_DIVISION = #{PIS_DIVISION}
+		</if>
+    </select>
+    
+        <update id="PIS_update">
+    	UPDATE t_popupinfo_skin
+    	SET   PIS_SUBJECT = #{PIS_SUBJECT}
+    		, PIS_FORM = #{PIS_FORM}
+    		, PIS_MODDT = SYSDATE
+    		, PIS_MODNM = #{PIS_MODNM}
+    	WHERE PIS_KEYNO = #{PIS_KEYNO}
+    </update>
+    
+    <update id="PIS_delete">
+    	UPDATE t_popupinfo_skin
+    	SET PIS_DEL_YN = 'Y'
+    	WHERE PIS_KEYNO = #{PIS_KEYNO}
+    </update>
+    
+         <!-- 스킨 히스토리 리스트 -->
+	<select id="PISH_getList" resultType="hashmap" resultMap="PopMap">
+		SELECT 		TO_CHAR(A.PISH_STDT, 'YYYY-MM-DD HH24:MI:SS') PISH_STDT_B
+				 	, TO_CHAR(A.PISH_ENDT, 'YYYY-MM-DD HH24:MI:SS') PISH_ENDT_B
+				 	, NVL(U.UI_REP_NAME,PISH_MODNM) PISH_MODNM	
+					, A.*
+		FROM t_popupinfo_skin_history A
+		LEFT JOIN u_userinfo U
+		ON		A.PISH_MODNM	=	U.UI_ID		
+		WHERE		PISH_PIS_KEYNO	=	#{PIS_KEYNO}
+		AND			PISH_DEL_YN		=	'N'
+		ORDER BY	PISH_ENDT DESC
+	</select>
+	
+		<!-- 스킨 히스토리 작성일 -->
+	<select id="get_historyDate" resultType="String">
+		SELECT 	CASE WHEN PIS_MODDT IS NULL THEN PIS_REGDT ELSE PIS_MODDT END REGDT
+		FROM t_popupinfo_skin
+		WHERE 	PIS_KEYNO 	=  #{PIS_KEYNO}
+		AND   	PIS_DEL_YN 	= 'N'
+	</select>
+	
+			<!-- 스킨 히스토리버전 -->	
+	<select id="get_historyVersion" resultType="double">
+		SELECT NVL(MAX(PISH_VERSION),0)
+		FROM t_popupinfo_skin_history
+		WHERE PISH_PIS_KEYNO = #{PIS_KEYNO}
+	</select>
+	
+		<!-- 스킨 히스토리 등록 -->
+	<insert id ="PISH_insert" parameterType="PopupSkinDTO">
+		INSERT INTO t_popupinfo_skin_history(
+			 PISH_KEYNO
+			,PISH_PIS_KEYNO
+			,PISH_DATA
+			,PISH_STDT
+			,PISH_ENDT
+			,PISH_MODNM
+			,PISH_VERSION
+			,PISH_COMMENT
+			)
+		VALUES(
+			 #{PISH_KEYNO}
+			,#{PISH_PIS_KEYNO}
+			,#{PISH_DATA}
+			,TO_DATE(#{PISH_STDT},'YYYY-MM-DD HH24:MI:SS')
+			,SYSDATE
+			,#{PISH_MODNM}
+			,#{PISH_VERSION}
+			,#{PISH_COMMENT}
+			)
+	</insert>
+	
+		<!--  스킨 히스토리 데이터 -->
+	<select id="PISH_getData" parameterType="PopupSkinDTO" resultType="PopupSkinDTO">
+		SELECT 		*
+		FROM t_popupinfo_skin_history
+		WHERE		PISH_KEYNO	=	#{PISH_KEYNO}
+	</select>		
+ 
+     	<!-- 스킨 히스토리 비교 데이터 -->
+	<select id="PISH_compareData" parameterType="PopupSkinDTO" resultType="PopupSkinDTO">
+		<if test='PIS_KEYNO != "undefined"'>
+			SELECT       PIS_FORM 
+	        FROM t_popupinfo_skin 
+	        WHERE       PIS_KEYNO   =   #{PIS_KEYNO}
+			UNION ALL
+		</if>
+		<![CDATA[
+		(
+			SELECT 		PISH_DATA PIS_FORM
+			FROM (
+				SELECT PISH_DATA
+					   ,ROW_NUMBER() OVER(ORDER BY PISH_STDT DESC) AS SS
+			FROM t_popupinfo_skin_history
+			WHERE		PISH_PIS_KEYNO	= (
+											SELECT PISH_PIS_KEYNO 
+											FROM t_popupinfo_skin_history
+											WHERE PISH_KEYNO   =  #{PISH_KEYNO}
+										  )
+			AND			PISH_DEL_YN		=	'N'
+	        AND			PISH_KEYNO		<=  #{PISH_KEYNO}
+			ORDER BY	PISH_ENDT DESC
+			)
+			WHERE SS <= 2
+		)
+		]]>
+	</select> 
+	
+	 <!-- 스킨 사용여부 검사 -->
+	<select id="PIS_getSkinUsing"  resultType="int">
+			SELECT 	COUNT(*)
+			FROM s_home_manager 
+			WHERE 	HM_POPUP_SKIN_W = #{PIS_KEYNO} OR HM_POPUP_SKIN_B = #{PIS_KEYNO}
+	</select>   
+	
+	  <!-- 스킨 사용중인 홈페이지 출력 -->
+	<select id="PIS_getSkinUsingHP" parameterType="PopupSkinDTO" resultType="Hashmap">
+			SELECT LISTAGG(M.MN_NAME,',') WITHIN GROUP(ORDER BY M.MN_NAME) PIS_HP
+			FROM s_home_manager
+			LEFT JOIN s_menu_manager M
+			ON HM_MN_HOMEDIV_C = M.MN_KEYNO
+				<choose>
+				<when test='PIS_DIVISION == "W"'>
+			WHERE HM_POPUP_SKIN_W = #{PIS_KEYNO}
+				</when>
+				<otherwise>
+			WHERE HM_POPUP_SKIN_B = #{PIS_KEYNO}
+				</otherwise>
+			</choose>
+	</select> 		     
+	
+    <select id="getSkinForm" resultType="String">
+        SELECT     PIS_FORM
+        FROM t_popupinfo_skin
+        WHERE     PIS_KEYNO = #{PIS_KEYNO}
+    </select>
+</mapper>
+ 

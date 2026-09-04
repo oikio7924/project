@@ -1,0 +1,160 @@
+<!-- #include virtual="JSON_2.0.4.asp" -->
+<!-- #include virtual="JSON_UTIL_0.1.1.asp" -->
+<!--#include virtual="/aspJSON1.17.asp" -->
+<%
+
+'asp는 php와 달라서 자체적으로 배열값을  json 형식으로 보낼 방법이 없다. 아래싸이트참고
+'https://mrb18.tistory.com/entry/ASP-Json-%EC%A0%84%EC%86%A1%ED%95%98%EA%B8%B0?category=692730
+'쿠팡 rest api example 에서  json 형식으로 데이터를 다 일일이 만들어서 보냈다. 아래싸이트참고
+'https://developers.coupangcorp.com/hc/ko/articles/360033396834-Classic-ASP-Example
+
+
+Dim json 
+Dim person, people(1)
+Dim I
+
+
+'풍목은  1 ~ 99 까지 전송 가능 하다.
+'오브젝트를 생성한 후 배열값을 저장한다 .
+Set person = jsObject()
+For I = 0 To 1
+	person("description") = "품목별비고입력"              '비고
+	person("supplyprice") = "500000"                 '공급가액 
+	person("quantity") = "0.00"                   '수량
+	person("unit") = ""								 '규격
+	person("subject") = ""							'품목명
+	person("gyymmdd") = "20010501"					'공급년월일
+	person("tax") = "50000"							'세액
+	person("unitprice") = "50000"					'단가
+    
+	Set people(I) = person
+Next
+
+
+Set json = jsObject()
+'관리
+json("hometaxbill_id") = "cmj0633"	         '회사아이디
+json("spass") =	"Mem12345"					'회사패스워드
+json("apikey") = "SSADFVSDFSDE"				'apikey값	
+json("homemunseo_id") = "330333333271"		'회사(공급자)고유값'	
+json("pcode" ) = "companymanage"			'사업자관리번호(고객번호등등)
+json("typecode1") = "01"					'계산서 분류  01(세금계산서),02(수정세금계산서), 03(계산서), 04(수정계산서)
+json("typecode2") = "01"					'계산서 종류  01(일반), 02(영세율),03(위수탁), 05(영세율 위수탁)
+json("description") = "비고사항입력 랍니다"        '비고란  수정세금계산서 발행시 원본 세금계산서의 승인번호가 자동으로 입력됨   (수정시 필수)
+
+'기본정보
+json("issuedate") = "20010524"				'작성일자
+json("modifytype") = "01"					'수정코드   01(기재사항의 착오·정정, 세율을 잘못 적용한 경우), 02(공급가액 변동), 03(환입), 04(계약의 해제), 05(내국신용장 사후 개설), 06(착오에 의한 이중발급, 면세 등 발급대상이 아닌 거래 등    (수정시 필수)
+json("purposetype") = "01"					'청구 타입   01 : 영수, 02 : 청구
+json("originalissueid") = ""				'당초 승인번호   (수정시 필수)
+'수입(세금)계산서내역
+json("si_id") = "2"							'수입번호
+json("si_hcnt") = "10"						'수입총건
+json("si_startdt") = ""						'일괄발급시작일
+json("si_enddt") = ""						'일괄발급종료일	
+
+'공급자정보(위탁사업자)
+json("ir_companynumber") = "99999999"		'사업자등록번호
+json("ir_biztype") = "소프트웨어개발"			'업태
+json("ir_companyname") = "(주)신안소프트"		'상호명
+json("ir_bizclassification") = ""			'업종
+json("ir_taxnumber") = ""					'종 사업자 번호
+json("ir_ceoname") = ""						'대표자명
+json("ir_busename") = ""					'담당자부서명
+json("ir_name") = ""						'담당자명
+json("ir_cell") = ""						'담당자 전화번호
+json("ir_email") = ""						'담당자 이메일
+json("ir_companyaddress") = ""				'주소	
+
+'공급받는자
+json("ie_companynumber") = "1118812544"			'사업자등록번호
+json("ie_biztype") = ""							'업태
+json("ie_companyname") = "(주)공급받는자 주식회사"		'상호명
+json("ie_bizclassification") = ""				'업종	
+json("ie_taxnumber") = ""						'종사업자 번호
+json("partytypecode") = "01"					'공급받는자 구분  기업: 01, 개인(내국인): 02. 개인(외국인): 03
+json("ie_ceoname") = ""							'대표자명		
+json("ie_busename1") = ""						'담당자부서명1
+json("ie_name1") = ""							'담당자명1
+json("ie_cell1") = ""							'담당자 연락처1
+json("ie_email1") = ""							'담당자 이메일1
+json("ie_busename2") = ""						'담당자부서명2 
+json("ie_name2") = ""							'담당자명2    
+json("ie_cell2") = ""							'담당자 연락처2
+json("ie_email2") = ""							'담당자 이메일2
+json("ie_companyaddress") = ""					'회사 주소
+
+'수탁사업자
+json("su_companynumber") = ""					'사업자등록번호             
+json("su_biztype") = ""							'업태                   
+json("su_companyname") = ""						'상호명                  
+json("su_bizclassification") = ""				'업종                   
+json("su_taxnumber") = ""						'종 사업자 번호            
+json("su_ceoname") = ""							'대표자명                 
+json("su_busename") = ""						'담당자부서명              
+json("su_name") = ""							'담당자명                 
+json("su_cell") = ""							'담당자 전화번호            
+json("su_email") = ""							'담당자 이메일             
+json("su_companyaddress") = ""					'주소	    
+
+'결제내역
+json("cash") = "0"								'현금
+json("scheck") = "0"							'수표
+json("draft") = "0"								'어음
+json("uncollected") = "0"						'외상 미수금
+json("chargetotal") = "1000000"					'총공급가액
+json("taxtotal") = "100000"						'총세액
+json("grandtotal") = "1100000"					'총금액	
+
+
+' 품목을 taxdetailList  값에 담아준다.
+json("taxdetailList") = people
+
+'Response.Write toJSON(json)
+'Response.End
+
+
+dim url
+dim xmlhttp
+dim xmlhttp_result
+
+
+'REST API 전송 URL  TEST 서버
+url = "http://115.68.1.5:8084/homtax/post"
+
+'REST API 전송
+set xmlhttp = server.Createobject("MSXML2.ServerXMLHTTP.3.0")
+xmlhttp.Open "POST", url ,false
+xmlhttp.setRequestHeader "Content-Type", "application/json"
+xmlhttp.setRequestHeader "Accept","application/json"
+xmlhttp.send toJSON(json)
+
+'결과값을 가져오기
+xmlhttp_result = xmlhttp.responseText
+'response.write xmlhttp_result
+
+
+Response.Write xmlhttp_result;
+
+If Trim(xmlhttp_result)<>"" Then
+ Set oJSON = New aspJSON
+ xmlhttp_result = "{""list"" : " & xmlhttp_result & "}"
+ oJSON.loadJSON(xmlhttp_result)
+
+ Response.write "<br />code : "  & oJSON.data("list").item("code")
+ Response.write "<br />msg : "  & oJSON.data("list").item("msg")
+ Response.write "<br />jsnumber : "  & oJSON.data("list").item("jsnumber")
+
+
+End If
+
+
+
+'시스템상 할당된 자원을 해제한다.
+
+Set oJSON	= Nothing
+set xmlhttp = Nothing
+
+
+
+%>

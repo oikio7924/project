@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="keyword"> 
+  
+  	
+  	<sql id="SK_getDataListBody">
+		FROM (
+			SELECT	B.*
+					, @ROWNUM:=@ROWNUM+1 as COUNT
+			FROM (
+				<include refid="keywordSearchOptions"/>
+			) B 
+			WHERE (@ROWNUM:=0)=0
+		)AA
+		WHERE 1=1
+		
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT 				LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		SK_KEYWORD			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		SK_SIZE 			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT 				LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				SK_KEYWORD			LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				SK_SIZE 			LIKE CONCAT( '%',#{item.searchKeyword},'%') 		
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+	
+	</sql>
+  	
+    <select id="SK_getDataListCnt" resultType="int">
+		SELECT	COUNT(*)
+		<include  refid="SK_getDataListBody"/>
+    </select>
+    
+    <select id="SK_getDataList" resultMap="ResultMap.rownumHashMap">
+    	SELECT	* 
+		<include  refid="SK_getDataListBody"/>
+		<choose>
+	 		<when test="orderBy == 1">
+	 		ORDER BY	COUNT ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 2">
+	 		ORDER BY	SK_KEYWORD ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 3">
+	 		ORDER BY	SK_SIZE ${sortDirect}
+	 		</when>
+	 		<otherwise>
+	 		ORDER BY 	COUNT
+	 		</otherwise>
+ 		</choose>
+		<if test=" recordCountPerPage != 0">
+		LIMIT  	#{recordCountPerPage} OFFSET #{firstIndex} 
+		</if>  
+    </select>
+  	
+  	<!-- 키워드 저장 -->
+	<insert id="SK_insert" parameterType="keyword">
+	
+		INSERT INTO t_search_keyword (
+			  SK_KEYWORD
+			, SK_REGDT
+			, SK_IP
+			, SK_USERID
+		) 
+		VALUES (
+			  #{SK_KEYWORD}
+			, DATE_FORMAT(NOW(),'%Y-%m-%d')
+			, #{SK_IP}
+			, #{SK_USERID}
+		)  
+		ON DUPLICATE KEY UPDATE sk_userid = #{SK_USERID} 
+	
+	</insert>
+  	
+  	<!-- 키워드 리스트  -->
+	<select id="SK_getList" parameterType="keyword" resultType="keyword">
+		SELECT SK_KEYWORD, COUNT(*) SK_SIZE 
+		FROM t_search_keyword 
+		GROUP BY SK_KEYWORD
+		HAVING SK_SIZE > #{minCount}
+		ORDER BY SK_SIZE DESC
+		LIMIT	#{KeywordSize}
+	</select>
+	
+	<!-- 키워드 디테일 리스트  -->
+	<select id="SK_getDetailList" parameterType="keyword" resultType="keyword">
+		SELECT 		S.*,IFNULL(U.UI_ID,CASE WHEN SK_USERID = '비회원' THEN '비회원' WHEN SK_USERID = '투니DB' THEN '투니DB' ELSE '관리자 조작' END) UI_ID  
+		FROM t_search_keyword S
+		LEFT JOIN u_userinfo U
+		ON			S.SK_USERID = U.UI_KEYNO
+		WHERE	SK_KEYWORD	=	#{SK_KEYWORD}
+	</select>
+	
+	<delete id="SK_deleteData" parameterType="keyword">
+	
+		DELETE FROM t_search_keyword
+		WHERE	SK_KEYWORD	=	#{SK_KEYWORD}
+		AND		SK_IP		=	#{SK_IP}
+		AND		SK_REGDT	=	#{SK_REGDT}
+		AND		SK_USERID	=	#{SK_USERID}
+	</delete>
+	
+	<delete id="SK_deleteDataWithKeyword" parameterType="keyword">
+	
+		DELETE FROM t_search_keyword
+		WHERE	SK_KEYWORD	=	#{SK_KEYWORD}
+	</delete>
+	
+	<!-- 키워드 조작 -->
+	<insert id="SK_updateKeyword" parameterType="hashmap">
+	
+		INSERT INTO t_search_keyword (
+			  SK_KEYWORD
+			, SK_REGDT
+			, SK_IP
+			, SK_USERID
+		) 
+		VALUES 
+		<foreach collection="list" item="item" separator=",">
+		(
+			  #{item.SK_KEYWORD}
+			, DATE_FORMAT(NOW(),'%Y-%m-%d')
+			, #{item.SK_IP}
+			, #{item.SK_USERID}
+		) 
+		</foreach>
+	</insert>
+	
+	
+	
+    
+    <sql id="keywordSearchOptions">
+    	SELECT	*
+    	FROM (
+	    	SELECT	SK_KEYWORD
+			        , COUNT(*) SK_SIZE
+	       	FROM t_search_keyword
+	       	WHERE	1=1
+	        <if test="searchBeginDate != null and searchBeginDate != ''">
+	 		AND			DATE_FORMAT(SK_REGDT,'%Y-%m-%d') 	>=	#{searchBeginDate}
+		 	</if>
+		 	<if test="searchEndDate != null and searchEndDate != ''">
+		 	<![CDATA[
+	 		AND			DATE_FORMAT(SK_REGDT,'%Y-%m-%d') 	<=	#{searchEndDate}
+		 	]]>
+		 	</if>
+		 	GROUP BY SK_KEYWORD 
+			ORDER BY SK_SIZE DESC
+    	) BODY
+       	ORDER BY SK_KEYWORD DESC 
+	 	
+    </sql>
+	
+	
+</mapper>
+ 

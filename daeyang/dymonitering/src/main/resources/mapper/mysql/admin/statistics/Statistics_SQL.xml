@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Statistics"> 
+	
+	<insert id="STM_insert">
+		INSERT INTO t_statistics_manager
+		(	
+			 STM_IP
+			,STM_REGDT
+			,STM_TYPE
+			,STM_MAINKEY
+			,STM_CONNECT_KEY
+		)
+		VALUES
+		(
+			 #{STM_IP}
+			,SYSDATE()
+			,#{STM_TYPE}
+			,#{STM_MAINKEY}
+			,#{STM_CONNECT_KEY}
+		)
+	</insert>
+	
+	
+	<!-- 게시판 가져오기 -->
+	<select id="get_boardListName" resultType="HashMap">
+		SELECT 	  BN_KEYNO	MENU_KEY
+				, BN_TITLE	MENU_NAME
+		FROM b_board_notice
+		WHERE BN_DEL_YN = 'N'
+		AND   BN_MN_KEYNO = #{KEY}
+		ORDER BY BN_REGDT DESC
+	</select>
+	
+	
+	
+	<!-- 통계 - 시간 -->
+	<select id="STM_getVisitTime" resultType="hashmap">
+		SELECT 	SC_CODENM AS CONTENT
+				, IFNULL(COUNT,0) AS COUNT 
+		FROM s_common_code_sub CB
+        LEFT JOIN (
+        	SELECT 	SUBSTR(STM_REGDT,12,2) TIME
+        			, COUNT(*) COUNT 
+        	FROM (
+	        	<include refid="statisticsSearchOptions"/>
+	        ) A
+			GROUP BY TIME
+			ORDER BY TIME
+		) B 
+        ON CB.SC_CODENM = B.TIME
+        WHERE SC_MC_IN_C = 'AS' 
+		<choose>
+			<when test='STM_ORDER.equals("A")'>
+		ORDER BY COUNT DESC
+			</when>
+			<when test='STM_ORDER.equals("B")'>
+		ORDER BY SC_CODELV 			
+			</when>
+		</choose>
+	</select>
+	
+	
+	<!-- 통계 - 요일 -->
+	<select id="STM_getVisitWeekOfDay" resultType="hashmap">
+		SELECT 	SC_CODENM AS CONTENT
+				, IFNULL(COUNT,0) AS COUNT 
+		FROM s_common_code_sub CB
+        LEFT JOIN (
+        	SELECT 	SUBSTR( _UTF8'일월화수목금토', DAYOFWEEK(STM_REGDT), 1) AS DAYOFWEEK
+        			, COUNT(*) AS COUNT 
+        	FROM (
+	        	<include refid="statisticsSearchOptions"/>
+	        ) A
+			GROUP BY DAYOFWEEK
+			ORDER BY 1
+		) B
+		ON CB.SC_CODENM = B.DAYOFWEEK
+ 		WHERE SC_MC_IN_C = 'AR' 
+ 		<choose>
+			<when test='STM_ORDER.equals("A")'>
+		ORDER BY COUNT DESC
+			</when>
+			<when test='STM_ORDER.equals("B")'>
+		ORDER BY SC_CODELV 			
+			</when>
+		</choose>
+	</select>
+	
+	
+	<!-- 통계 - 일 별겸색-->
+	<select id="STM_getVisitDay" resultType="hashmap">
+        SELECT 	LEFT(STM_REGDT,10) CONTENT 
+        		, COUNT(*) COUNT
+        FROM (
+        	<include refid="statisticsSearchOptions"/>
+        ) A		
+		GROUP BY CONTENT
+		<choose>
+			<when test='STM_ORDER.equals("A")'>
+		ORDER BY COUNT DESC
+			</when>
+			<when test='STM_ORDER.equals("B")'>
+		ORDER BY CONTENT 			
+			</when>
+		</choose>
+	</select>
+	
+	<!-- 통계 - 월 별겸색-->
+	<select id="STM_getVisitMonth" resultType="hashmap">
+        SELECT 	SUBSTR(STM_REGDT, 1,7) CONTENT 
+        		, COUNT(*) COUNT
+        FROM (
+        	<include refid="statisticsSearchOptions"/>
+        ) A		
+		GROUP BY CONTENT
+		<choose>
+			<when test='STM_ORDER.equals("A")'>
+		ORDER BY COUNT DESC
+			</when>
+			<when test='STM_ORDER.equals("B")'>
+		ORDER BY CONTENT DESC 			
+			</when>
+		</choose>
+	</select>
+	
+	<!-- 통계 - 년 별겸색-->
+	<select id="STM_getVisitYear" resultType="hashmap">
+        SELECT 	LEFT(STM_REGDT,4) CONTENT 
+        		, COUNT(*) COUNT
+        FROM (
+        	<include refid="statisticsSearchOptions"/>
+        ) A		
+		GROUP BY CONTENT
+		<choose>
+			<when test='STM_ORDER.equals("A")'>
+		ORDER BY COUNT DESC
+			</when>
+			<when test='STM_ORDER.equals("B")'>
+		ORDER BY CONTENT DESC 			
+			</when>
+		</choose>
+	</select>
+    
+    
+	<sql id="statisticsSearchOptions">
+		SELECT 		STM.* 
+		FROM t_statistics_manager STM
+		LEFT JOIN b_board_notice BN
+		ON    		STM.STM_CONNECT_KEY = BN.BN_KEYNO
+		LEFT JOIN s_menu_manager MN
+		ON    		BN.BN_MN_KEYNO = MN.MN_KEYNO
+		WHERE 		1=1
+		AND	  		STM_TYPE 		= #{STM_TYPE}
+		<if test="MENU_MAIN_DIV != null and MENU_MAIN_DIV != ''">
+		AND   		STM_MAINKEY 	= #{MENU_MAIN_DIV}
+		</if>
+		<if test="MENU_DIV != null and MENU_DIV != ''">
+		AND	  		MN_KEYNO = #{MENU_DIV}
+		</if>
+		<if test="BOARD_DIV != null and BOARD_DIV != ''">
+		AND	  		STM_CONNECT_KEY = #{BOARD_DIV}
+		</if>
+		<if test="HOMEKEY != null and HOMEKEY != ''">
+		AND			MN.MN_HOMEDIV_C = #{HOMEKEY}
+		</if>
+		<if test="searchBeginDate != null and searchBeginDate != ''">
+ 		AND	  		DATE_FORMAT(STM_REGDT,'%Y-%m-%d')  >=	 #{searchBeginDate}
+	 	</if>
+	 	<if test="searchEndDate != null and searchEndDate != ''">
+	 	<![CDATA[
+ 		AND	  		DATE_FORMAT(STM_REGDT,'%Y-%m-%d')  <=	 #{searchEndDate}
+	 	]]>
+	 	</if>
+		ORDER BY 	STM_KEYNO DESC
+	</sql>
+</mapper>
+ 

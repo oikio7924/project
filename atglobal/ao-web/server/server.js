@@ -1,0 +1,78 @@
+'use strict';
+
+require('dotenv').config();
+
+const path = require('path');
+const express = require('express');
+const session = require('express-session');
+const cors = require('cors');
+const pgSession = require('connect-pg-simple')(session);
+const pool = require('./db');
+const initDb = require('./lib/initDb');
+const migrateDb = require('./lib/migrateDb');
+
+const app = express();
+const port = Number(process.env.PORT || 4000);
+const isProduction = process.env.NODE_ENV === 'production';
+
+app.use(cors({
+  origin: isProduction ? process.env.SITE_DOMAIN : ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  credentials: true
+}));
+app.use(express.json());
+app.use(session({
+  store: new pgSession({
+    pool,
+    tableName: 'user_sessions',
+    createTableIfMissing: true
+  }),
+  name: 'atglobal.sid',
+  secret: process.env.SESSION_SECRET || 'local_atglobal_secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: isProduction ? 'lax' : 'lax',
+    secure: false,
+    maxAge: 1000 * 60 * 60 * 8
+  }
+}));
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+app.get('/api/health', (_req, res) => res.json({ ok: true, name: 'AT Global API' }));
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/users', require('./routes/users'));
+app.use('/api/products', require('./routes/products'));
+app.use('/api/distributor-prices', require('./routes/distributorPrices'));
+app.use('/api/inventory', require('./routes/inventory'));
+app.use('/api/orders', require('./routes/orders'));
+app.use('/api/shipments', require('./routes/shipments'));
+app.use('/api/sales', require('./routes/sales'));
+app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/barcode', require('./routes/barcode'));
+app.use('/api/business', require('./routes/business'));
+
+if (isProduction) {
+  const dist = path.join(__dirname, '../client/dist');
+  app.use(express.static(dist));
+  app.get('*', (_req, res) => res.sendFile(path.join(dist, 'index.html')));
+}
+
+app.use((err, _req, res, _next) => {
+  console.error('[Server Error]', err.message);
+  res.status(500).json({ message: err.message || '서버 오류가 발생했습니다.' });
+});
+
+// unhandled rejection이 서버를 죽이지 않도록
+process.on('unhandledRejection', (reason) => {
+  console.error('[Unhandled Rejection]', reason);
+});
+
+initDb()
+  .then(migrateDb)
+  .then(() => app.listen(port, () => console.log(`AT Global API listening on ${port}`)))
+  .catch((error) => {
+    console.error('DB initialization failed:', error.message);
+    process.exit(1);
+  });

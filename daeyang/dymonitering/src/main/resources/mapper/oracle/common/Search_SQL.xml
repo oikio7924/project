@@ -1,0 +1,614 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="search"> 
+	<resultMap id="SEARCH_MAP" type="HashMap">
+ 		<result property="BN_CONTENTS_SEARCH" column="BN_CONTENTS_SEARCH" jdbcType="CLOB" javaType="java.lang.String"/>
+		<result property="MVD_DATA_SEARCH" column="MVD_DATA_SEARCH" jdbcType="CLOB" javaType="java.lang.String"/>
+		<result property="DU_CONTENTS" column="DU_CONTENTS" jdbcType="CLOB" javaType="java.lang.String"/>
+	</resultMap>
+	
+	<!-- 메뉴검색  count -->
+	<select id="MN_getMenuListCnt" resultType="int" parameterType="Menu">
+		SELECT COUNT(*)
+		FROM s_menu_manager M
+		LEFT JOIN (
+			SELECT 	*
+			FROM s_menu_view_data
+			WHERE  	MVD_DEL_YN = 'N'
+		) V
+		ON   	M.MN_KEYNO = V.MVD_MN_KEYNO
+		<if test='userAuth != "UIA_ASDFG"'>
+		LEFT JOIN u_userinfo_authority_roll UAR
+		ON 			UAR.MN_KEYNO = M.MN_KEYNO
+		</if>
+		WHERE 1=1
+		AND	
+		<foreach collection="searchKeywordArr" item="keyword" open="(" close=")" separator="OR">
+		  ( MN_NAME LIKE ('%'||#{keyword}||'%') OR V.MVD_DATA_SEARCH LIKE ('%'||#{keyword}||'%') )
+		</foreach>
+		AND	  MN_HOMEDIV_C	=	#{MN_HOMEDIV_C}
+		AND	  MN_USE_YN		=	'Y'
+		AND	  MN_DEL_YN		=	'N'
+		AND	  MN_SHOW_YN	=	'Y'
+		AND	  MN_PAGEDIV_C	!=	'SC_QXCFB'
+		<if test='userAuth != "UIA_ASDFG"'>
+		AND   UIR_KEYNO = (SELECT UIR_KEYNO FROM u_userinfo_roll WHERE UIR_NAME='view') AND UIA_KEYNO = #{userAuth}
+		</if>
+	</select>
+	
+	
+	<!-- 메뉴검색 -->
+	<select id="MN_getMenuList" resultType="hashmap" parameterType="Menu" resultMap="SEARCH_MAP">
+		WITH V_TEMP1 AS(
+		    SELECT  MN_KEYNO, COUNT(*) searchCnt, LISTAGG(keyword,'   ')  WITHIN GROUP (ORDER BY keyword)
+		    FROM (
+		        <foreach collection="searchKeywordArr" item="keyword"  separator="UNION ALL">
+		        SELECT #{keyword} keyword,M.*,V.MVD_DATA_SEARCH
+					FROM s_menu_manager M
+					LEFT JOIN (
+						SELECT 	*
+						FROM s_menu_view_data
+						WHERE  	MVD_DEL_YN = 'N'
+					) V
+					ON   	M.MN_KEYNO = V.MVD_MN_KEYNO
+				<if test='userAuth != "UIA_ASDFG"'>
+					LEFT JOIN u_userinfo_authority_roll UAR
+					ON 			UAR.MN_KEYNO = M.MN_KEYNO
+				</if>
+					WHERE 	1=1
+					AND   	( MN_NAME LIKE ('%'||#{keyword}||'%') OR V.MVD_DATA_SEARCH LIKE ('%'||#{keyword}||'%') )
+					AND	  	MN_HOMEDIV_C	=	#{MN_HOMEDIV_C}
+					AND	  	MN_USE_YN		=	'Y'
+					AND	  	MN_DEL_YN		=	'N'
+					AND		MN_SHOW_YN		=	'Y'
+					AND	  	MN_PAGEDIV_C	!=	'SC_QXCFB'
+				<if test='userAuth != "UIA_ASDFG"'>
+					AND 	UIR_KEYNO = (SELECT UIR_KEYNO FROM u_userinfo_roll WHERE UIR_NAME='view') AND UIA_KEYNO = #{userAuth}
+				</if>
+		    	</foreach>
+		    ) A
+		    GROUP BY MN_KEYNO
+		)
+		,V_TEMP2 AS(
+		    SELECT * FROM(
+		    SELECT  ROW_NUMBER() OVER(PARTITION BY MN_KEYNO ORDER BY 1) AS RN
+		            , A.*
+		    FROM (
+		            <foreach collection="searchKeywordArr" item="keyword"  separator="UNION ALL">
+		            SELECT #{keyword} keyword,M.*,V.MVD_DATA_SEARCH
+					FROM s_menu_manager M
+					LEFT JOIN (
+						SELECT 	*
+						FROM s_menu_view_data
+						WHERE  	MVD_DEL_YN = 'N'
+					) V
+					ON   	M.MN_KEYNO = V.MVD_MN_KEYNO
+				<if test='userAuth != "UIA_ASDFG"'>
+					LEFT JOIN u_userinfo_authority_roll UAR
+					ON 			UAR.MN_KEYNO = M.MN_KEYNO
+				</if>
+					WHERE 	1=1
+					AND   	( MN_NAME LIKE ('%'||#{keyword}||'%') OR V.MVD_DATA_SEARCH LIKE ('%'||#{keyword}||'%') )
+					AND	  	MN_HOMEDIV_C	=	#{MN_HOMEDIV_C}
+					AND	  	MN_USE_YN		=	'Y'
+					AND	  	MN_DEL_YN		=	'N'
+					AND		MN_SHOW_YN		=	'Y'
+					AND	  	MN_PAGEDIV_C	!=	'SC_QXCFB'
+				<if test='userAuth != "UIA_ASDFG"'>
+					AND 	UIR_KEYNO = (SELECT UIR_KEYNO FROM u_userinfo_roll WHERE UIR_NAME='view') AND UIA_KEYNO = #{userAuth}
+				</if>
+		            </foreach>
+		        ) A
+		    )
+		    WHERE RN = 1
+		)
+		
+		SELECT * FROM (
+		SELECT ROWNUM AS "COUNT", A.*
+		FROM(
+		    SELECT *
+		    FROM v_temp1 V1
+		    LEFT JOIN v_temp2 V2
+		    ON V1.MN_KEYNO = V2.MN_KEYNO
+		    )A
+		) 
+		WHERE COUNT BETWEEN (#{pageIndex} - 1) * #{recordCountPerPage} + 1
+		AND #{pageIndex} * #{recordCountPerPage}
+		<choose>
+		    <when test='orderCondition.equals("A")'>
+		    ORDER BY searchCnt DESC	
+		    </when>
+		    <when test='orderCondition.equals("B")'>
+		    ORDER BY MN_NAME
+		    </when>
+		    <when test='orderCondition.equals("C")'>
+		    ORDER BY MN_REGDT DESC	
+		    </when>
+		    <otherwise>
+		    ORDER BY searchCnt DESC
+		    </otherwise>
+		</choose>
+	</select>
+	
+	<!-- 메뉴키로 부모 이름들 찾기 -->
+	<select id="MN_getMainNames" resultType="String" parameterType="String">
+		SELECT LISTAGG(MN_NAME,',')  WITHIN GROUP (ORDER BY LEVEL DESC) AS MN_NAME
+		FROM s_menu_manager
+		START WITH MN_KEYNO = #{MN_KEYNO}
+		CONNECT BY PRIOR MN_MAINKEY = MN_KEYNO
+	</select>
+	
+	<!-- 게시판 - count -->
+	<select id="BN_getCnt" resultType="int" parameterType="BoardNotice">
+    	SELECT SUM(CNT) COUNT
+    	FROM
+    	(
+    	SELECT 		COUNT(*) CNT
+    	FROM b_board_notice B
+    	LEFT JOIN s_menu_manager M
+    	ON			B.BN_MN_KEYNO = MN_KEYNO 
+   	<if test='userAuth != "UIA_ASDFG"'>
+    	LEFT JOIN u_userinfo_authority_roll UAR
+		ON 			UAR.MN_KEYNO = B.BN_MN_KEYNO
+	</if>
+    	WHERE
+    	<foreach collection="searchKeywordArr" item="keyword" open="(" close=")" separator="OR">
+		BN_TITLE	LIKE	('%'||#{keyword}||'%') 
+		OR
+    	BN_CONTENTS_SEARCH	LIKE	('%'||#{keyword}||'%')
+		</foreach>
+    	AND			BN_USE_YN		=	'Y'
+    	AND			BN_DEL_YN		=	'N'
+    	AND			MN_HOMEDIV_C	=	#{BN_MN_KEYNO}	
+    	AND 		MN_USE_YN = 'Y' 
+	    AND 		MN_DEL_YN='N' 
+	    AND 		MN_SHOW_YN = 'Y'
+	 <if test='userAuth != "UIA_ASDFG"'>
+    	AND 		UIR_KEYNO = (SELECT UIR_KEYNO FROM u_userinfo_roll WHERE UIR_NAME='access') AND UIA_KEYNO = #{userAuth}
+     </if>
+    	<choose>
+        	<when test='searchCondition.equals("day")'>
+        	<![CDATA[
+        	AND		BN_REGDT >= #{searchBeginDate}
+        	]]>
+        	</when>
+        	<when test='searchCondition.equals("week") or searchCondition.equals("month") or searchCondition.equals("year") or searchCondition.equals("etc")'>
+        	<![CDATA[
+        	AND		BN_REGDT >= #{searchBeginDate} 
+        	AND		BN_REGDT <= #{searchEndDate}
+        	]]>
+        	</when>
+        </choose>
+        
+        ) A
+    </select>
+    
+    <!-- 게시판 -->
+    <select id="BN_getList" resultType="hashmap" resultMap="SEARCH_MAP" parameterType="BoardNotice">
+    	WITH V_TEMP1 AS(
+		    SELECT  BN_KEYNO, COUNT(*) searchCnt, LISTAGG(keyword,'   ')  WITHIN GROUP (ORDER BY keyword)
+		    FROM (
+		        <foreach collection="searchKeywordArr" item="keyword"  separator="UNION ALL">
+		        SELECT 		  #{keyword} keyword
+		    				    , M.MN_URL
+		                        , B.BN_KEYNO
+		                        , B.BN_TITLE
+		                        , B.BN_CONTENTS_SEARCH
+		                        , B.BN_REGDT
+		                        , B.BN_MN_KEYNO
+			    	FROM b_board_notice B
+			    	LEFT JOIN s_menu_manager M
+			    	ON			B.BN_MN_KEYNO	=	M.MN_KEYNO
+			    <if test='userAuth != "UIA_ASDFG"'>
+			    	LEFT JOIN u_userinfo_authority_roll UAR
+					ON 			UAR.MN_KEYNO = B.BN_MN_KEYNO
+				</if>
+			    	WHERE		(
+			    					BN_TITLE	LIKE	('%'||#{keyword}||'%') 
+			    				OR
+			    					BN_CONTENTS_SEARCH	LIKE	('%'||#{keyword}||'%')
+			   					)
+			    	AND			BN_USE_YN		=	'Y'
+			    	AND			BN_DEL_YN		=	'N'
+			    	AND 		MN_USE_YN = 'Y' 
+	    			AND 		MN_DEL_YN='N' 
+	    			AND 		MN_SHOW_YN = 'Y'
+			    	AND			MN_HOMEDIV_C	=	#{BN_MN_KEYNO}	
+			   <!-- 게시판 게시물은 접근권한이 있어야 게시물 내역을 볼 수 있음 -->
+			    <if test='userAuth != "UIA_ASDFG"'>
+			    	AND 		UIR_KEYNO = (SELECT UIR_KEYNO FROM u_userinfo_roll WHERE UIR_NAME='access') AND UIA_KEYNO = #{userAuth}
+			    </if>
+			    	<choose>
+			        	<when test='searchCondition.equals("day")'>
+			        	<![CDATA[
+			        	AND		BN_REGDT >= #{searchBeginDate}
+			        	]]>
+			        	</when>
+			        	<when test='searchCondition.equals("week") or searchCondition.equals("month") or searchCondition.equals("year") or searchCondition.equals("etc")'>
+			        	<![CDATA[
+			        	AND		BN_REGDT >= #{searchBeginDate} 
+			        	AND		BN_REGDT <= #{searchEndDate}
+			        	]]>
+			        	</when>
+			        </choose>
+		    	</foreach>
+		    ) A
+		    GROUP BY BN_KEYNO
+		)
+		,V_TEMP2 AS(
+		    SELECT * FROM(
+		    SELECT  ROW_NUMBER() OVER(PARTITION BY BN_KEYNO ORDER BY 1) AS RN
+		            , A.*
+		    FROM (
+		            <foreach collection="searchKeywordArr" item="keyword"  separator="UNION ALL">
+		            SELECT 		  #{keyword} keyword
+		    				    , M.MN_URL
+		                        , B.BN_KEYNO
+		                        , B.BN_TITLE
+		                        , B.BN_CONTENTS_SEARCH
+		                        , B.BN_REGDT
+		                        , B.BN_MN_KEYNO
+			    	FROM b_board_notice B
+			    	LEFT JOIN s_menu_manager M
+			    	ON			B.BN_MN_KEYNO	=	M.MN_KEYNO
+			    <if test='userAuth != "UIA_ASDFG"'>
+			    	LEFT JOIN u_userinfo_authority_roll UAR
+					ON 			UAR.MN_KEYNO = B.BN_MN_KEYNO
+				</if>
+			    	WHERE		(
+			    					BN_TITLE	LIKE	('%'||#{keyword}||'%') 
+			    				OR
+			    					BN_CONTENTS_SEARCH	LIKE	('%'||#{keyword}||'%')
+			   					)
+			    	AND			BN_USE_YN		=	'Y'
+			    	AND			BN_DEL_YN		=	'N'
+    		    	AND 		MN_USE_YN = 'Y' 
+			    	AND 		MN_DEL_YN='N' 
+			    	AND 		MN_SHOW_YN = 'Y'
+			    	AND			MN_HOMEDIV_C	=	#{BN_MN_KEYNO}
+			   <!-- 게시판 게시물은 접근권한이 있어야 게시물 내역을 볼 수 있음 -->
+		    <if test='userAuth != "UIA_ASDFG"'>
+		    		AND 		UIR_KEYNO = (SELECT UIR_KEYNO FROM u_userinfo_roll WHERE UIR_NAME='access') AND UIA_KEYNO = #{userAuth}
+		    </if>
+			    	<choose>
+			        	<when test='searchCondition.equals("day")'>
+			        	<![CDATA[
+			        	AND		BN_REGDT >= #{searchBeginDate}
+			        	]]>
+			        	</when>
+			        	<when test='searchCondition.equals("week") or searchCondition.equals("month") or searchCondition.equals("year") or searchCondition.equals("etc")'>
+			        	<![CDATA[
+			        	AND		BN_REGDT >= #{searchBeginDate} 
+			        	AND		BN_REGDT <= #{searchEndDate}
+			        	]]>
+			        	</when>
+			        </choose>
+		            </foreach>
+		        ) A
+		    )
+		    WHERE RN = 1
+		)
+		
+		SELECT * FROM (
+		SELECT ROWNUM AS "COUNT", A.*
+   	<if test='userAuth != "UIA_ASDFG"'>
+	   , CASE
+	      WHEN INSTR ((SELECT
+								(
+									SELECT LISTAGG(A.UIA_KEYNO,',')  WITHIN GROUP (ORDER BY A.UIA_KEYNO)
+								    FROM u_userinfo_authority A, U_USERINFO_AUTHORITY_ROLL BR
+								    WHERE	BR.UIA_KEYNO		=	A.UIA_KEYNO	
+								    AND		BR.MN_KEYNO	=	(SELECT MN_KEYNO FROM s_menu_manager SM WHERE SM.MN_URL = A.MN_URL)
+								    AND		BR.UIR_KEYNO	=	U.UIR_KEYNO
+								) AUTHORITY_LIST
+								FROM u_userinfo_roll U
+								WHERE	U.UIR_TYPE	=	'SC_MYKFE'
+								AND UIR_NAME = 'read'),#{userAuth},1,1) > 0
+		 THEN 'permit'
+		 ELSE 'disallow'
+		 END "readAuth"
+	</if>
+		FROM(
+		    SELECT *
+		    FROM v_temp1 V1
+		    LEFT JOIN v_temp2 V2
+		    ON V1.BN_KEYNO = V2.BN_KEYNO
+		    )A
+		) 
+		WHERE COUNT BETWEEN (#{pageIndex} - 1) * #{recordCountPerPage} + 1
+		AND #{pageIndex} * #{recordCountPerPage}
+		 <choose>
+		    <when test='orderCondition.equals("A")'>
+		    ORDER BY searchCnt DESC, BN_REGDT DESC 	
+		    </when>
+		    <when test='orderCondition.equals("B")'>
+		    ORDER BY BN_TITLE
+		    </when>
+		    <when test='orderCondition.equals("C")'>
+		    ORDER BY BN_REGDT DESC	
+		    </when>
+		    <otherwise>
+		    ORDER BY searchCnt DESC, BN_REGDT DESC 	
+		    </otherwise>
+		</choose>
+    </select>
+	
+	<!-- 자료 - count -->
+	<select id="FS_getCnt" resultType="int" parameterType="BoardNotice">
+		SELECT 		COUNT(*)
+		FROM b_board_notice BN
+		LEFT JOIN s_common_file_main FM
+		ON			BN.BN_FM_KEYNO = FM.FM_KEYNO
+		LEFT JOIN s_common_file_sub FS
+		ON			FM.FM_KEYNO	=	FS.FS_FM_KEYNO
+		LEFT JOIN s_menu_manager M
+	    ON			BN.BN_MN_KEYNO	=	M.MN_KEYNO
+		<if test='userAuth != "UIA_ASDFG"'>
+	    LEFT JOIN u_userinfo_authority_roll UAR
+		ON 			UAR.MN_KEYNO = BN.BN_MN_KEYNO
+		</if>
+		WHERE
+		<foreach collection="searchKeywordArr" item="keyword" open="(" close=")" separator="OR">
+		FS.FS_ORINM LIKE ('%'||#{keyword}||'%')
+		</foreach>
+		AND			BN_USE_YN	=	'Y'
+    	AND			BN_DEL_YN	=	'N'
+    	AND 		MN_USE_YN 	= 	'Y' 
+    	AND 		MN_DEL_YN	=	'N' 
+    	AND 		MN_SHOW_YN	= 	'Y'
+    	AND			MN_HOMEDIV_C	=	#{BN_MN_KEYNO}
+    	AND			BN_MN_KEYNO	IS NOT NULL
+    	<if test='userAuth != "UIA_ASDFG"'>
+    	AND 		UIR_KEYNO = (SELECT UIR_KEYNO FROM u_userinfo_roll WHERE UIR_NAME='access') AND UIA_KEYNO = #{userAuth}
+    	</if>
+    	<choose>
+        	<when test='searchCondition.equals("day")'>
+        	<![CDATA[
+        	AND		FS_REGDT >= #{searchBeginDate}
+        	]]>
+        	</when>
+        	<when test='searchCondition.equals("week") or searchCondition.equals("month") or searchCondition.equals("year") or searchCondition.equals("etc")'>
+        	<![CDATA[
+        	AND		FS_REGDT >= #{searchBeginDate} 
+        	AND		FS_REGDT <= #{searchEndDate}
+        	]]>
+        	</when>
+        </choose>
+    </select>
+    
+    <!-- 자료 -->
+    <select id="FS_getList" resultType="hashmap" parameterType="BoardNotice">
+    	WITH V_TEMP1 AS(
+		    SELECT  FS_KEYNO, COUNT(*) searchCnt, LISTAGG(keyword,'   ')  WITHIN GROUP (ORDER BY keyword)
+		    FROM (
+		        <foreach collection="searchKeywordArr" item="keyword"  separator="UNION ALL">
+		        SELECT 		BN.*
+		                    , FS.*
+		                    , M.MN_URL
+		                    , NVL2(FS.FS_KEYNO,(FS.FS_FOLDER||FS.FS_CHANGENM||'.'||FS.FS_EXT),'') AS FS_PATH
+		                    , #{keyword} keyword
+		        FROM b_board_notice BN
+		        LEFT JOIN s_common_file_main FM
+		        ON			BN.BN_FM_KEYNO = FM.FM_KEYNO
+		        LEFT JOIN s_common_file_sub FS
+		        ON			FM.FM_KEYNO	=	FS.FS_FM_KEYNO
+		        LEFT JOIN s_menu_manager M
+		        ON			BN.BN_MN_KEYNO	=	M.MN_KEYNO
+		       	<if test='userAuth != "UIA_ASDFG"'>
+		    	LEFT JOIN u_userinfo_authority_roll UAR
+				ON 			UAR.MN_KEYNO = BN.BN_MN_KEYNO
+				</if>
+		    	WHERE		FS.FS_ORINM LIKE ('%'||#{keyword}||'%')
+		    	AND			BN_USE_YN	=	'Y'
+		    	AND			BN_DEL_YN	=	'N'
+		    	AND 		MN_USE_YN 	= 	'Y' 
+		    	AND 		MN_DEL_YN	=	'N' 
+		    	AND 		MN_SHOW_YN	= 	'Y'
+		    	AND			MN_HOMEDIV_C	=	#{BN_MN_KEYNO}
+		    	AND			BN_MN_KEYNO	IS NOT NULL
+		    <!-- 게시판 게시물은 접근권한이 있어야 게시물 내역을 볼 수 있음 -->
+	    	<if test='userAuth != "UIA_ASDFG"'>
+	    		AND 		UIR_KEYNO = (SELECT UIR_KEYNO FROM u_userinfo_roll WHERE UIR_NAME='access') AND UIA_KEYNO = #{userAuth}
+	    	</if>
+		            <choose>
+			        	<when test='searchCondition.equals("day")'>
+			        	<![CDATA[
+			        	AND		FS_REGDT >= #{searchBeginDate}
+			        	]]>
+			        	</when>
+			        	<when test='searchCondition.equals("week") or searchCondition.equals("month") or searchCondition.equals("year") or searchCondition.equals("etc")'>
+			        	<![CDATA[
+			        	AND		FS_REGDT >= #{searchBeginDate} 
+			        	AND		FS_REGDT <= #{searchEndDate}
+			        	]]>
+			        	</when>
+			        </choose>
+		    	</foreach>
+		    ) A
+		    GROUP BY FS_KEYNO
+		)
+		,V_TEMP2 AS(
+		    SELECT * FROM(
+		    SELECT  ROW_NUMBER() OVER(PARTITION BY FS_KEYNO ORDER BY 1) AS RN
+		            , A.*
+		    FROM (
+		            <foreach collection="searchKeywordArr" item="keyword"  separator="UNION ALL">
+		            SELECT 		BN.*
+		                        , FS.*
+		                        , M.MN_URL
+		                        , NVL2(FS.FS_KEYNO,(FS.FS_FOLDER||FS.FS_CHANGENM||'.'||FS.FS_EXT),'') AS FS_PATH
+		                        , #{keyword} keyword
+		            FROM b_board_notice BN
+		            LEFT JOIN s_common_file_main FM
+		            ON			BN.BN_FM_KEYNO = FM.FM_KEYNO
+		            LEFT JOIN s_common_file_sub FS
+		            ON			FM.FM_KEYNO	=	FS.FS_FM_KEYNO
+		            LEFT JOIN s_menu_manager M
+		            ON			BN.BN_MN_KEYNO	=	M.MN_KEYNO
+		        <if test='userAuth != "UIA_ASDFG"'>
+			    	LEFT JOIN u_userinfo_authority_roll UAR
+					ON 			UAR.MN_KEYNO = BN.BN_MN_KEYNO
+				</if>
+		        	WHERE		FS.FS_ORINM LIKE ('%'||#{keyword}||'%')
+		        	AND			BN_USE_YN	=	'Y'
+		            AND			BN_DEL_YN	=	'N'
+		            AND 		MN_USE_YN 	= 	'Y' 
+			    	AND 		MN_DEL_YN	=	'N' 
+			    	AND 		MN_SHOW_YN	= 	'Y'
+			    	AND			MN_HOMEDIV_C	=	#{BN_MN_KEYNO}
+			 <!-- 게시판 게시물은 접근권한이 있어야 게시물 내역을 볼 수 있음 -->
+		    	<if test='userAuth != "UIA_ASDFG"'>
+		    		AND 		UIR_KEYNO = (SELECT UIR_KEYNO FROM u_userinfo_roll WHERE UIR_NAME='access') AND UIA_KEYNO = #{userAuth}
+		    	</if>
+		            AND			BN_MN_KEYNO	IS NOT NULL
+		                <choose>
+		                    <when test='searchCondition.equals("day")'>
+		                    <![CDATA[
+		                    AND		FS_REGDT >= #{searchBeginDate}
+		                    ]]>
+		                    </when>
+		                    <when test='searchCondition.equals("week") or searchCondition.equals("month") or searchCondition.equals("year") or searchCondition.equals("etc")'>
+		                    <![CDATA[
+		                    AND		FS_REGDT >= #{searchBeginDate} 
+		                    AND		FS_REGDT <= #{searchEndDate}
+		                    ]]>
+		                    </when>
+		                </choose>
+		            </foreach>
+		            ORDER BY BN_KEYNO
+		        ) A
+		    )
+		    WHERE RN = 1
+		)
+		
+		SELECT * FROM (
+		SELECT ROWNUM AS "COUNT", A.*
+				<if test='userAuth != "UIA_ASDFG"'>
+				   , CASE
+				     WHEN INSTR ((SELECT
+											(
+												SELECT  LISTAGG(A.UIA_KEYNO,',')  WITHIN GROUP (ORDER BY A.UIA_KEYNO)
+											    FROM u_userinfo_authority A, U_USERINFO_AUTHORITY_ROLL BR
+											    WHERE	BR.UIA_KEYNO		=	A.UIA_KEYNO	
+											    AND		BR.MN_KEYNO	=	(SELECT MN_KEYNO FROM s_menu_manager SM WHERE SM.MN_URL = A.MN_URL)
+											    AND		BR.UIR_KEYNO	=	U.UIR_KEYNO
+											) AUTHORITY_LIST
+											FROM u_userinfo_roll U
+											WHERE	U.UIR_TYPE	=	'SC_MYKFE'
+											AND UIR_NAME = 'read'),#{userAuth},1,1 )>0
+					 THEN 'permit'
+					 ELSE 'disallow'
+					 END "readAuth"
+					,CASE
+				     WHEN INSTR ((SELECT
+											(
+												SELECT  LISTAGG(A.UIA_KEYNO,',')  WITHIN GROUP (ORDER BY A.UIA_KEYNO)
+											    FROM u_userinfo_authority A, U_USERINFO_AUTHORITY_ROLL BR
+											    WHERE	BR.UIA_KEYNO		=	A.UIA_KEYNO	
+											    AND		BR.MN_KEYNO	=	(SELECT MN_KEYNO FROM s_menu_manager SM WHERE SM.MN_URL = A.MN_URL)
+											    AND		BR.UIR_KEYNO	=	U.UIR_KEYNO
+											) AUTHORITY_LIST
+											FROM u_userinfo_roll U
+											WHERE	U.UIR_TYPE	=	'SC_MYKFE'
+											AND UIR_NAME = 'download'),#{userAuth},1,1 )>0
+					 THEN 'permit'
+					 ELSE 'disallow'
+					 END "downAuth"
+				</if>
+		FROM(
+		    SELECT *
+		    FROM v_temp1 V1
+		    LEFT JOIN v_temp2 V2
+		    ON V1.FS_KEYNO = V2.FS_KEYNO
+		    )A
+		) 
+		WHERE COUNT BETWEEN (#{pageIndex} - 1) * #{recordCountPerPage} + 1
+		AND #{pageIndex} * #{recordCountPerPage}
+		<choose>
+		    <when test='orderCondition.equals("A")'>
+		    ORDER BY searchCnt DESC, FS_REGDT DESC	
+		    </when>
+		    <when test='orderCondition.equals("B")'>
+		    ORDER BY FS_ORINM
+		    </when>
+		    <when test='orderCondition.equals("C")'>
+		    ORDER BY FS_REGDT DESC	
+		    </when>
+		    <otherwise>
+		    ORDER BY searchCnt DESC, FS_REGDT DESC
+		    </otherwise>
+		</choose>
+    </select>
+    
+    	<!-- 인물 - count -->
+	<select id="dept_getCnt" resultType="int" parameterType="BoardNotice">
+		SELECT 		COUNT(*)
+		FROM t_department_user_manager DU
+		LEFT JOIN t_department_manager DN
+		ON DN.DN_KEYNO = DU.DU_DN_KEYNO		
+		WHERE
+		<foreach collection="searchKeywordArr" item="keyword" open="(" close=")" separator="OR">
+		(
+			DU_NAME 	LIKE ('%'||#{keyword}||'%')
+			OR
+			DU_ROLE		LIKE ('%'||#{keyword}||'%')	
+			OR
+			DU_CONTENTS LIKE ('%'||#{keyword}||'%')
+			OR
+			DU_TEL		LIKE ('%'||#{keyword}||'%')		
+		)		
+ 		   	AND			DU_DEL_YN	=	'N'
+			AND			DN.DN_HOMEDIV_C	=	#{BN_MN_KEYNO}
+		</foreach>
+    	AND			DU_DEL_YN	=	'N'
+    </select>
+    
+    <!-- 인물  -->
+    <select id="dept_getList" resultType="hashmap" parameterType="BoardNotice" resultMap="SEARCH_MAP">
+      SELECT *	FROM(
+      		SELECT AB.*
+      			, ROW_NUMBER() OVER (
+				 <choose>
+					 <when test='orderCondition.equals("A")'>
+					 ORDER BY DU_NAME DESC, DU_CONTENTS DESC, DU_ROLE DESC
+					 </when>
+					 <when test='orderCondition.equals("B")'>
+					 ORDER BY DU_CONTENTS DESC, DU_NAME DESC, DU_ROLE DESC
+					 </when>					
+					 <otherwise>
+					 ORDER BY DU_NAME DESC 	
+					 </otherwise>
+				 </choose>
+      			)RNUM
+      		FROM(
+		 <foreach collection="searchKeywordArr" item="keyword"  separator="UNION ALL">
+			 SELECT 		  #{keyword} keyword
+							 				, DU.DU_NAME
+											, DU.DU_ROLE
+											, DU.DU_CONTENTS
+											, DU.DU_TEL
+			 FROM t_department_user_manager DU
+			 LEFT JOIN t_department_manager DN
+			 ON DN.DN_KEYNO = DU.DU_DN_KEYNO
+			 WHERE		(
+								DU_NAME 	LIKE ('%'||#{keyword}||'%')
+								OR
+								DU_ROLE		LIKE ('%'||#{keyword}||'%')	
+								OR
+								DU_CONTENTS LIKE ('%'||#{keyword}||'%')
+								OR
+								DU_TEL		LIKE ('%'||#{keyword}||'%')	
+						 )
+ 		   	AND			DU_DEL_YN	=	'N'
+			AND			DN.DN_HOMEDIV_C	=	#{BN_MN_KEYNO}			
+			 </foreach>
+			 ) AB 
+			  ) AA
+		<if test="recordCountPerPage != 0">
+			WHERE RNUM BETWEEN (#{pageIndex} - 1) * #{recordCountPerPage} + 1
+			        	AND #{pageIndex} * #{recordCountPerPage}
+		</if>
+	 </select>
+		
+</mapper>
+ 

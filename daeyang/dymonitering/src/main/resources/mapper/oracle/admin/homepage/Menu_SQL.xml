@@ -1,0 +1,1244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Menu">
+	
+	
+	
+	<select id="AMD_getDataWithUrl" parameterType="Menu" resultType="Menu">
+		SELECT	*
+		FROM s_menu_manager
+		WHERE 	MN_DEL_YN		=		'N'
+		AND		MN_USE_YN		=		'Y'
+		<if test="MN_URL != null">
+		AND		MN_URL			=		#{MN_URL}
+		</if>
+		<if test="MN_URL == null">
+		AND		MN_KEYNO			=	#{MN_HOMEDIV_C}
+		</if>
+	
+	</select>
+	
+	
+
+	
+	
+	
+	<select id="AMN_getMenuAllList" parameterType="HomeManager" resultType="Menu">
+		SELECT		A.*
+					, CASE MN_PAGEDIV_C 
+						WHEN 'SC_EANHU' THEN '단일 페이지' 
+						WHEN 'SC_TFOVO' THEN '게시판' 
+						WHEN 'SC_HFAIU' THEN '링크' 
+						WHEN 'SC_QXCFB' THEN '소메뉴' 
+						WHEN 'SC_VUWAQ' THEN '개발자페이지' 
+						WHEN 'SC_DEFGR' THEN '관광페이지'
+					  END  MN_PAGEDIV_NAME
+					, (SELECT COUNT(*) FROM s_menu_manager WHERE A.MN_KEYNO = MN_MAINKEY AND MN_DEL_YN = 'N' 
+						<if test='pageDivList != null'>
+						AND MN_PAGEDIV_C IN 
+						<foreach collection="pageDivList" item="pageDiv" open="(" close=")" separator=",">
+							#{pageDiv}
+						</foreach>
+						</if>
+					) MN_CHILD_CNT
+					, (SELECT COUNT(*) FROM s_menu_manager WHERE MN_URL LIKE (A.MN_URL||'%.do') AND MN_PAGEDIV_C = 'SC_EANHU') MN_PAGEVIEW_CNT
+					<if test="UIA_KEYNO != null">
+					, (
+						SELECT 	LISTAGG(UIR_KEYNO, ',') WITHIN GROUP (ORDER BY UIR_KEYNO)
+						FROM u_userinfo_authority_roll
+						WHERE	MN_KEYNO		=	A.MN_KEYNO
+						AND		UIA_KEYNO		=	#{UIA_KEYNO}
+					) MN_ROLES
+					, (
+						SELECT 	LISTAGG(UIR_KEYNO, ',') WITHIN GROUP (ORDER BY UIR_KEYNO)
+						FROM u_userinfo_authority_roll
+						WHERE	MN_KEYNO		=	A.MN_KEYNO
+						AND		UIA_KEYNO		=	#{UIA_MAINKEY}
+					) MN_ROLES_MAIN
+					</if>
+		FROM s_menu_manager A
+		WHERE		MN_DEL_YN		=	'N'
+		AND			MN_HOMEDIV_C	=	#{HM_MN_HOMEDIV_C}	
+		<if test='pageDivList != null'>
+		AND MN_PAGEDIV_C IN 
+		<foreach collection="pageDivList" item="pageDiv" open="(" close=")" separator=",">
+			#{pageDiv}
+		</foreach>
+		</if>
+		ORDER BY	MN_LEV, MN_ORDER
+	</select>
+	
+	    <select id="AMN_getMenuAllList2" parameterType="HomeManager" resultType="Menu">
+        SELECT     DISTINCT A.*
+                    , CASE MN_PAGEDIV_C 
+                        WHEN 'SC_EANHU' THEN '단일 페이지' 
+                        WHEN 'SC_TFOVO' THEN '게시판' 
+                        WHEN 'SC_HFAIU' THEN '링크' 
+                        WHEN 'SC_QXCFB' THEN '소메뉴' 
+                        WHEN 'SC_VUWAQ' THEN '개발자페이지' 
+                        WHEN 'SC_DEFGR' THEN '관광페이지'
+                      END  MN_PAGEDIV_NAME
+                    , (SELECT COUNT(*) FROM s_menu_manager 
+                
+                    WHERE A.MN_KEYNO = MN_MAINKEY AND MN_DEL_YN = 'N' 
+                     
+                        <if test='pageDivList != null'>
+                        AND MN_PAGEDIV_C IN 
+                        <foreach collection="pageDivList" item="pageDiv" open="(" close=")" separator=",">
+                            #{pageDiv}
+                        </foreach>
+                        </if>
+                    ) MN_CHILD_CNT
+                    , (SELECT COUNT(*) FROM s_menu_manager SMM2
+                    
+                        WHERE MN_URL LIKE CONCAT(A.MN_URL,'%.do') 
+                        AND SMM2.MN_PAGEDIV_C = 'SC_EANHU'
+                        
+                        ) MN_PAGEVIEW_CNT
+                        
+                    
+        FROM s_menu_manager A
+        <if test="UIA_KEYNO != 'UIA_ASDFG'">
+        LEFT JOIN u_userinfo_authority_roll UAR
+        ON A.MN_KEYNO = UAR.MN_KEYNO
+        </if>
+        WHERE        MN_DEL_YN        =    'N'
+        AND            MN_HOMEDIV_C    =    #{HM_MN_HOMEDIV_C}
+        <if test='pageDivList != null'>
+        AND MN_PAGEDIV_C IN 
+        <foreach collection="pageDivList" item="pageDiv" open="(" close=")" separator=",">
+            #{pageDiv}
+        </foreach>
+        </if>
+        <if test="UIA_KEYNO != 'UIA_ASDFG'">    
+        AND          ( UAR.UIA_KEYNO		=	#{UIA_KEYNO} OR (MN_LEV >= 1 AND SUBSTR(MN_URL, INSTR(MN_URL,'/' , 2) + 1, 6)  LIKE 'member') ) 
+        </if>
+        ORDER BY    MN_LEV, MN_ORDER
+    </select>
+	
+	
+	
+
+	<!-- 메뉴 LIST -->
+    <select id="AMN_getUserMenuListByHOMEDIV" parameterType="Menu" resultType="Menu">
+     
+		<![CDATA[
+			SELECT 	* 
+			FROM s_menu_manager
+			WHERE 	MN_DEL_YN		=		'N'
+			AND		MN_USE_YN		=		'Y'
+		]]>
+		<if test="MN_SHOW_YN != null and MN_SHOW_YN != '' ">
+			AND   MN_SHOW_YN		=		#{MN_SHOW_YN}
+		</if>
+		<![CDATA[
+			AND		MN_HOMEDIV_C	=		#{MN_HOMEDIV_C}
+			ORDER BY MN_ORDER
+		]]> 
+	</select>
+	
+	<!-- 메뉴 LIST -->
+    <select id="AMN_getUserMenuListByHOMEDIV2" parameterType="HashMap" resultType="Menu"> 
+			
+			
+			SELECT 		A.*,
+						CASE MN_PAGEDIV_C
+							WHEN 'SC_HFAIU' THEN MN_FORWARD_URL
+							ELSE MN_URL
+						END MN_REAL_URL 
+			FROM s_menu_manager A
+			<if test="UIA_KEYNO != 'UIA_ASDFG'">
+			LEFT JOIN u_userinfo_authority_roll UAR
+			ON UAR.MN_KEYNO = A.MN_KEYNO
+			</if>
+			WHERE 		MN_DEL_YN		=		'N'
+			AND			MN_USE_YN		=		'Y'
+			AND   		MN_SHOW_YN		=		'Y'
+			<if test="UIA_KEYNO != 'UIA_ASDFG'">
+			AND			UAR.UIA_KEYNO 	= 		#{UIA_KEYNO}
+			AND			UAR.UIR_KEYNO = 'UIR_0000000013'
+			</if>
+			AND			MN_HOMEDIV_C	= (SELECT MN_KEYNO FROM s_menu_manager WHERE MN_URL = #{MN_URL} AND MN_DEL_YN = 'N')
+			ORDER BY 	MN_LEV,MN_ORDER
+	</select>
+	
+	<!-- 메뉴관리 홈페이지별 메뉴 리스트(홈페이지,대메뉴,소메뉴별) -->
+	<select id="AMN_getMenuList"  resultType="homeManager" parameterType="Menu">
+			SELECT  (SELECT 	MVD_KEYNO
+					 FROM s_menu_view_data 
+					 WHERE  MVD_MN_KEYNO = A.MN_KEYNO
+					 ) MVD_KEYNO
+					, A.*
+					, B.*
+					, CASE MN_KEYNO 
+						WHEN  #{MN_KEYNO} THEN '2' 
+						WHEN  #{MN_HOMEPAGE_REP} THEN '1' 
+						ELSE '0' 
+					END ADMIN_PRIORITY
+			FROM s_menu_manager A, S_HOME_MANAGER B
+			WHERE	A.MN_HOMEDIV_C	=	B.HM_MN_HOMEDIV_C
+			AND 	MN_DEL_YN 		=		#{MN_DEL_YN}
+			AND		HM_USE_YN		=		'Y'
+		<if test="MN_HOMEDIV_C != null and MN_HOMEDIV_C != '' ">
+			AND		MN_HOMEDIV_C		=		#{MN_HOMEDIV_C}
+		</if>
+		<if test='searchKeyword != null and searchKeyword.equals("incldueAdmin")'>
+			AND		MN_KEYNO			!=		#{MN_KEYNO}
+		</if>
+		<if test="MN_MAINKEY == null or MN_MAINKEY == '' ">
+			AND		REPLACE(MN_MAINKEY, ' ' ,'')	IS NULL
+		</if>
+		<if test="MN_MAINKEY != null and MN_MAINKEY != '' ">
+			AND		MN_MAINKEY			=		#{MN_MAINKEY}
+		</if>
+		<![CDATA[
+			ORDER BY ADMIN_PRIORITY DESC, MN_ORDER
+		]]>
+	</select>
+	<!-- 메뉴관리 홈페이지별 메뉴 갯수(홈페이지,대메뉴,소메뉴별) -->
+	<select id="AMN_getMenuCnt"  resultType="Integer">
+			SELECT  COUNT(*)
+			FROM s_menu_manager A
+			WHERE 	MN_DEL_YN 		=		'N'
+		<if test="MN_HOMEDIV_C != null and MN_HOMEDIV_C != '' ">
+			AND		MN_HOMEDIV_C		=		#{MN_HOMEDIV_C}
+		</if>
+		<choose>
+			<when test="MN_MAINKEY != null and MN_MAINKEY != ''"> 
+				AND		MN_MAINKEY		=		#{MN_MAINKEY}
+			</when>
+			<otherwise>
+				AND		MN_LEV  =		0
+			</otherwise>
+		</choose>
+			
+		<![CDATA[
+			ORDER BY MN_ORDER
+		]]>
+	</select>
+	
+	<!-- 메뉴 LIST - 팝업관리에서 사용 -->
+    <select id="AMN_getUserMenuListByHOMEDIV3" resultType="HashMap"> 
+		<![CDATA[
+			SELECT 	* 
+			FROM s_menu_manager
+			WHERE 	MN_DEL_YN		=		'N'
+			AND		MN_USE_YN		=		'Y'
+			AND		MN_HOMEDIV_C	=		#{MN_HOMEDIV_C}
+			AND		MN_PAGEDIV_C	!= 		'SC_QXCFB'
+			ORDER BY MN_ORDER
+		]]> 
+	</select>
+	
+	<!-- 메뉴관리 URL로 메뉴 리스트 찾기 -->
+	<select id="AMN_getMenuByURL"  resultType="Menu" parameterType="Menu">
+		<![CDATA[
+			SELECT	A.*
+					, MM.MN_NAME HIGH_MN_NAME
+					, MM.MN_DATA1 AS MN_MAIN_DATA1
+					, FS.FS_FOLDER||FS.FS_CHANGENM||'.'||FS.FS_EXT AS IMG_PATH
+					, DM.DN_HOMEDIV_C PAGE_HOMEDIV_C
+					, DU.DU_KEYNO PAGE_KEYNO
+					, DU.DU_NAME PAGE_NAME
+					, DU.DU_TEL PAGE_TEL
+					, DM.DN_NAME PAGE_DEPARTMENT
+					, HM.HM_SESSION sessionTime
+			FROM s_menu_manager A
+			LEFT JOIN s_common_file_sub FS
+			ON A.MN_QR_KEYNO = FS.FS_KEYNO 
+			LEFT JOIN s_menu_manager MM
+			ON A.MN_MAINKEY = MM.MN_KEYNO
+			LEFT JOIN t_department_user_manager DU
+			ON  A.MN_DU_KEYNO = DU.DU_KEYNO
+			LEFT JOIN t_department_manager DM
+			ON  DU.DU_DN_KEYNO = DM.DN_KEYNO
+			LEFT JOIN s_home_manager HM
+			ON A.MN_HOMEDIV_C = HM.HM_MN_HOMEDIV_C
+			WHERE 	A.MN_DEL_YN 		=		'N'
+		]]>
+		<choose>
+			<when test="MN_KEYNO != '' and MN_KEYNO != null">
+			AND		A.MN_KEYNO	=	#{MN_KEYNO}
+			</when>
+			<otherwise>
+			AND     (  
+						A.MN_URL			=	#{MN_URL} 
+						OR  
+						A.MN_FORWARD_URL    =  	#{MN_URL} 
+					)
+			AND		A.MN_PAGEDIV_C != 'SC_HFAIU'
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="AMN_getSimpleMenuByURL"  resultType="Menu" parameterType="Menu">
+			SELECT	A.*
+			FROM s_menu_manager A
+			WHERE 	A.MN_DEL_YN 		=		'N'
+			AND     (  
+						A.MN_URL			=	#{MN_URL} 
+						OR  
+						A.MN_FORWARD_URL    =  	#{MN_URL} 
+					)
+	</select>
+	
+	
+	<!-- 키값으로 이름들 리턴  -->	
+	<select id="AMN_getMainMenuNames" resultType="hashmap" parameterType="String">
+		SELECT  LISTAGG(ID,',')  WITHIN GROUP (ORDER BY ID) MN_MAINKEYS
+				, LISTAGG(MN_NAME,',')  WITHIN GROUP (ORDER BY ID) MN_MAINNAMES
+		FROM (
+			SELECT	MN_KEYNO AS ID
+					, MN_MAINKEY
+					, MN_NAME
+			FROM s_menu_manager 
+			START WITH MN_KEYNO = #{MN_KEYNO} 
+			AND MN_DEL_YN = 'N' 
+			CONNECT BY PRIOR MN_MAINKEY = MN_KEYNO 
+		) A
+	</select>
+	
+	
+	<!-- 메뉴관리 URL로 메뉴 리스트 찾기 -->
+	<select id="AMN_getMenuByKey"  resultType="Menu" parameterType="Menu">
+		<![CDATA[
+			
+			SELECT * FROM ( 
+			SELECT  *
+			FROM s_menu_manager 
+			WHERE 	MN_DEL_YN 		=		'N'
+			AND		MN_USE_YN	=		'Y'
+			AND		MN_KEYNO	=		#{MN_KEYNO}
+		]]>
+		<![CDATA[
+			ORDER BY MN_ORDER
+			)
+			WHERE ROWNUM = 1
+		]]>
+	</select>
+	
+	<!-- 메뉴관리 URL로 메뉴 리스트 찾기 -->
+	<select id="AMN_getDataByKey"  resultType="Menu" parameterType="Menu">
+		<![CDATA[
+		SELECT * FROM (
+			SELECT  *
+			FROM s_menu_manager 
+			WHERE 	MN_DEL_YN 		=		'N'
+			AND		MN_KEYNO	=		#{MN_KEYNO}
+		]]>
+		<![CDATA[
+			ORDER BY MN_ORDER
+			)
+			WHERE ROWNUM = 1
+    ]]>
+  </select>
+  
+	
+	
+	<!-- 메뉴 URL 정보 내역 -->
+	<select id="AMN_getMenuUrlList"  resultType="int">
+		<![CDATA[ 
+			SELECT 	COUNT(*)
+			FROM s_menu_manager 
+			WHERE 	MN_DEL_YN 		=	'N'
+			AND		( 
+						MN_URL 		=	#{MN_URL} 
+						OR 
+						MN_FORWARD_URL = #{MN_URL} 
+					)
+			AND		MN_PAGEDIV_C 	!=	#{MN_PAGEDIV_C}
+			AND		MN_KEYNO		!=	#{MN_KEYNO}
+		]]>
+	</select>
+	
+	<!-- 홈페이지 타일즈 중복 내역 -->
+	<select id="HM_getTilesCount"  resultType="int">
+		SELECT 	COUNT(*)
+		FROM s_home_manager 
+		WHERE 	HM_USE_YN 		!=	'D'
+		AND		HM_TILES 		=	#{HM_TILES} 
+	</select>
+    <!-- 홈페이지 사이트경로 중복 내역 -->
+    <select id="HM_getPathCount"  resultType="int">
+       SELECT     COUNT(*)
+       FROM s_home_manager 
+       WHERE     HM_USE_YN         !=    'D'
+       AND        HM_SITE_PATH         =    #{HM_SITE_PATH} 
+    </select>
+    
+	<!-- 메뉴관리 메뉴 등록 -->
+	<insert id="AMN_regist" parameterType="Menu">
+	<![CDATA[
+		INSERT INTO s_menu_manager(
+			MN_KEYNO
+			,MN_NAME
+			,MN_ENG_NAME
+			,MN_DEP
+			,MN_COLOR
+			,MN_DATA1
+			,MN_DATA2
+			,MN_DATA3
+			,MN_HOMEDIV_C
+			,MN_PAGEDIV_C
+			,MN_BT_KEYNO
+			,MN_TOURKEY
+			,MN_URL
+			,MN_FORWARD_URL
+			,MN_MAINKEY
+			,MN_ORDER
+			,MN_LEV
+			,MN_ICON_CSS
+			,MN_RESEARCH
+			,MN_QRCODE
+			,MN_MANAGER
+			,MN_USE_YN
+			,MN_SHOW_YN
+			,MN_DEL_YN
+			,MN_REGDT
+			,MN_REGNM
+			,MN_QR_KEYNO
+			,MN_MANAGER_DEP
+			,MN_MANAGER_TEL
+			,MN_DU_KEYNO
+            ,MN_GONGNULI_TYPE
+            ,MN_GONGNULI_YN
+            ,MN_EMAIL
+            ,MN_NEWLINK
+            ,MN_META_DESC
+            ,MN_META_KEYWORD
+			,MN_CHANGE_FREQ
+			,MN_PRIORITY            
+			)
+		VALUES(
+			#{MN_KEYNO}
+			,#{MN_NAME}
+			,#{MN_ENG_NAME}
+			,#{MN_DEP}
+			,#{MN_COLOR}
+			,#{MN_DATA1}
+			,#{MN_DATA2}
+			,#{MN_DATA3}
+			,#{MN_HOMEDIV_C}
+			,#{MN_PAGEDIV_C}
+			,#{MN_BT_KEYNO}
+			,#{MN_TOURKEY}
+			,#{MN_URL}
+			,#{MN_FORWARD_URL}
+			,#{MN_MAINKEY}
+			,#{MN_ORDER}
+			,#{MN_LEV}
+			,#{MN_ICON_CSS}
+			,#{MN_RESEARCH}
+			,#{MN_QRCODE}
+			,#{MN_MANAGER}
+			,#{MN_USE_YN}
+			,#{MN_SHOW_YN}
+			,'N'
+			,SYSDATE
+			,#{MN_REGNM}
+			,#{MN_QR_KEYNO}
+			,#{MN_MANAGER_DEP}
+			,#{MN_MANAGER_TEL}
+			,#{MN_DU_KEYNO}
+			,#{MN_GONGNULI_TYPE}
+            ,#{MN_GONGNULI_YN}
+            ,#{MN_EMAIL}
+            ,#{MN_NEWLINK}
+            ,#{MN_META_DESC}
+            ,#{MN_META_KEYWORD}
+            ,#{MN_CHANGE_FREQ}
+			,#{MN_PRIORITY}            
+			)
+	]]>
+	</insert>
+	
+	<!-- 메뉴관리 메뉴 수정 -->
+	<update id="AMN_update" parameterType="Menu">
+	<![CDATA[
+		UPDATE s_menu_manager
+		SET		MN_NAME				=		#{MN_NAME}
+				,MN_ENG_NAME     	=   	#{MN_ENG_NAME}
+				,MN_DEP          	=      	#{MN_DEP}
+				,MN_COLOR        	=      	#{MN_COLOR}
+				,MN_DATA1        	=      	#{MN_DATA1}
+				,MN_DATA2        	=      	#{MN_DATA2}
+				,MN_DATA3        	=      	#{MN_DATA3}
+				,MN_PAGEDIV_C		=		#{MN_PAGEDIV_C}
+				,MN_BT_KEYNO		=		#{MN_BT_KEYNO}
+				,MN_TOURKEY			=		#{MN_TOURKEY}
+				,MN_URL				=		#{MN_URL}
+				,MN_FORWARD_URL		=		#{MN_FORWARD_URL}
+				,MN_ICON_CSS 		=	   	#{MN_ICON_CSS}
+				,MN_RESEARCH 		=	   	#{MN_RESEARCH}
+				,MN_QRCODE 			=	   	#{MN_QRCODE}
+				,MN_MANAGER 		=	   	#{MN_MANAGER}
+				,MN_MODNM 			=	   	#{MN_MODNM}
+				,MN_MODDT			=		SYSDATE
+				,MN_QR_KEYNO		=		#{MN_QR_KEYNO}
+				,MN_MANAGER_DEP		=		#{MN_MANAGER_DEP}
+				,MN_MANAGER_TEL		=		#{MN_MANAGER_TEL}
+				,MN_DU_KEYNO		=		#{MN_DU_KEYNO}
+				,MN_GONGNULI_TYPE	=		#{MN_GONGNULI_TYPE}
+				,MN_GONGNULI_YN		=		#{MN_GONGNULI_YN}
+				,MN_USE_YN			=		#{MN_USE_YN}
+				,MN_SHOW_YN			=		#{MN_SHOW_YN}
+				,MN_EMAIL			=		#{MN_EMAIL}
+				,MN_NEWLINK			=		#{MN_NEWLINK}
+                ,MN_META_DESC       =       #{MN_META_DESC}
+                ,MN_META_KEYWORD    =       #{MN_META_KEYWORD}
+            	,MN_CHANGE_FREQ 	=		#{MN_CHANGE_FREQ}		
+				,MN_PRIORITY 		=		#{MN_PRIORITY}						
+		WHERE 	MN_KEYNO			=		#{MN_KEYNO}
+	]]>
+	</update>
+	
+	<!-- 메뉴 순서 변경 --> 
+	<update id="MN_OrderUpdate">
+		 UPDATE s_menu_manager A
+			SET MN_ORDER = 
+			(
+				CASE WHEN MN_KEYNO = #{MN_KEYNO} THEN #{MN_ORDER}
+					<![CDATA[
+					 WHEN	MN_ORDER >= #{MN_ORDER} AND MN_ORDER <= #{MN_ORDER_BEFORE} THEN MN_ORDER + 1
+					 WHEN	MN_ORDER >= #{MN_ORDER_BEFORE} AND MN_ORDER <= #{MN_ORDER} THEN MN_ORDER - 1
+					]]>
+					 ELSE 	MN_ORDER
+				END
+			)
+		WHERE MN_MAINKEY = #{MN_MAINKEY}
+		AND	  MN_DEL_YN = 'N'
+	</update>
+	
+	
+	<!-- 메뉴관리 메뉴 사용여부 -->
+	<update id="AMN_ShowUse" parameterType="HashMap">
+	<![CDATA[
+		UPDATE s_menu_manager
+		SET		${colunm}		=		#{value},
+				MN_MODNM		=		#{MN_MODNM} ,
+				MN_MODDT		=		SYSDATE
+		
+		WHERE 	MN_KEYNO		=		#{MN_KEYNO}
+	]]>
+	</update>
+	
+	
+	<!-- 메뉴관리 메뉴 삭제 -->
+	<update id="AMN_Delete" parameterType="Menu">
+	<![CDATA[
+		UPDATE s_menu_manager
+		SET		MN_DEL_YN		=		'Y',
+				MN_MODNM		=		#{MN_MODNM} ,
+				MN_DELDT		=		SYSDATE
+		
+		WHERE 	MN_KEYNO		=		#{MN_KEYNO}
+	]]>
+	</update>
+	
+	 <!-- 삭제 순서 추가 처리-->
+    <update id="AMN_DeleteOrder">
+   		UPDATE s_menu_manager
+        SET MN_ORDER = MN_ORDER - 1
+        WHERE MN_MAINKEY = #{MN_MAINKEY}
+        AND	  MN_ORDER >= #{MN_ORDER}
+        AND   MN_DEL_YN = 'N'
+    </update>
+	
+	<!-- 메뉴관리 메뉴 삭제 : 하위메뉴까지 추가로 논리삭제 -->
+	<update id="AMN_DeleteByLikeURL" parameterType="Menu">
+	<![CDATA[
+		UPDATE s_menu_manager
+		SET		MN_DEL_YN		=		'Y',
+				MN_MODDT		=		SYSDATE
+		WHERE 	MN_URL = #{MN_URL}
+		OR   	MN_URL LIKE NVL2(#{MN_URL}, #{MN_URL}||'/'||'%','')
+	]]>
+	</update>
+	
+	<!-- 메뉴관리 데이터 선택 출력 -->
+	<select id="AMN_getData"  resultType="HashMap" parameterType="Menu">
+		<![CDATA[ 
+			SELECT   (SELECT UI_NAME FROM u_userinfo WHERE A.MN_MODNM = UI_KEYNO ) MN_MODNM
+                    ,(SELECT UI_NAME FROM u_userinfo WHERE A.MN_REGNM = UI_KEYNO ) MN_REGNM
+                    , A.*
+                    , DM.DN_HOMEDIV_C, DU.DU_KEYNO, DU.DU_NAME, DU.DU_TEL
+            FROM (   
+					SELECT 		mn1.*
+								, mn2.MN_NAME HIGH_MN_NAME
+								, (SELECT COUNT(*) FROM s_menu_manager WHERE mn1.MN_KEYNO = MN_MAINKEY AND MN_DEL_YN = 'N') MN_CHILD_CNT
+								, T.TC_TYPE MN_TOUR_CATEGORY  
+					FROM s_menu_manager mn1
+					LEFT JOIN s_menu_manager mn2
+					ON			mn1.MN_MAINKEY			=		mn2.MN_KEYNO
+					LEFT JOIN t_tourism_common T
+					ON			mn1.MN_TOURKEY = T.TC_KEYNO
+					WHERE		mn1.MN_KEYNO 			=		#{MN_KEYNO}
+			     ) A
+            LEFT JOIN t_department_user_manager DU
+            ON  A.MN_DU_KEYNO = DU.DU_KEYNO
+            LEFT JOIN t_department_manager DM
+            ON  DU.DU_DN_KEYNO = DM.DN_KEYNO
+				]]>
+	</select>
+	
+	
+	
+	<!-- 메뉴 추가시 정렬 기준 확인 -->
+	<select id="AMN_getMNLV"  resultType="int" parameterType="Menu">
+		<![CDATA[ 
+			SELECT count(*) FROM s_menu_manager 
+			WHERE 	 MN_ORDER 		=		#{MN_ORDER}
+			AND		 MN_HOMEDIV_C	=		#{MN_HOMEDIV_C}
+			AND		 MN_MAINKEY		=		#{MN_MAINKEY}
+			AND		 MN_DEL_YN		=		'N'
+		]]>
+	</select>
+	
+	
+	
+	<!-- 메뉴 정렬기준 순서를 +1시켜주는 쿼리 -->
+	<update id="AMN_addMNLV" parameterType="Menu">
+		<![CDATA[
+			UPDATE s_menu_manager
+			SET 		MN_ORDER			=		MN_ORDER+1
+			WHERE		MN_ORDER			>=		#{MN_ORDER}
+			AND			MN_HOMEDIV_C		=		#{MN_HOMEDIV_C}
+			AND 		MN_MAINKEY			=		#{MN_MAINKEY}
+			AND 		MN_DEL_YN			=		'N'
+		]]>
+	</update>
+	
+	
+	<select id="AMN_getBoardTypeList"  resultType="Menu">
+		<![CDATA[ 
+			SELECT MN_NAME, MN_KEYNO, MN_BT_KEYNO, BT.BT_CODEKEY AS BTCODEKEY FROM s_menu_manager MN, B_BOARD_TYPE BT
+			WHERE MN.MN_BT_KEYNO = BT.BT_KEYNO
+			AND   BT.BT_USE_YN = 'Y'
+			AND   MN.MN_DEL_YN = 'N'
+			AND   MN.MN_USE_YN = 'Y'
+		]]>
+	</select>
+	
+	
+	
+	
+	<!-- 소메뉴 하위 메뉴들 일괄 업데이트 -->
+	<update id="AMN_updateSubList" parameterType="Menu" >
+		UPDATE s_menu_manager
+		SET 	MN_URL = REPLACE(MN_URL,NVL2(#{MN_beforeURL},#{MN_beforeURL}||'/',''),NVL2(#{MN_URL},#{MN_URL}||'/','')),
+				MN_FORWARD_URL = REPLACE(MN_FORWARD_URL,NVL2(#{MN_beforeURL},#{MN_beforeURL}||'/',''),NVL2(#{MN_URL},#{MN_URL}||'/',''))
+		WHERE 	MN_URL LIKE NVL2(#{MN_beforeURL},#{MN_beforeURL}||'/%','')
+		AND		MN_DEL_YN = 'N'
+	</update>
+	
+	<!-- LayoutType 가져오기 -->
+	<select id="AMN_getLayoutTypeByURL"  resultType="HomeManager" parameterType="String">
+		-- LOG OFF
+		<![CDATA[
+		SELECT 	tmm.*
+      	FROM s_home_manager tmm
+      	WHERE	HM_USE_YN 	= 'Y'
+      	AND		HM_MN_HOMEDIV_C = (SELECT MN_HOMEDIV_C FROM s_menu_manager WHERE MN_DEL_YN = 'N' AND  MN_URL = #{MN_URL} )
+		]]>
+	</select>
+	
+	
+	
+	<select id="AMN_getBoardTypeList_menu"  resultType="hashmap">
+			SELECT 	MN_NAME AS MN_SUB_NAME
+					,(SELECT MN_NAME FROM s_menu_manager WHERE MN_KEYNO = MN.MN_MAINKEY)||' - '||MN_NAME AS MN_NAME
+					,(SELECT MN_NAME FROM s_menu_manager WHERE MN_KEYNO = MN.MN_MAINKEY) AS MN_MAIN_NAME
+					, MN_KEYNO
+					, MN_BT_KEYNO
+					, BT.BT_CODEKEY AS BTCODEKEY
+					, BT.BT_TYPE_NAME
+					, (
+                    	SELECT 	LISTAGG(C.UIA_NAME,',')  WITHIN GROUP (ORDER BY C.UIA_NAME)
+                        FROM u_userinfo_authority_roll B, U_USERINFO_AUTHORITY C
+                        WHERE	B.UIA_KEYNO		=	C.UIA_KEYNO	
+                        AND		B.MN_KEYNO 		=	MN.MN_KEYNO 	
+                        AND     B.UIR_KEYNO 	= 'UIR_0000000015'
+                    ) AUTHLIST
+			FROM s_menu_manager MN, B_BOARD_TYPE BT
+			WHERE MN.MN_BT_KEYNO = BT.BT_KEYNO
+			<if test="MN_HOMEDIV_C != null and MN_HOMEDIV_C !=''">
+			AND   MN.MN_HOMEDIV_C = #{MN_HOMEDIV_C}
+			</if>
+			AND   BT.BT_USE_YN = 'Y'
+			AND   MN.MN_DEL_YN = 'N'
+			AND   MN.MN_USE_YN = 'Y'
+			AND   MN.MN_PAGEDIV_C = 'SC_TFOVO'
+			ORDER BY MN_KEYNO
+	</select>
+	
+	<select id="AMN_getMenuChildList"  resultType="Menu">
+			SELECT  A.*
+			FROM s_menu_manager A
+			WHERE 	MN_DEL_YN 		=		'N'
+			AND		MN_USE_YN		=		'Y'
+			AND		MN_SHOW_YN		=		'Y'
+			AND		MN_MAINKEY		=		(
+				SELECT	MN_KEYNO
+				FROM s_menu_manager
+				WHERE	MN_URL	=	#{MN_URL}
+			)
+			ORDER BY MN_ORDER
+	</select>
+	
+	<!-- 메뉴 엑셀 -->
+	<select id="get_HomeDepth"  resultType="int">
+		SELECT 	HM_MENU_DEPTH
+		FROM s_home_manager
+		WHERE 	HM_MN_HOMEDIV_C = #{MN_HOMEDIV_C}
+	</select>
+	
+	<select id="excel_getWebName"  resultType="String">
+		SELECT MN_NAME
+		FROM s_menu_manager
+		WHERE MN_KEYNO = #{MN_HOMEDIV_C}
+	</select>
+	
+	<select id="excel_getMenuList"  resultType="HashMap">
+		SELECT   A.*,B.*
+		FROM (
+		   SELECT      H.MN_NAME DEPTH0,  H.MN_URL  URL0
+		   			<foreach collection="list" item="model">
+		   			,  C${model.index}.MN_KEYNO KEY${model.index}, C${model.index}.MN_NAME DEPTH${model.index}, C${model.index}.MN_ORDER ORDER${model.index}, C${model.index}.MN_URL URL${model.index}
+		   			</foreach>
+		            , CASE
+		            	<foreach collection="list" item="model">
+			   			 WHEN C${model.reverse}.MN_NAME IS NOT NULL THEN C${model.reverse}.MN_KEYNO
+			   			</foreach> 
+		               ELSE H.MN_KEYNO
+		            END KEYNO
+		   FROM s_menu_manager H
+		   <foreach collection="list" item="model">
+		   LEFT JOIN s_menu_manager C${model.index}
+		   ON         
+		   <if test="model.index == 1">
+		 		H.MN_KEYNO 
+		   </if>
+		   <if test="model.index != 1">
+		 		C${model.index-1}.MN_KEYNO 
+		   </if>
+		   		= C${model.index}.MN_MAINKEY AND C${model.index}.MN_DEL_YN = 'N'
+		   </foreach>
+		   WHERE      	H.MN_KEYNO = #{MN_HOMEDIV_C}
+		) A, S_MENU_MANAGER B
+		WHERE   A.KEYNO = B.MN_KEYNO
+		ORDER BY 
+		<foreach collection="list" item="model" separator=",">
+		ORDER${model.index}
+		</foreach>
+	</select>
+	
+	<!-- 20190328 오라클 추가 -->
+	<!-- 메뉴 xml -->
+	<select id="XML_getAllMenuList" resultType="String">
+		SELECT MN_KEYNO
+		FROM s_menu_manager
+		WHERE MN_HOMEDIV_C = #{MN_HOMEDIV_C} AND (trim(MN_MAINKEY) IS NOT NULL)
+	</select>
+	
+	<delete id="XML_MenuListDel">
+		DELETE FROM s_menu_manager
+		WHERE MN_HOMEDIV_C = #{MN_HOMEDIV_C} AND (trim(MN_MAINKEY) IS NOT NULL)
+	</delete>
+	
+	<select id="XML_getHistoryList" resultType="HashMap">
+		SELECT TO_CHAR(XH_REGDT,'YYYY-MM-DD HH24:MI') AS REGDT, XH.*, FS.FS_ORINM
+		FROM t_xml_history XH
+		LEFT JOIN s_common_file_sub FS
+		ON XH.XH_FS_KEYNO = FS.FS_KEYNO
+		WHERE XH_MN_KEYNO = #{MN_HOMEDIV_C}
+		AND   XH_DELYN    = 'N'
+	</select>
+	
+	<insert id="XML_regist">
+		INSERT INTO t_xml_history
+		(
+			 XH_KEYNO
+			,XH_MN_KEYNO
+			,XH_FS_KEYNO
+			,XH_REGDT
+		)
+		VALUES
+		(
+			 #{XH_KEYNO}
+			,#{XH_MN_KEYNO}
+			,#{XH_FS_KEYNO}
+			,SYSDATE
+		)
+	</insert>
+	
+	
+	
+	<select id="XML_getMenuColumn"  resultType="hashmap">
+		SELECT COLUMN_NAME AS "Field"
+		FROM cols
+		WHERE TABLE_NAME = #{table}
+	</select>
+	
+	<select id="XML_getMenuInfo"  resultType="hashmap">
+		SELECT 	*
+		FROM s_menu_manager
+		WHERE 	MN_HOMEDIV_C = #{MN_HOMEDIV_C}
+		AND 	MN_DEL_YN = 'N'
+		AND 	MN_USE_YN = 'Y'
+	</select>
+	
+	<select id="XML_getMenuInfoAll"  resultType="hashmap">
+		SELECT CONCAT(#{DOMAIN}, (NVL2(REPLACE(MN_FORWARD_URL, ' ', null), MN_FORWARD_URL, MN_URL))) AS "loc"
+				, TO_CHAR((NVL(MN_MODDT, MN_REGDT)), 'YYYY-MM-DD') AS "lastmon"
+				, MN_CHANGE_FREQ AS "changefreq"
+				, MN_PRIORITY AS "priority"
+				, MN_HOMEDIV_C
+				, MN_LEV
+				, MN_ORDER
+				, MN_PAGEDIV_C
+		FROM s_menu_manager
+		<if test='MN_HOMEDIV_C == "all"'>
+		WHERE 	MN_HOMEDIV_C not in (SELECT MN_HOMEDIV_C FROM s_menu_manager WHERE MN_URL = '/dyAdmin')
+		</if>
+		<if test='MN_HOMEDIV_C != "all"'>
+		WHERE 	MN_HOMEDIV_C = #{MN_HOMEDIV_C}
+		</if>
+		AND		MN_DEL_YN = 'N'
+		AND 	MN_USE_YN = 'Y'
+		AND		MN_PAGEDIV_C != 'SC_HFAIU'		
+		AND		(MN_URL LIKE '%.do'OR MN_FORWARD_URL LIKE '%.do')
+		ORDER BY MN_HOMEDIV_C asc, MN_LEV asc, MN_ORDER asc		
+	</select>
+	
+	<select id="getHomeKey"  resultType="String">
+		SELECT 	MN_HOMEDIV_C
+		FROM s_menu_manager
+		WHERE 	MN_KEYNO = #{MN_KEYNO}
+	</select>
+	
+	<insert id="XML_MenuRestore">
+		INSERT INTO ${table}
+		(
+		<foreach collection="list" item="item" separator=",">
+		${item.column}
+		</foreach>
+		)
+		VALUES
+		(
+		<foreach collection="list" item="item" separator=",">
+		#{item.value}
+		</foreach>
+		)
+	</insert>
+	
+	<update id="XML_Delete">
+		UPDATE t_xml_history
+		SET     XH_DELYN   = 'Y'
+		WHERE   XH_KEYNO   = #{XH_KEYNO} 
+	</update>
+	
+	<!-- 20190516 -->
+	<update id="change_MenuModifyTime">
+		UPDATE s_menu_manager
+		SET  	  MN_MODDT = SYSDATE
+				, MN_MODNM = #{MVD_MODNM}
+		WHERE MN_KEYNO = #{MN_KEYNO}
+	</update>
+	
+	<!-- 20190530 -->
+	<select id="MN_getMenuData" resultType="HashMap">
+		SELECT *
+    	FROM s_menu_manager
+    	WHERE MN_KEYNO = #{MN_KEYNO}
+	</select>
+	
+	<select id="get_subMenu" resultType="Menu">
+    	SELECT *
+		FROM s_menu_manager
+		WHERE MN_MAINKEY = #{MN_KEYNO}
+		AND MN_USE_YN = 'Y'	
+		AND MN_DEL_YN = 'N'
+		AND MN_SHOW_YN = 'Y'
+		AND MN_PAGEDIV_C = #{MN_PAGEDIV_C}
+    </select>
+    
+    <select id="get_CourseMainName" resultType="String">
+    	SELECT MN_NAME
+		FROM s_menu_manager
+		WHERE MN_KEYNO = (
+						SELECT MN_MAINKEY
+						FROM s_menu_manager
+						WHERE MN_KEYNO = #{MN_KEYNO}
+						 )
+		AND MN_DEL_YN = 'N'
+		AND MN_USE_YN = 'Y'					 
+    </select>
+    
+    <select id="get_CourseMenuList" resultType="HashMap">
+    	SELECT *
+		FROM s_menu_manager
+		WHERE MN_MAINKEY = (
+						SELECT MN_MAINKEY
+						FROM s_menu_manager
+						WHERE MN_KEYNO = #{MN_KEYNO}
+						AND MN_DEL_YN = 'N'
+						AND MN_USE_YN = 'Y'
+						)
+		AND MN_DEL_YN = 'N'
+		AND MN_USE_YN = 'Y'						 
+    </select>
+    
+    <update id="ch_QRcode">
+    	UPDATE s_menu_manager
+    	SET MN_QR_KEYNO = #{MN_QR_KEYNO}
+    	WHERE MN_KEYNO = #{MN_KEYNO}
+    </update>
+    
+    <select id="get_subMenuList" resultType="HashMap">
+    	SELECT 	  NVL((SELECT MN_NAME FROM s_menu_manager WHERE MN_KEYNO = MN.MN_MAINKEY AND MN_DEL_YN = 'N'),'최상위메뉴') MAINNAME
+				  , MN_KEYNO
+				  , MN_NAME
+				  , MN_URL
+				  , MN_MAINKEY
+				  , MN_LEV
+				  , MN_ORDER
+				  , MN_PAGEDIV_C
+    	FROM s_menu_manager MN
+    	WHERE 		MN_HOMEDIV_C 	= 		 #{MN_HOMEDIV_C}
+    	AND   		MN_PAGEDIV_C 	= 		 #{MN_PAGEDIV_C}
+    	AND  		MN_URL  		NOT LIKE #{MN_URL}||'%' 
+    	AND 		MN_URL 			!= 		 #{MN_URL}
+    	AND   		MN_DEL_YN    	= 		 'N'
+    	ORDER BY 	MN_LEV, MN_ORDER
+    </select>
+    
+     <update id="set_changeDeth">
+    	UPDATE s_menu_manager
+		SET 	  MN_MAINKEY = #{MN_MAINKEY}
+		  		, MN_ORDER   = #{MN_ORDER}
+		  		, MN_LEV	 = #{MN_LEV}
+		  		, MN_URL	 = #{MN_URL}
+		WHERE     MN_KEYNO 	 = #{MN_KEYNO}
+    </update>
+    
+    <update id="set_changeDethOrder">
+    	UPDATE s_menu_manager
+		SET    MN_ORDER = MN_ORDER - 1
+		WHERE  MN_DEL_YN  = 'N'
+		AND	   MN_MAINKEY = #{dethOriMAIN}
+		<![CDATA[
+		AND    MN_ORDER > #{dethOriORDER}
+		]]>
+    </update>
+    
+    <select id="get_changeDethOrder" resultType="Integer">
+    	SELECT NVL(MAX(MN_ORDER), 0) + 1
+		FROM s_menu_manager
+		WHERE MN_MAINKEY = #{dethSubMenuKey}
+		AND   MN_DEL_YN = 'N'
+    </select>
+    
+    <update id="set_updateSubMenuUrl">
+    	UPDATE s_menu_manager
+		SET  		 MN_URL  = REPLACE(MN_URL, #{MN_beforeURL}, #{dethChUrl})
+					,MN_LEV  = MN_LEV - (#{dethInterval})
+		WHERE 		 MN_URL != #{MN_beforeURL} AND MN_URL LIKE #{MN_beforeURL}||'%'	
+    </update>
+    
+
+    <resultMap id="MenuHeaderTemplate" type="HashMap">
+		<result property="SMT_FORM" column="SMT_FORM" jdbcType="CLOB" javaType="java.lang.String"/>
+	</resultMap>
+    
+    
+      <sql id="SMT_getListBody">
+		FROM(
+			SELECT AA.*
+		  			, ROW_NUMBER() OVER (
+			<choose>
+	 		<when test='orderBy.equals("1")'>
+	 		ORDER BY	COUNT ${sortDirect}
+	 		</when>
+	 		<when test='orderBy.equals("2")'>
+	 		ORDER BY	SMT_SUBJECT ${sortDirect}
+	 		</when>
+	 		<when test='orderBy.equals("3")'>
+	 		ORDER BY	SMT_UI_NAME ${sortDirect}
+	 		</when>
+	 		<when test='orderBy.equals("4")'>
+	 		ORDER BY	SMT_REGDT ${sortDirect}
+	 		</when>
+	 		<otherwise>
+	 		ORDER BY SMT_KEYNO DESC
+	 		</otherwise>
+	 	</choose>
+		) RNUM
+		FROM(
+			SELECT 	  SMT_KEYNO
+					, ROWNUM COUNT
+		    		, TO_CHAR(SMT_REGDT,'YYYY-MM-dd') SMT_REGDT
+		    		, NVL(U.UI_REP_NAME,SMT_REGNM) SMT_UI_NAME
+		    		, SMT_SUBJECT
+		    FROM s_menu_template B 
+		    LEFT JOIN u_userinfo U
+		    ON		B.SMT_REGNM	=	U.UI_KEYNO
+			WHERE SMT_DELYN = 'N'
+		)AA
+		WHERE 1=1
+		
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT 			LIKE '%' || #{item.searchKeyword} || '%'						
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		SMT_SUBJECT					LIKE '%' || #{item.searchKeyword} || '%'							
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		SMT_UI_NAME 	LIKE '%' || #{item.searchKeyword} || '%'						
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		SMT_REGDT 		LIKE '%' || #{item.searchKeyword} || '%'						
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT 			LIKE '%' || #{item.searchKeyword} || '%'				OR
+ 				SMT_SUBJECT 			LIKE '%' || #{item.searchKeyword} || '%'	 				OR
+ 				SMT_UI_NAME 	LIKE '%' || #{item.searchKeyword} || '%'	  		OR
+ 				SMT_REGDT 		LIKE '%' || #{item.searchKeyword} || '%'						
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+	) AAA
+	</sql>
+	
+    <select id="SMT_getListCnt" resultType="int">
+			SELECT	COUNT(*)
+		<include  refid="SMT_getListBody"/>
+    </select>
+    
+    <select id="SMT_getList" resultMap="ResultMap.rownumHashMap">
+		SELECT	*
+		<include  refid="SMT_getListBody"/>
+		<if test="recordCountPerPage != 0">
+		 	WHERE 1=1
+	 		AND RNUM BETWEEN #{firstIndex}+1 AND #{recordCountPerPage}
+		</if> 	
+		
+    </select>
+    
+     <select id="SMT_getData" resultType="hashmap" resultMap="MenuHeaderTemplate">
+	   	SELECT 	  SMT_KEYNO
+	   			, 'SMT'||TO_NUMBER(SUBSTR(SMT_KEYNO,-10)) KEYNO
+	    		, TO_CHAR(SMT_REGDT,'YYYY-MM-dd') SMT_REGDT
+	    		, NVL(U.UI_REP_NAME,SMT_REGNM) SMT_UI_NAME
+	    		, SMT_FORM
+	    		, SMT_SUBJECT
+	    FROM s_menu_template B 
+	    LEFT JOIN u_userinfo U
+	    ON		B.SMT_REGNM	=	U.UI_KEYNO
+		WHERE SMT_DELYN = 'N'
+		<if test="SMT_KEYNO != null and SMT_KEYNO != ''">
+		AND SMT_KEYNO = #{SMT_KEYNO}
+		</if>
+    </select>
+    
+      <select id="SMT_getFormList" resultType="hashmap" resultMap="MenuHeaderTemplate">
+    	SELECT SMT_KEYNO, SMT_FORM, 'FORM'||TO_NUMBER(SUBSTR(SMT_KEYNO,-10)) FORM_NAME, SMT_SUBJECT
+    	FROM s_menu_template
+    	WHERE SMT_DELYN = 'N'
+    </select>
+    
+    <insert id="SMT_insert">
+    	INSERT INTO s_menu_template(
+				 SMT_KEYNO
+				,SMT_FORM
+				,SMT_REGDT
+				,SMT_REGNM
+				,SMT_SUBJECT
+				,SMT_DELYN
+				
+				)
+		VALUES(
+				 #{SMT_KEYNO}
+				,#{SMT_FORM}
+				,SYSDATE
+				,#{SMT_REGNM}
+				,#{SMT_SUBJECT}
+				,'N'
+			)
+    </insert>
+
+	<update id="SMT_update">
+    	UPDATE s_menu_template
+    	SET   SMT_FORM = #{SMT_FORM}
+    		, SMT_SUBJECT = #{SMT_SUBJECT}
+   
+    	WHERE SMT_KEYNO = #{SMT_KEYNO}
+    </update>
+    
+    <update id="SMT_delete">
+    	UPDATE s_menu_template
+    	SET SMT_DELYN = 'Y'
+    	WHERE SMT_KEYNO = #{SMT_KEYNO}
+    </update>
+    
+    <select id="get_Maindata" resultType="Menu">
+		SELECT *
+		FROM s_menu_manager
+		WHERE MN_KEYNO = #{MN_MAINKEY}
+		AND MN_DEL_YN 		=		'N'
+	</select>
+	
+	<select id="get_homeUrl" resultType="String">
+		SELECT 	MN_URL
+		FROM s_menu_manager
+		WHERE 	MN_KEYNO = #{MN_HOMEDIV_C}
+	</select>
+	    
+    <select id="getSkinForm" resultType="String">
+        SELECT     SMT_FORM
+        FROM s_menu_template
+        WHERE     SMT_KEYNO = #{SMT_KEYNO}
+    </select>
+        
+    <select id="getMenuActionAuthData" resultType="String">
+        SELECT LISTAGG(MN_KEYNO,',') WITHIN GROUP (ORDER BY MN_KEYNO) MN_KEYNO
+        FROM s_menu_manager
+        WHERE MN_KEYNO IN ( 
+                            SELECT UAR2.MN_KEYNO 
+                            FROM u_userinfo_authority_roll UAR2
+                            <if test="UIA_KEYNO != 'UIA_ASDFG'">							
+                            WHERE UAR2.UIR_KEYNO = 'UIR_0000000023'
+							AND UAR2.UIA_KEYNO 	 = #{UIA_KEYNO}
+							</if>
+                          )    
+    </select>
+    
+    <select id="MN_getListForCopy" resultType="Menu">
+    	SELECT 		* 
+    	FROM s_menu_manager 
+    	WHERE 		MN_HOMEDIV_C  	= 	#{MN_HOMEDIV_C}
+    	AND 		MN_DEL_YN 		= 	'N' 
+    	AND 		MN_LEV 			!= 	0
+    	ORDER BY 	MN_LEV
+    </select>
+    
+    <!-- 메뉴관리 메뉴 등록 -->
+	<insert id="AMN_insertList">
+		INSERT ALL
+		<foreach collection="list" item="item">
+		INTO S_MENU_MANAGER(
+			 MN_KEYNO
+			,MN_NAME
+			,MN_ENG_NAME
+			,MN_DEP
+			,MN_COLOR
+			,MN_DATA1
+			,MN_DATA2
+			,MN_DATA3
+			,MN_HOMEDIV_C
+			,MN_PAGEDIV_C
+			,MN_BT_KEYNO
+			,MN_TOURKEY
+			,MN_URL
+			,MN_FORWARD_URL
+			,MN_MAINKEY
+			,MN_ORDER
+			,MN_LEV
+			,MN_ICON_CSS
+			,MN_RESEARCH
+			,MN_QRCODE
+			,MN_MANAGER
+			,MN_USE_YN
+			,MN_SHOW_YN
+			,MN_DEL_YN
+			,MN_REGDT
+			,MN_REGNM
+			,MN_QR_KEYNO
+			,MN_MANAGER_DEP
+			,MN_MANAGER_TEL
+			,MN_DU_KEYNO
+			,MN_GONGNULI_TYPE
+			,MN_GONGNULI_YN
+			,MN_EMAIL
+			,MN_NEWLINK
+			,MN_META_DESC
+			,MN_META_KEYWORD
+			,MN_CHANGE_FREQ
+			,MN_PRIORITY
+			)
+		VALUES
+		(
+			 #{item.MN_KEYNO}
+			,#{item.MN_NAME}
+			,#{item.MN_ENG_NAME}
+			,#{item.MN_DEP}
+			,#{item.MN_COLOR}
+			,#{item.MN_DATA1}
+			,#{item.MN_DATA2}
+			,#{item.MN_DATA3}
+			,#{item.MN_HOMEDIV_C}
+			,#{item.MN_PAGEDIV_C}
+			,#{item.MN_BT_KEYNO}
+			,#{item.MN_TOURKEY}
+			,#{item.MN_URL}
+			,#{item.MN_FORWARD_URL}
+			,#{item.MN_MAINKEY}
+			,#{item.MN_ORDER}
+			,#{item.MN_LEV}
+			,#{item.MN_ICON_CSS}
+			,#{item.MN_RESEARCH}
+			,#{item.MN_QRCODE}
+			,#{item.MN_MANAGER}
+			,#{item.MN_USE_YN}
+			,#{item.MN_SHOW_YN}
+			,'N'
+			,SYSDATE
+			,#{item.MN_REGNM}
+			,#{item.MN_QR_KEYNO}
+			,#{item.MN_MANAGER_DEP}
+			,#{item.MN_MANAGER_TEL}
+			,#{item.MN_DU_KEYNO}
+			,#{item.MN_GONGNULI_TYPE}
+			,#{item.MN_GONGNULI_YN}
+			,#{item.MN_EMAIL}
+			,#{item.MN_NEWLINK}
+			,#{item.MN_META_DESC}
+			,#{item.MN_META_KEYWORD}
+			,#{item.MN_CHANGE_FREQ}
+			,#{item.MN_PRIORITY}
+		)
+		</foreach>
+		SELECT * FROM dual
+	</insert>
+	
+	<select id="MN_getDefaultMenuList" parameterType="String" resultType="String">
+		SELECT 	MN_KEYNO
+		FROM s_menu_manager 
+		WHERE	MN_HOMEDIV_C  != #{MN_HOMEDIV_C}
+		AND	 	MN_DEL_YN = 'N'
+		AND 	MN_URL  NOT LIKE '/dyAdmin/admin%'
+	</select>
+	
+	<select id="MN_getMenuListByHomeDiv" resultType="String">
+		SELECT 	MN_KEYNO
+		FROM s_menu_manager 
+		WHERE 	MN_HOMEDIV_C  = #{MN_HOMEDIV_C}
+		AND 	MN_DEL_YN = 'N'
+		<if test="MN_PAGEDIV_C != null">
+		AND 	MN_PAGEDIV_C = #{MN_PAGEDIV_C}
+		</if>
+	</select>
+	
+	<select id="MN_getAdminAuthMenuList" resultType="Menu">
+    	SELECT	*
+    	FROM s_menu_manager 
+    	WHERE 	MN_DEL_YN	=	'N'
+    	AND		MN_URL LIKE '/dyAdmin/homepage%'
+    </select>
+	
+</mapper>

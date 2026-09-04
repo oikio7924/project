@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BoardColumn"> 
+
+	<select id="BL_getviewList" resultType="BoardColumn" parameterType="String">
+		SELECT BL.* , BL_KEYNO KEYNO
+		FROM b_board_column BL, S_MENU_MANAGER MN
+		WHERE BL.BL_BT_KEYNO = MN.MN_BT_KEYNO
+		AND   MN.MN_KEYNO = #{MN_KEYNO}
+		AND   BL.BL_USE_YN = 'Y'
+		ORDER BY BL.BL_COLUMN_LEVEL
+    </select>
+    
+    <select id="BL_getviewList2" resultType="BoardColumn" parameterType="String">
+		SELECT 		BL.* 
+					, BL_KEYNO KEYNO
+		FROM b_board_column BL, S_MENU_MANAGER MN
+		WHERE 		BL.BL_BT_KEYNO 	= 	MN.MN_BT_KEYNO
+		AND   		MN.MN_KEYNO 	= 	#{MN_KEYNO}
+		AND   		BL.BL_USE_YN 	= 	'Y'
+		AND			BL_LISTVIEW_YN	=	'Y'
+		ORDER BY 	BL.BL_COLUMN_LEVEL
+    </select>
+   
+	<select id="BL_getList" resultType="BoardColumn" parameterType="String">
+		SELECT A.*,B.MC_IN_C FROM b_board_column A
+		LEFT JOIN s_common_code_main B
+		ON  B.MC_KEYNO =  A.BL_OPTION_DATA
+		WHERE BL_USE_YN = 'Y'
+		AND   BL_BT_KEYNO = #{BL_BT_KEYNO}
+		ORDER BY BL_COLUMN_LEVEL
+    </select>
+  	
+    <insert id="BL_insert" parameterType="BoardColumn">
+	<![CDATA[
+		INSERT INTO b_board_column(
+				BL_KEYNO,
+				BL_BT_KEYNO,
+				BL_COLUMN_NAME,
+				BL_VALIDATE,
+				BL_COLUMN_SIZE,
+				BL_COLUMN_LEVEL,
+				BL_LISTVIEW_YN,
+				BL_TYPE,
+				BL_OPTION_DATA,
+				BL_USE_YN,
+				BL_REGDT
+				)
+		VALUES(
+				BL_SEQ.NEXTVAL,
+				#{BL_BT_KEYNO},
+				#{BL_COLUMN_NAME},
+				#{BL_VALIDATE},
+				#{BL_COLUMN_SIZE},
+				#{BL_COLUMN_LEVEL},
+				#{BL_LISTVIEW_YN},
+				#{BL_TYPE},
+				#{BL_OPTION_DATA},
+				'Y',
+				SYSDATE
+				)
+		]]>
+	</insert>
+	
+	<update id="BL_update" parameterType="BoardColumn">
+	<![CDATA[
+		UPDATE b_board_column 
+		SET		BL_COLUMN_NAME		= #{BL_COLUMN_NAME},
+				BL_VALIDATE			= #{BL_VALIDATE},
+				BL_COLUMN_SIZE		= #{BL_COLUMN_SIZE},
+				BL_COLUMN_LEVEL		= #{BL_COLUMN_LEVEL},
+				BL_LISTVIEW_YN		= #{BL_LISTVIEW_YN},
+				BL_TYPE				= #{BL_TYPE},
+				BL_OPTION_DATA		= #{BL_OPTION_DATA}
+		WHERE   BL_KEYNO			= #{BL_KEYNO}
+		]]>
+	</update>
+	
+	<delete id="BL_delete" parameterType="String">
+	<![CDATA[
+		  UPDATE b_board_column
+		  SET	 BL_USE_YN		= 'N'
+		  WHERE	 BL_KEYNO = #{BL_KEYNO}	
+	  	]]>
+	 </delete>
+	 
+	
+    
+    <!-- 컬럼 타입이 코드 일 경우 관련 코드값들 겟 -->
+    <select id="BL_getCodeWidthColumn" resultType="hashmap" parameterType="hashmap">
+    
+    	SELECT S.*,M.MC_KEYNO 
+ 		FROM s_common_code_sub S
+ 		LEFT JOIN s_common_code_main M
+ 		ON S.SC_MC_IN_C	=	M.MC_IN_C
+ 		WHERE SC_MC_IN_C IN (
+ 			SELECT MC_IN_C FROM s_common_code_main WHERE MC_KEYNO IN
+ 			<foreach collection="typeList" item="type" open="(" close=")" separator=",">
+	 		#{type.BL_OPTION_DATA}
+	 		</foreach> 
+ 		)
+ 		
+ 		ORDER BY SC_CODELV
+    
+    
+    </select>
+    
+</mapper>
+ 

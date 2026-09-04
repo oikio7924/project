@@ -1,0 +1,40 @@
+
+
+.jOrgChart table {margin:0 auto;}
+.jOrgChart td {text-align:center;vertical-align:top;padding:0;}
+#org {display:none;}
+.btnWrap button:first-child {margin-bottom:3px;}
+
+.jOrgChart .node{
+    border: 1px solid #ccc;
+    display: inline-block;
+    width: 102px;
+    height: 86px;
+    z-index: 10;
+    margin: 0 2px;
+    padding: 5px;
+    background-color: #fafafa;
+}
+.jOrgChart .node p {
+    margin: 0 0 9px;
+    font-size: 12px;
+    color: #5a5a5a;
+    font-weight: 500;
+}
+.jOrgChart .top {
+    border-top: 1px solid #bfbfbf;
+}
+.jOrgChart .left {
+    border-right: 1px solid #bfbfbf;
+}
+.jOrgChart .right {
+    border-left: 1px solid #bfbfbf;
+}
+.jOrgChart .line {
+    height: 20px;
+    width: 1px;
+}
+.jOrgChart .down {
+    background-color: #bfbfbf;
+    margin: 0px auto;
+}

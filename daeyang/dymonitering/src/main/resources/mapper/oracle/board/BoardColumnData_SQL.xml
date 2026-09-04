@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BoardColumnData"> 
+  	
+	<select id="BD_getList" resultType="BoardColumnData">
+		SELECT BL.BL_COLUMN_NAME as COLUMN_NAME, BD.BD_DATA, BD.BD_DATA BD_DATA_ORI, BD.BD_BL_KEYNO, BD.BD_BL_TYPE, BD.BD_KEYNO
+		FROM b_board_column BL, B_BOARD_COLUMN_DATA BD
+		WHERE BL.BL_KEYNO = BD.BD_BL_KEYNO
+		AND   BD.BD_BN_KEYNO = #{BD_BN_KEYNO}
+		ORDER BY BL.BL_COLUMN_LEVEL
+    </select>
+  	
+  	<select id="BD_getData" resultType="BoardColumnData" parameterType="String">
+		SELECT * FROM b_board_column_data
+		WHERE BD_BL_KEYNO  =	#{BD_BL_KEYNO}
+    </select> 
+    
+    <insert id="BD_insert" parameterType="BoardColumnData">
+	<![CDATA[
+		INSERT INTO b_board_column_data(
+				BD_KEYNO,
+				BD_BT_KEYNO,
+				BD_BN_KEYNO,
+				BD_BL_KEYNO,
+				BD_BL_TYPE,
+				BD_MN_KEYNO,
+				BD_DATA
+				)
+		VALUES(
+				BD_SEQ.NEXTVAL,
+				#{BD_BT_KEYNO},
+				#{BD_BN_KEYNO},
+				#{BD_BL_KEYNO},
+				#{BD_BL_TYPE},
+				#{BD_MN_KEYNO},
+				#{BD_DATA}
+				)
+		]]>
+	</insert>
+	
+	<update id="BD_update" parameterType="BoardColumnData">
+	<![CDATA[
+		UPDATE b_board_column_data 
+		SET		BD_DATA			= #{BD_DATA}
+		WHERE   BD_KEYNO		= #{BD_KEYNO}
+		]]>
+	</update>
+	
+	<select id="BD_getDataList" resultType="BoardColumnData" parameterType="String">
+		SELECT BD.*,BL.BL_LISTVIEW_YN FROM b_board_column_data BD
+		LEFT JOIN b_board_column BL
+		ON BD.BD_BL_KEYNO = BL.BL_KEYNO
+		WHERE BD.BD_MN_KEYNO = #{BD_MN_KEYNO}
+		AND   BL.BL_LISTVIEW_YN = 'Y'
+		AND   BL.BL_USE_YN = 'Y'
+		ORDER BY BD_BN_KEYNO, BL.BL_COLUMN_LEVEL
+    </select>
+    
+    
+    <select id="BD_getDataListWithPaging" resultType="BoardColumnData" parameterType="hashmap">
+		SELECT BD.*,BL.BL_LISTVIEW_YN 
+		FROM b_board_column_data BD
+		LEFT JOIN b_board_column BL
+		ON BD.BD_BL_KEYNO = BL.BL_KEYNO
+		WHERE BD.BD_MN_KEYNO = #{MN_KEYNO}
+		AND   BL.BL_LISTVIEW_YN = 'Y'
+		AND   BL.BL_USE_YN = 'Y'
+		AND	  BD.BD_BN_KEYNO IN
+		<foreach collection="BoardNoticeDataList" item="item" open="(" close=")" separator=",">
+		#{item.BN_KEYNO}
+		</foreach>
+		ORDER BY BD_BN_KEYNO, BL.BL_COLUMN_LEVEL
+    </select>
+    
+  
+    
+   
+    
+    <insert id="BDH_insert" parameterType="BoardColumnData">
+	<![CDATA[
+		INSERT INTO b_board_column_data_history (
+				BDH_BD_KEYNO,
+				BDH_BD_BT_KEYNO,
+				BDH_BD_BN_KEYNO,
+				BDH_BD_BL_KEYNO,
+				BDH_BD_BL_TYPE,
+				BDH_BD_MN_KEYNO,
+				BDH_BD_DATA,
+                BDH_BNH_KEYNO           				
+				)
+		SELECT 			
+				BD_KEYNO,
+				BD_BT_KEYNO,
+				BD_BN_KEYNO,
+				BD_BL_KEYNO,
+				BD_BL_TYPE,
+				BD_MN_KEYNO,
+				BD_DATA,
+                #{BDH_BNH_KEYNO}
+        FROM b_board_column_data
+        WHERE BD_BN_KEYNO = #{BD_BN_KEYNO}
+		]]>
+	</insert>
+	
+	<select id="BDH_compareData" parameterType="BoardColumnData" resultType="BoardColumnData">
+	<if test='BD_COMPARE != "undefined"'>
+		SELECT 		A.BD_KEYNO, A.BD_BL_TYPE, NVL(A.BD_DATA, ' ') AS BD_DATA, B.BL_COLUMN_NAME AS COLUMN_NAME
+		FROM b_board_column_data A, B_BOARD_COLUMN B 
+		WHERE 		A.BD_BL_KEYNO = B.BL_KEYNO
+        AND			A.BD_BN_KEYNO		=	#{BD_BN_KEYNO}
+		UNION ALL		 
+		</if>
+		<![CDATA[
+		SELECT * FROM (
+		SELECT		A.BDH_BD_KEYNO AS BD_KEYNO, A.BDH_BD_BL_TYPE AS BD_BL_TYPE, NVL(A.BDH_BD_DATA, ' ') AS BD_DATA, B.BL_COLUMN_NAME AS COLUMN_NAME
+        FROM b_board_column_data_history A, B_BOARD_COLUMN B
+        WHERE		A.BDH_BD_BL_KEYNO = B.BL_KEYNO
+		AND			A.BDH_BNH_KEYNO	<=  #{BDH_BNH_KEYNO}
+		AND			A.BDH_BD_BN_KEYNO	 = 	#{BD_BN_KEYNO}
+        ORDER BY	A.BDH_BNH_KEYNO DESC, A.BDH_BD_KEYNO
+		) COL
+		]]>
+	</select>
+	
+	<update id="BL_restore_update" parameterType="BoardColumnData">
+		<![CDATA[
+		UPDATE b_board_column_data A 
+			SET ( A.BD_KEYNO, 
+			    A.BD_BT_KEYNO,
+			    A.BD_BN_KEYNO,
+			    A.BD_BL_KEYNO,
+			    A.BD_MN_KEYNO,
+			    A.BD_BL_TYPE,
+			    A.BD_DATA) = ( 
+			        SELECT 
+			                B.BDH_BD_KEYNO,
+			                B.BDH_BD_BT_KEYNO,
+					    	B.BDH_BD_BN_KEYNO,
+							B.BDH_BD_BL_KEYNO,
+					    	B.BDH_BD_MN_KEYNO,
+							B.BDH_BD_BL_TYPE,    
+					    	B.BDH_BD_DATA
+			                FROM b_board_column_data_history B
+			                WHERE A.BD_KEYNO = B.BDH_BD_KEYNO
+			                AND BDH_BNH_KEYNO = #{BDH_BNH_KEYNO}
+			    ) 
+			WHERE A.BD_KEYNO IN (
+			      SELECT BDH_BD_KEYNO FROM b_board_column_data_history
+			      WHERE A.BD_KEYNO = BDH_BD_KEYNO AND BDH_BNH_KEYNO = #{BDH_BNH_KEYNO}
+			)
+		]]>
+	</update>
+	
+	 <!-- 게시물 이동 (BT 같을 경우) -->
+    <update id="BL_moveBoard" parameterType="hashmap">
+    	UPDATE b_board_column_data
+    	SET		  BD_MN_KEYNO		=	#{MN_KEYNO}
+    			, BD_BT_KEYNO		=	#{BT_KEYNO}
+    	WHERE	  BD_BN_KEYNO		=	#{BN_KEYNO}
+    </update>
+    
+    <!-- 게시물 이동  (BT 다를 경우) -->
+    <update id="BL_moveBoard2" parameterType="hashmap">
+    	UPDATE b_board_column_data
+    	SET		  BD_MN_KEYNO		=	#{MN_KEYNO}
+    			, BD_BT_KEYNO		=	#{BT_KEYNO}
+    			, BD_BL_KEYNO		=	(
+    										SELECT 	BL_KEYNO 
+    										FROM b_board_column 
+    										WHERE 	BL_BT_KEYNO	=	#{BT_KEYNO}
+    										AND		BL_TYPE		=	'SC_HBHNH'
+    									)
+    	WHERE	  BD_BN_KEYNO		=	#{BN_KEYNO}
+    	AND		  BD_BL_TYPE		=	'SC_HBHNH'
+    </update>
+     
+    <!-- 게시물 이동 시 기존 컬럼들 삭제 처리 -->
+    <delete id="BD_delete" parameterType="hashmap">
+    	DELETE 	FROM b_board_column_data
+    	WHERE	BD_BN_KEYNO		=	#{BN_KEYNO}
+    </delete>
+    
+    <!-- 게시물 이동 시 히스토리 컬럼들 삭제 처리 -->
+    <delete id="BDH_delete" parameterType="hashmap">
+    	DELETE 	FROM b_board_column_data_history
+    	WHERE	BDH_BD_BN_KEYNO		=	#{BN_KEYNO}
+    </delete>
+    
+</mapper>
+ 

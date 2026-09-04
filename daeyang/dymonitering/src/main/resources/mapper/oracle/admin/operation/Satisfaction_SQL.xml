@@ -1,0 +1,704 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Satisfaction"> 
+	<resultMap id="SatisfactionMap" type="HashMap">
+		<result property="TPS_COMMENT" column="TPS_COMMENT" jdbcType="CLOB" javaType="java.lang.String"/>
+		<result property="PRS_FORM" column="PRS_FORM" jdbcType="CLOB" javaType="java.lang.String"/>
+		<result property="PRSH_DATA" column="PRSH_DATA" jdbcType="CLOB" javaType="java.lang.String"/>
+	</resultMap>
+	
+	<sql id="TPS_getListBody">
+	FROM (
+		SELECT AA.*, ROW_NUMBER() OVER(
+						<choose>
+				 		<when test="orderBy == 1">
+				 		ORDER BY	COUNT ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 2">
+				 		ORDER BY	MN_HOMEDIV_NAME ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 3">
+				 		ORDER BY	MN_NAME ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 4">
+				 		ORDER BY	TOTAL_CNT ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 5">
+				 		ORDER BY	SCORE_DATA5 ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 6">
+				 		ORDER BY	SCORE_DATA4 ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 7">
+				 		ORDER BY	SCORE_DATA3 ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 8">
+				 		ORDER BY	SCORE_DATA2 ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 9">
+				 		ORDER BY	SCORE_DATA1 ${sortDirect}
+				 		</when>
+				 		<when test="orderBy == 10">
+				 		ORDER BY	RESULT_DATA ${sortDirect}
+				 		</when>
+				 		<otherwise>
+				 		ORDER BY 	COUNT 
+				 		</otherwise>
+			 		</choose>
+		) RNUM
+		FROM (
+			SELECT	AB.*, ROWNUM AS COUNT
+			FROM (
+				SELECT	TPS_MN_KEYNO
+		        		, B.MN_NAME
+		                , C.MN_NAME MN_HOMEDIV_NAME
+		                , TOTAL || '명' TOTAL_CNT
+		                , SCORE1 || '명' || CASE SCORE1 WHEN 0 THEN '' ELSE '(' || ROUND(SCORE1/TOTAL*100,2) || '%)' END  SCORE_DATA1
+	                    , SCORE2 || '명' || CASE SCORE2 WHEN 0 THEN '' ELSE '(' || ROUND(SCORE2/TOTAL*100,2) || '%)' END  SCORE_DATA2
+	                    , SCORE3 || '명' || CASE SCORE3 WHEN 0 THEN '' ELSE '(' || ROUND(SCORE3/TOTAL*100,2) || '%)' END  SCORE_DATA3
+	                    , SCORE4 || '명' || CASE SCORE4 WHEN 0 THEN '' ELSE '(' || ROUND(SCORE4/TOTAL*100,2) || '%)' END  SCORE_DATA4
+	                    , SCORE5 || '명' || CASE SCORE5 WHEN 0 THEN '' ELSE '(' || ROUND(SCORE5/TOTAL*100,2) || '%)' END  SCORE_DATA5
+		                , CASE 
+		                	WHEN SCORE5 >= SCORE4 AND SCORE5 >= SCORE3 AND SCORE5 >= SCORE2 AND SCORE5 >= SCORE1 THEN '매우 만족'
+		                    WHEN SCORE4 >= SCORE3 AND SCORE4 >= SCORE2 AND SCORE4 >= SCORE1 THEN '만족'
+		                    WHEN SCORE3 >= SCORE2 AND SCORE3 >= SCORE1 THEN '보통'
+		                    WHEN SCORE2 >= SCORE1 THEN '불만족'
+		                    ELSE '매우 불만족'
+		                END RESULT_DATA
+		        FROM (
+		        	SELECT 	  TPS_MN_KEYNO
+		            		, COUNT(TPS_SCORE_NAME) AS TOTAL
+		                    , COUNT(CASE TPS_SCORE WHEN 1 THEN 1 ELSE NULL END ) SCORE1
+	                        , COUNT(CASE TPS_SCORE WHEN 2 THEN 1 ELSE NULL END ) SCORE2
+	                        , COUNT(CASE TPS_SCORE WHEN 3 THEN 1 ELSE NULL END ) SCORE3
+	                        , COUNT(CASE TPS_SCORE WHEN 4 THEN 1 ELSE NULL END ) SCORE4
+	                        , COUNT(CASE TPS_SCORE WHEN 5 THEN 1 ELSE NULL END ) SCORE5
+		            FROM t_page_research_manager TPR
+		            LEFT JOIN s_menu_manager TMM
+		            ON		TPR.TPS_MN_KEYNO = TMM.MN_KEYNO
+		            GROUP BY  TPS_MN_KEYNO
+		        ) A 
+		        LEFT JOIN s_menu_manager B
+		        ON	A.TPS_MN_KEYNO = B.MN_KEYNO
+		        LEFT JOIN s_menu_manager C
+		        <choose>
+		        	<when test="mainkey != null and mainkey !=''">
+		        ON	(B.MN_HOMEDIV_C = C.MN_KEYNO AND B.MN_HOMEDIV_C IS NOT NULL)
+	 				</when>
+	 				<otherwise>
+		        ON	(B.MN_HOMEDIV_C = C.MN_KEYNO AND B.MN_HOMEDIV_C = #{HOMEDIV_C})
+					</otherwise>
+		        </choose>
+		        <if test="UIA_KEYNO != 'UIA_ASDFG'">
+		        LEFT JOIN u_userinfo_authority_roll UAR
+				ON		UAR.MN_KEYNO = A.TPS_MN_KEYNO
+				</if>
+				<if test="UIA_KEYNO != 'UIA_ASDFG'">
+				WHERE 	UAR.UIA_KEYNO		=	#{UIA_KEYNO}
+				</if>
+			) AB
+		WHERE 1=1
+		AND AB.MN_HOMEDIV_NAME IS NOT NULL
+		<if test="mainkey != null and mainkey !=''">
+		ORDER BY TOTAL_CNT DESC
+		</if>
+		)AA
+		WHERE 1=1
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT 				LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		MN_NAME 			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		TOTAL_CNT			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		SCORE_DATA5 		LIKE '%' || #{item.searchKeyword} || '%'						
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		SCORE_DATA4 		LIKE '%' || #{item.searchKeyword} || '%'						
+	 			</when>
+	 			<when test='item.searchIndex.equals("6")'>
+ 		AND		SCORE_DATA3 		LIKE '%' || #{item.searchKeyword} || '%'						
+	 			</when>
+	 			<when test='item.searchIndex.equals("7")'>
+ 		AND		SCORE_DATA2 		LIKE '%' || #{item.searchKeyword} || '%'						
+	 			</when>
+	 			<when test='item.searchIndex.equals("8")'>
+ 		AND		SCORE_DATA1 		LIKE '%' || #{item.searchKeyword} || '%'						
+	 			</when>
+	 			<when test='item.searchIndex.equals("9")'>
+ 		AND		RESULT_DATA 		LIKE '%' || #{item.searchKeyword} || '%'						
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT 					LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				MN_NAME 				LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				TOTAL_CNT				LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SCORE_DATA5 			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SCORE_DATA4 			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SCORE_DATA3 			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SCORE_DATA2 			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				SCORE_DATA1 			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				RESULT_DATA 			LIKE '%' || #{item.searchKeyword} || '%' 	
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+	 ) BB
+	</sql>
+  	
+    <select id="TPS_getListCnt" resultType="int" parameterType="hashmap">
+		SELECT	COUNT(*)
+		<include  refid="TPS_getListBody"/>
+    </select>
+    
+    <select id="TPS_getList" resultType="hashmap">
+    	SELECT *
+		<include  refid="TPS_getListBody"/>
+		<if test=" recordCountPerPage != 0">
+		WHERE RNUM BETWEEN  #{firstIndex}+1 AND #{lastIndex} 
+		</if>  
+    </select>
+    
+        <sql id="TPS_getDetailListBody">
+        FROM (
+            SELECT    AB.*
+                    , ROW_NUMBER() OVER (
+                    <choose>
+                         <when test="orderBy == 1">
+                         ORDER BY    COUNT ${sortDirect}
+                         </when>
+                         <when test="orderBy == 2">
+                         ORDER BY    TPS_SCORE_NAME ${sortDirect}
+                         </when>
+                         <when test="orderBy == 3">
+                         ORDER BY    TPS_IP ${sortDirect}
+                         </when>
+                         <when test="orderBy == 4">
+                         ORDER BY    TPS_COMMENT ${sortDirect}
+                         </when>
+                         <when test="orderBy == 5">
+                         ORDER BY    TPS_REGDT ${sortDirect}
+                         </when>
+                         <otherwise>
+                         ORDER BY     COUNT 
+                         </otherwise>
+                     </choose>
+                     ) RNUM
+            FROM (
+                SELECT        ROWNUM AS COUNT    
+                            , TO_CHAR(TPR.TPS_REGDT, 'YYYY-MM-dd') AS TPS_REGDT
+                               , TPS_IP
+                               , TPS_COMMENT
+                               , TPS_SCORE_NAME
+                FROM t_page_research_manager TPR
+                WHERE         TPS_MN_KEYNO = #{TPS_MN_KEYNO}
+                ORDER BY     TPS_REGDT DESC
+            ) AB
+        WHERE 1=1
+        <if test="searchList != null">
+         <foreach collection="searchList" item="item">
+             <choose>
+                 <when test='item.searchIndex.equals("1")'>
+         AND        COUNT                 LIKE '%' || #{item.searchKeyword} || '%'                    
+                 </when>
+                 <when test='item.searchIndex.equals("2")'>
+         AND        TPS_SCORE_NAME        LIKE '%' || #{item.searchKeyword} || '%'                    
+                 </when>
+                 <when test='item.searchIndex.equals("3")'>
+         AND        TPS_IP                 LIKE '%' || #{item.searchKeyword} || '%'                    
+                 </when>
+                 <when test='item.searchIndex.equals("4")'>
+         AND        TPS_COMMENT            LIKE '%' || #{item.searchKeyword} || '%'                    
+                 </when>
+                 <when test='item.searchIndex.equals("5")'>
+         AND        TPS_REGDT             LIKE '%' || #{item.searchKeyword} || '%'                        
+                 </when>
+                 <when test='item.searchIndex.equals("all")'>
+         AND (
+                 COUNT                     LIKE '%' || #{item.searchKeyword} || '%'     OR
+                 TPS_SCORE_NAME            LIKE '%' || #{item.searchKeyword} || '%'     OR
+                 TPS_IP                     LIKE '%' || #{item.searchKeyword} || '%'     OR
+                 TPS_COMMENT                LIKE '%' || #{item.searchKeyword} || '%'     OR
+                 TPS_REGDT                 LIKE '%' || #{item.searchKeyword} || '%'         
+         )                            
+                 </when>
+             </choose>
+         </foreach>
+         </if>
+        )AA
+    
+    </sql>
+      
+    <select id="TPS_getDetailListCnt" resultType="int">
+        SELECT    COUNT(*)
+        <include  refid="TPS_getDetailListBody"/>
+    </select>
+    
+    <select id="TPS_getDetailList" resultMap="SatisfactionMap">
+        SELECT    * 
+        <include  refid="TPS_getDetailListBody"/>
+        <if test=" recordCountPerPage != 0">
+            WHERE 1=1
+            AND     RNUM BETWEEN  #{firstIndex}+1 AND #{lastIndex} 
+        </if>  
+    </select>
+    
+	
+	
+	 <!-- 코멘트페이지 SQL --> 
+    
+      <sql id="TPS_getCommentDetailListBody">
+		FROM (
+			SELECT	AB.*, ROW_NUMBER() OVER (
+						<choose>
+	 		<when test="orderBy == 1">
+	 		ORDER BY	COUNT ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 2">
+	 		ORDER BY	MN_NAME ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 3">
+	 		ORDER BY	TPS_SCORE_NAME ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 4">
+	 		ORDER BY	TPS_IP ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 5">
+	 		ORDER BY	TPS_COMMENT ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 6">
+	 		ORDER BY	TPS_REGDT ${sortDirect}
+	 		</when>
+	 		<otherwise>
+	 		ORDER BY 	COUNT
+	 		</otherwise>
+ 		</choose>
+			) RNUM
+			FROM (
+				SELECT 	  	
+							(RANK() OVER(ORDER BY TPR.TPS_REGDT DESC)) COUNT
+							, SUBSTR(TPR.TPS_REGDT, 1, 10) AS TPS_REGDT
+			   				, TPS_IP
+			   				, TPS_COMMENT
+			   				, TPS_SCORE_NAME
+			   				, TPS_MN_KEYNO
+			   				, TMM.MN_NAME AS MN_NAME
+		        FROM t_page_research_manager TPR
+					LEFT JOIN s_menu_manager TMM
+		            ON		TPR.TPS_MN_KEYNO = TMM.MN_KEYNO
+		            <if test="UIA_KEYNO != 'UIA_ASDFG'">
+		       		LEFT JOIN u_userinfo_authority_roll UAR
+		       		ON		UAR.MN_KEYNO = TPR.TPS_MN_KEYNO
+		       		</if>
+		        WHERE MN_NAME IS NOT NULL
+		         <if test="UIA_KEYNO != 'UIA_ASDFG'">
+		        AND		UAR.UIA_KEYNO		=	#{UIA_KEYNO}
+		        </if>
+		        AND DBMS_LOB.GETLENGTH(TPS_COMMENT) != 0
+		        AND TMM.MN_HOMEDIV_C = #{HOMEDIV_C}
+		             ORDER BY 	TPS_REGDT DESC
+			) AB
+		WHERE 1=1
+		
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT 				LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 				<when test='item.searchIndex.equals("2")'>
+ 		AND		MN_NAME 			LIKE '%' || #{item.searchKeyword} || '%'				
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		TPS_SCORE_NAME		LIKE '%' || #{item.searchKeyword} || '%'				
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		TPS_IP 				LIKE '%' || #{item.searchKeyword} || '%'				
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		TPS_COMMENT			LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("6")'>
+ 		AND		TPS_REGDT 			LIKE '%' || #{item.searchKeyword} || '%'						
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT 				LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				TPS_SCORE_NAME		LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				TPS_IP 				LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				TPS_COMMENT			LIKE '%' || #{item.searchKeyword} || '%' 	OR
+ 				MN_NAME 			LIKE '%' || #{item.searchKeyword} || '%'	OR
+ 				TPS_REGDT 			LIKE '%' || #{item.searchKeyword} || '%' 	
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+	) BB
+	</sql>
+	
+	 <select id="TPS_getCommentDetailListCnt" resultType="int">
+		SELECT	COUNT(*)
+		<include  refid="TPS_getCommentDetailListBody"/>
+    </select>
+    
+    <select id="TPS_getCommentDetailList" resultMap="SatisfactionMap">
+    	SELECT	* 
+		<include  refid="TPS_getCommentDetailListBody"/>
+		<if test=" recordCountPerPage != 0">
+		WHERE RNUM BETWEEN #{firstIndex}+1 AND #{lastIndex}  
+		</if> 
+    </select>
+    
+    <!-- 페이지 평가 등록  -->
+    <insert id="TPS_Insert">
+    	INSERT INTO t_page_research_manager
+    	(
+			 TPS_KEYNO
+			,TPS_MN_KEYNO
+			,TPS_SCORE
+			,TPS_COMMENT
+			,TPS_REGDT
+			,TPS_IP
+			,TPS_SCORE_NAME
+    	)
+    	VALUES
+    	(
+    		 #{TPS_KEYNO}
+			,#{TPS_MN_KEYNO}
+			,#{TPS_SCORE}
+			,#{TPS_COMMENT}
+			,SYSDATE
+			,#{TPS_IP}
+			,#{TPS_SCORE_NAME}
+    	)
+    </insert>
+    
+    <!-- 하루에 한번만 체크가능 -->
+    <select id="TPS_Select" resultType="int">
+   		SELECT COUNT(*)
+	    FROM t_page_research_manager
+	    WHERE TPS_IP = #{TPS_IP}
+	    AND TPS_MN_KEYNO =  #{TPS_MN_KEYNO}
+	    AND substr(TPS_REGDT, 0, 10) = substr(SYSDATE, 0, 10)
+    </select>
+    
+    <!-- 결과 보기 -->
+    <select id="ResultList" resultType="Hashmap">
+   		SELECT TPS_SCORE, TPS_SCORE_NAME, COUNT(*) AS COUNT
+	    FROM t_page_research_manager
+	    WHERE TPS_MN_KEYNO = #{TPS_MN_KEYNO}
+	    GROUP BY TPS_SCORE, TPS_SCORE_NAME
+        ORDER BY TPS_SCORE
+    </select>
+    
+   
+    <!-- 페이지 이름 -->
+    <select id="TPS_MenuName" resultType="String">
+	    SELECT    TMM.MN_NAME
+		FROM t_page_research_manager TPR
+		LEFT JOIN s_menu_manager TMM
+        ON	TPR.TPS_MN_KEYNO = TMM.MN_KEYNO
+        WHERE TPR.TPS_MN_KEYNO = #{TPS_MN_KEYNO}
+        GROUP BY TMM.MN_NAME
+    </select>
+    
+    <!-- 커멘트 보기 -->
+    <select id="TPS_PageDataList" resultMap="SatisfactionMap">
+	   	 SELECT A.* FROM( 
+        	SELECT	 
+                       ROW_NUMBER() OVER(PARTITION BY TPR.TPS_SCORE_NAME ORDER BY TPS_KEYNO) AS RN
+                     , TPR.*
+		       		 , TMM.MN_NAME
+            FROM t_page_research_manager TPR
+            LEFT JOIN s_menu_manager TMM
+            ON		TPR.TPS_MN_KEYNO = TMM.MN_KEYNO
+              
+            WHERE TPS_MN_KEYNO = #{TPS_MN_KEYNO}
+            ORDER BY TPS_SCORE DESC
+        ) A
+        WHERE RN = 1
+    </select>
+    
+
+    <!-- 페이지 평가 스킨 등록  -->
+    <insert id="PRS_insert">
+    	INSERT INTO t_page_research_skin
+    	(
+			 PRS_KEYNO
+			,PRS_FORM
+			,PRS_REGDT
+			,PRS_REGNM
+			,PRS_SUBJECT
+    	)
+    	VALUES
+    	(
+    		 #{PRS_KEYNO}
+			,#{PRS_FORM}
+			,SYSDATE
+			,#{PRS_REGNM}
+			,#{PRS_SUBJECT}
+    	)
+    </insert>
+    
+    <select id="PRS_getData" resultType="hashmap" resultMap="SatisfactionMap">
+     SELECT  TO_CHAR(PRS.PRS_REGDT, 'YYYY-MM-DD HH24:MI:SS') PRS_REGDT
+			,TO_CHAR(PRS.PRS_MODDT, 'YYYY-MM-DD HH24:MI:SS') PRS_MODDT
+		    , NVL(U.UI_REP_NAME,PRS_REGNM) PRS_REGNM
+		    , NVL(U2.UI_REP_NAME,PRS_MODNM) PRS_MODNM				
+     		,PRS.*
+     FROM t_page_research_skin PRS
+		    LEFT JOIN u_userinfo U
+		    ON		PRS.PRS_REGNM	=	U.UI_ID
+		    LEFT JOIN u_userinfo U2
+		    ON		PRS.PRS_MODNM	=	U2.UI_ID       
+     WHERE PRS_DEL_YN = 'N'
+     	<if test="PRS_KEYNO != null and PRS_KEYNO != ''">
+		AND PRS_KEYNO = #{PRS_KEYNO}
+		</if>
+    </select>
+    
+      	<sql id="PRS_getListBody">
+      	FROM(
+      		SELECT AB.* , ROW_NUMBER() OVER(
+      				<choose>
+	 		<when test="orderBy == 1">
+	 		ORDER BY	COUNT ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 2">
+	 		ORDER BY	PRS_SUBJECT ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 3">
+	 		ORDER BY	PRS_REGNM ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 4">
+	 		ORDER BY	PRS_REGDT ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 5">
+	 		ORDER BY	PRS_MODNM ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 6">
+	 		ORDER BY	PRS_MODDT ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 7">
+	 		ORDER BY	PRS_USE ${sortDirect}
+	 		</when>	 			 			 		 		
+	 		<otherwise>
+	 		ORDER BY PRS_KEYNO DESC
+	 		</otherwise>
+	 	</choose>	
+      		)RNUM
+		FROM(
+     		 SELECT AA.*, ROWNUM AS COUNT
+      		 FROM (
+					SELECT 	  PRS_KEYNO
+		    		, SUBSTR(PRS_REGDT,0, 10) PRS_REGDT
+		    		, SUBSTR(PRS_MODDT,0, 10) PRS_MODDT
+		    		, NVL(U.UI_REP_NAME,PRS_REGNM) PRS_UI_NAME
+		    		, NVL(U2.UI_REP_NAME,PRS_MODNM) PRS_MODNM
+		    		, PRS_SUBJECT
+		    		, DECODE((SELECT COUNT(*) FROM s_home_manager WHERE HM_RESEARCH_SKIN = PRS_KEYNO), 0, 'N', 'Y') PRS_USE
+		   			 FROM t_page_research_skin P 
+		   			 LEFT JOIN u_userinfo U
+		    		ON		P.PRS_REGNM	=	U.UI_ID
+		   			 LEFT JOIN u_userinfo U2
+		    		ON		P.PRS_MODNM	=	U2.UI_ID		    		
+		    		WHERE PRS_DEL_YN = 'N'
+					)AA
+			) AB
+		WHERE 1=1
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT 						LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		PRS_SUBJECT					LIKE '%' || #{item.searchKeyword} || '%'						
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		PRS_REGNM					LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		PRS_REGDT 					LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		PRS_MODNM 					LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("6")'>
+ 		AND		PRS_MODDT 					LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>
+	 			<when test='item.searchIndex.equals("7")'>
+ 		AND		PRS_USE 					LIKE '%' || #{item.searchKeyword} || '%'					
+	 			</when>				 				 				 			
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT 					LIKE '%' || #{item.searchKeyword} || '%' 				OR
+ 				PRS_SUBJECT 			LIKE '%' || #{item.searchKeyword} || '%' 				OR
+ 				PRS_REGNM				LIKE '%' || #{item.searchKeyword} || '%' 				OR
+ 				PRS_REGDT 				LIKE '%' || #{item.searchKeyword} || '%'				OR
+ 				PRS_MODNM 				LIKE '%' || #{item.searchKeyword} || '%'				OR
+ 				PRS_MODDT 				LIKE '%' || #{item.searchKeyword} || '%'				OR
+ 				PRS_USE 				LIKE '%' || #{item.searchKeyword} || '%'				
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+		) BB
+	</sql>
+     
+    <select id="PRS_getListCnt" resultType="int">
+			SELECT	COUNT(*)
+		<include  refid="PRS_getListBody"/>
+    </select>
+    
+    <select id="PRS_getList" resultMap="ResultMap.rownumHashMap">
+		SELECT	*
+	<include  refid="PRS_getListBody"/>
+		<if test="recordCountPerPage != 0">
+		 	WHERE RNUM BETWEEN #{firstIndex}+1 AND #{lastIndex}
+		</if> 
+    </select>
+    
+     <select id="PRS_getFormList" resultType="hashmap" resultMap="SatisfactionMap">
+    SELECT PRS_KEYNO, PRS_FORM, PRS_SUBJECT, 'FORM'||TO_NUMBER(SUBSTR(PRS_KEYNO,-10)) FORM_NAME
+    FROM t_page_research_skin
+    WHERE PRS_DEL_YN = 'N'
+    </select>
+    
+        <update id="PRS_update">
+    	UPDATE t_page_research_skin
+    	SET   PRS_SUBJECT = #{PRS_SUBJECT}
+    		, PRS_FORM = #{PRS_FORM}
+    		, PRS_MODDT = SYSDATE
+    		, PRS_MODNM = #{PRS_MODNM}
+    	WHERE PRS_KEYNO = #{PRS_KEYNO}
+    </update>
+    
+    <update id="PRS_delete">
+    	UPDATE t_page_research_skin
+    	SET PRS_DEL_YN = 'Y'
+    	WHERE PRS_KEYNO = #{PRS_KEYNO}
+    </update>
+    
+         <!-- 스킨 히스토리 리스트 -->
+	<select id="PRSH_getList" resultType="hashmap" resultMap="SatisfactionMap">
+		SELECT 		TO_CHAR(A.PRSH_STDT, 'YYYY-MM-DD HH24:MI:SS') PRSH_STDT_B
+				 	, TO_CHAR(A.PRSH_ENDT, 'YYYY-MM-DD HH24:MI:SS') PRSH_ENDT_B
+				 	, NVL(U.UI_REP_NAME,PRSH_MODNM) PRSH_MODNM	
+					, A.*
+		FROM t_page_research_skin_history A
+		LEFT JOIN u_userinfo U
+		ON		A.PRSH_MODNM	=	U.UI_ID			
+		WHERE		PRSH_PRS_KEYNO	=	#{PRS_KEYNO}
+		AND			PRSH_DEL_YN		=	'N'
+		ORDER BY	PRSH_ENDT DESC
+	</select>
+	
+		<!-- 스킨 히스토리 작성일 -->
+	<select id="get_historyDate" resultType="String">
+		SELECT 	CASE WHEN PRS_MODDT IS NULL THEN PRS_REGDT ELSE PRS_MODDT END REGDT
+		FROM t_page_research_skin
+		WHERE 	PRS_KEYNO 	=  #{PRS_KEYNO}
+		AND   	PRS_DEL_YN 	= 'N'
+	</select>
+	
+			<!-- 스킨 히스토리버전 -->	
+	<select id="get_historyVersion" resultType="double">
+		SELECT NVL(MAX(PRSH_VERSION),0)
+		FROM t_page_research_skin_history
+		WHERE PRSH_PRS_KEYNO = #{PRS_KEYNO}
+	</select>
+	
+		<!-- 스킨 히스토리 등록 -->
+	<insert id ="PRSH_insert" parameterType="ResearchSkinDTO">
+		INSERT INTO t_page_research_skin_history(
+			 PRSH_KEYNO
+			,PRSH_PRS_KEYNO
+			,PRSH_DATA
+			,PRSH_STDT
+			,PRSH_ENDT
+			,PRSH_MODNM
+			,PRSH_VERSION
+			,PRSH_COMMENT
+			)
+		VALUES(
+			 #{PRSH_KEYNO}
+			,#{PRSH_PRS_KEYNO}
+			,#{PRSH_DATA}
+			,TO_DATE(#{PRSH_STDT},'YYYY-MM-DD HH24:MI:SS')
+			,SYSDATE
+			,#{PRSH_MODNM}
+			,#{PRSH_VERSION}
+			,#{PRSH_COMMENT}
+			)
+	</insert>
+	
+		<!--  스킨 히스토리 데이터 -->
+	<select id="PRSH_getData" parameterType="ResearchSkinDTO" resultType="ResearchSkinDTO">
+		SELECT 		*
+		FROM t_page_research_skin_history
+		WHERE		PRSH_KEYNO	=	#{PRSH_KEYNO}
+	</select>		
+ 
+     	<!-- 스킨 히스토리 비교 데이터 -->
+	<select id="PRSH_compareData" parameterType="ResearchSkinDTO" resultType="ResearchSkinDTO">
+		<if test='PRS_KEYNO != "undefined"'>
+			SELECT       PRS_FORM 
+	        FROM t_page_research_skin 
+	        WHERE       PRS_KEYNO   =   #{PRS_KEYNO}
+			UNION ALL
+		</if>
+		<![CDATA[
+		(
+			SELECT 		PRSH_DATA PRS_FORM
+			FROM (
+				SELECT PRSH_DATA
+					   ,ROW_NUMBER() OVER(ORDER BY PRSH_STDT DESC) AS SS
+			FROM t_page_research_skin_history
+			WHERE		PRSH_PRS_KEYNO	= (
+											SELECT PRSH_PRS_KEYNO 
+											FROM t_page_research_skin_history
+											WHERE PRSH_KEYNO   =  #{PRSH_KEYNO}
+										  )
+			AND			PRSH_DEL_YN		=	'N'
+	        AND			PRSH_KEYNO		<=  #{PRSH_KEYNO}
+			ORDER BY	PRSH_ENDT DESC
+			)
+			WHERE SS <= 2
+		)
+		]]>
+	</select> 
+	
+	 <!-- 스킨 사용여부 검사 -->
+	<select id="PRS_getSkinUsing"  resultType="int">
+			SELECT 	COUNT(*)
+			FROM s_home_manager 
+			WHERE 	HM_RESEARCH_SKIN = #{PRS_KEYNO}
+	</select>    
+	
+	  <!-- 스킨 사용중인 홈페이지 출력 -->
+	<select id="PRS_getSkinUsingHP" parameterType="ResearchSkinDTO" resultType="Hashmap">
+	SELECT LISTAGG(M.MN_NAME,',') WITHIN GROUP(ORDER BY M.MN_NAME) PRS_HP
+	FROM s_home_manager
+	LEFT JOIN s_menu_manager M
+	ON HM_MN_HOMEDIV_C = M.MN_KEYNO
+	WHERE HM_RESEARCH_SKIN = #{PRS_KEYNO}
+	</select> 	
+        
+    <select id="getSkinForm" resultType="String">
+        SELECT     PRS_FORM
+        FROM t_page_research_skin
+        WHERE     PRS_KEYNO = #{PRS_KEYNO}
+    </select>
+    
+</mapper>
+ 

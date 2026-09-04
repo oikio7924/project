@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BoardMainMini"> 
+	<resultMap id="MainMiniMap" type="HashMap">
+		<result property="BMM_FORM" column="BMM_FORM" jdbcType="CLOB" javaType="java.lang.String"/>
+	</resultMap>
+  	
+  	<sql id="BMM_getListBody">
+  		FROM(
+  			SELECT AA.*
+		  			, ROW_NUMBER() OVER (
+		    		<choose>
+				 		<when test='orderBy.equals("1")'>
+				 		ORDER BY	COUNT ${sortDirect}
+				 		</when>
+				 		<when test='orderBy.equals("2")'>
+				 		ORDER BY	BMM_SUBJECT ${sortDirect}
+				 		</when>
+				 		<when test='orderBy.equals("3")'>
+				 		ORDER BY	BMM_HOME_NAME ${sortDirect}
+				 		</when>
+				 		<when test='orderBy.equals("4")'>
+				 		ORDER BY	BMM_MN_NAME ${sortDirect}
+				 		</when>
+				 		<when test='orderBy.equals("5")'>
+				 		ORDER BY	BMM_SIZE ${sortDirect}
+				 		</when>
+				 		<when test='orderBy.equals("6")'>
+				 		ORDER BY	BMM_UI_NAME ${sortDirect}
+				 		</when>
+				 		<when test='orderBy.equals("7")'>
+				 		ORDER BY	BMM_REGDT ${sortDirect}
+				 		</when>
+				 		<otherwise>
+				 		ORDER BY BMM_KEYNO DESC
+				 		</otherwise>
+				 	</choose>
+			 		) RNUM
+			FROM(
+				SELECT 	  BMM_KEYNO
+						, ROWNUM COUNT
+			    		, TO_CHAR(BMM_REGDT,'YYYY-MM-dd') BMM_REGDT
+			    		, NVL(U.UI_REP_NAME,BMM_REGNM) BMM_UI_NAME
+			    		, M2.MN_NAME BMM_HOME_NAME
+			    		, BMM_SIZE
+			    		, M1.MN_NAME BMM_MN_NAME
+			    		, BMM_SUBJECT
+			    FROM b_board_mainmini B 
+			    LEFT JOIN u_userinfo U
+			    ON		B.BMM_REGNM	=	U.UI_KEYNO
+			    LEFT JOIN s_menu_manager M1
+			    ON		B.BMM_MN_KEYNO	=	M1.MN_KEYNO
+			    LEFT JOIN s_menu_manager M2
+			    ON		B.BMM_MN_HOMEDIV_C	=	M2.MN_KEYNO
+				WHERE BMM_DELYN = 'N'
+			)AA
+			WHERE 1=1
+			
+			<if test="searchList != null">
+		 	<foreach collection="searchList" item="item">
+		 		<choose>
+		 			<when test='item.searchIndex.equals("1")'>
+	 		AND		COUNT 			LIKE '%' || #{item.searchKeyword} || '%'			
+		 			</when>
+		 			<when test='item.searchIndex.equals("2")'>
+	 		AND		BMM_SUBJECT				LIKE '%' || #{item.searchKeyword} || '%'				
+		 			</when>
+		 			<when test='item.searchIndex.equals("3")'>
+	 		AND		BMM_HOME_NAME				LIKE '%' || #{item.searchKeyword} || '%'				
+		 			</when>
+		 			<when test='item.searchIndex.equals("4")'>
+	 		AND		BMM_MN_NAME 				LIKE '%' || #{item.searchKeyword} || '%'				
+		 			</when>
+		 			<when test='item.searchIndex.equals("5")'>
+	 		AND		BMM_SIZE			=	#{item.searchKeyword}					
+		 			</when>
+		 			<when test='item.searchIndex.equals("6")'>
+	 		AND		BMM_UI_NAME 	LIKE '%' || #{item.searchKeyword} || '%'				
+		 			</when>
+		 			<when test='item.searchIndex.equals("7")'>
+	 		AND		BMM_REGDT 		LIKE '%' || #{item.searchKeyword} || '%'					
+		 			</when>
+		 			<when test='item.searchIndex.equals("all")'>
+	 		AND (
+	 				COUNT 			LIKE '%' || #{item.searchKeyword} || '%'				OR
+	 				BMM_SUBJECT				LIKE '%' || #{item.searchKeyword} || '%' 	OR
+	 				BMM_HOME_NAME				LIKE '%' || #{item.searchKeyword} || '%' 	OR
+	 				BMM_MN_NAME 				LIKE '%' || #{item.searchKeyword} || '%' 	OR
+	 				BMM_SIZE			=	#{item.searchKeyword}  							OR
+	 				BMM_UI_NAME 	LIKE '%' || #{item.searchKeyword} || '%'  		OR
+	 				BMM_REGDT 		LIKE '%' || #{item.searchKeyword} || '%'					
+	 		)							
+		 			</when>
+		 		</choose>
+		 	</foreach>
+		 	</if>
+	 	) AAA
+		
+	</sql>
+	
+    <select id="BMM_getListCnt" resultType="int">
+			SELECT	COUNT(*)
+		<include  refid="BMM_getListBody"/>
+    </select>
+    
+    <select id="BMM_getList" resultType="hashmap">
+		SELECT	*
+		<include  refid="BMM_getListBody"/>
+		<if test="recordCountPerPage != 0">
+		WHERE 1=1
+	 	AND RNUM BETWEEN #{firstIndex}+1 AND #{lastIndex}
+		</if> 	
+		
+    </select>
+    
+    <insert id="BMM_insert">
+    	INSERT INTO b_board_mainmini(
+				 BMM_KEYNO
+				,BMM_MN_KEYNO
+				,BMM_SIZE
+				,BMM_FORM
+				,BMM_REGDT
+				,BMM_REGNM
+				,BMM_MN_HOMEDIV_C
+				,BMM_SUBJECT
+				,BMM_SORT_COLUMN
+				,BMM_SORT_DIRECTION
+				)
+		VALUES(
+				 #{BMM_KEYNO}
+				,#{BMM_MN_KEYNO}
+				,#{BMM_SIZE}
+				,#{BMM_FORM}
+				,SYSDATE
+				,#{BMM_REGNM}
+				,#{BMM_MN_HOMEDIV_C}
+				,#{BMM_SUBJECT}
+				,#{BMM_SORT_COLUMN}
+				,#{BMM_SORT_DIRECTION}
+			)
+    </insert>
+    
+    <select id="BMM_getData" resultType="hashmap" resultMap="MainMiniMap">
+	   	SELECT 	  BMM_KEYNO
+	   			, 'BMM'||TO_NUMBER(SUBSTR(BMM_KEYNO,-10)) KEYNO
+	    		, TO_CHAR(BMM_REGDT,'YYYY-MM-dd') BMM_REGDT
+	    		, NVL(U.UI_REP_NAME,BMM_REGNM) BMM_UI_NAME
+	    		, M2.MN_NAME BMM_HOME_NAME
+	    		, M2.MN_URL BMM_MN_HOMEDIV_URL
+	    		, BMM_SIZE
+	    		, M1.MN_NAME BMM_MNNAME
+	    		, BMM_FORM
+	    		, BMM_MN_HOMEDIV_C
+	    		, BMM_MN_KEYNO
+	    		, M3.HM_TILES BMM_MN_HOMEDIV_TILES
+	    		, BMM_SUBJECT
+	    		, BMM_SORT_COLUMN
+	    		, BMM_SORT_DIRECTION
+	    FROM b_board_mainmini B 
+	    LEFT JOIN u_userinfo U
+	    ON		B.BMM_REGNM	=	U.UI_KEYNO
+	    LEFT JOIN s_menu_manager M1
+	    ON		B.BMM_MN_KEYNO	=	M1.MN_KEYNO
+	    LEFT JOIN s_menu_manager M2
+	    ON		B.BMM_MN_HOMEDIV_C	=	M2.MN_KEYNO
+	    LEFT JOIN s_home_manager M3
+	    ON		B.BMM_MN_HOMEDIV_C	=	M3.HM_MN_HOMEDIV_C
+		WHERE BMM_DELYN = 'N'
+		<if test="BMM_MN_HOMEDIV_C != null and BMM_MN_HOMEDIV_C != ''">
+		AND BMM_MN_HOMEDIV_C = #{BMM_MN_HOMEDIV_C}
+		</if>
+		<if test="BMM_KEYNO != null and BMM_KEYNO != ''">
+		AND BMM_KEYNO = #{BMM_KEYNO}
+		</if>
+    </select>
+    
+    <update id="BMM_update">
+    	UPDATE b_board_mainmini
+    	SET   BMM_SIZE = #{BMM_SIZE}
+    		, BMM_FORM = #{BMM_FORM}
+    		, BMM_SUBJECT = #{BMM_SUBJECT}
+    		, BMM_SORT_COLUMN = #{BMM_SORT_COLUMN}
+			, BMM_SORT_DIRECTION = #{BMM_SORT_DIRECTION}
+    	WHERE BMM_KEYNO = #{BMM_KEYNO}
+    </update>
+    
+    <update id="BMM_delete">
+    	UPDATE b_board_mainmini
+    	SET BMM_DELYN = 'Y'
+    	WHERE BMM_KEYNO = #{BMM_KEYNO}
+    </update>
+    
+    <select id="BoardColumn_List" resultType="hashmap">
+    	SELECT 'COLUMN'||BL_KEYNO DATASET, BL.BL_COLUMN_NAME COMMENT_NAME 
+		FROM b_board_column BL, S_MENU_MANAGER MN
+		WHERE BL.BL_BT_KEYNO = MN.MN_BT_KEYNO
+		AND   MN.MN_KEYNO = #{MN_KEYNO}
+		AND   BL.BL_USE_YN = 'Y'
+    </select>
+    
+    <select id="User_Board_List" resultType="hashmap">
+    	SELECT *
+    	FROM (SELECT	*
+	    	FROM(
+				SELECT 		BN_KEYNO
+							, NVL(U.UI_REP_NAME,BN_REGNM) BN_REGNM
+							, TO_CHAR(BN_REGDT,'YYYY-MM-dd') BN_REGDT
+							, FS.FS_PUBLIC_PATH THUMBNAIL_PUBLIC_PATH
+							, (FS.FS_FOLDER || FS.FS_CHANGENM || '.' || FS.FS_EXT) AS THUMBNAIL_PATH
+							<foreach collection="BoardColumnList" item="column">
+							<choose>
+								<!-- 라디오(코드), 셀렉트(코드)  -->
+								<when test='column.BL_TYPE.equals(BOARD_COLUMN_TYPE_RADIO_CODE) or column.BL_TYPE.equals(BOARD_COLUMN_TYPE_SELECT_CODE)'>
+							,  SC${column.KEYNO}.SC_CODENM COLUMN${column.KEYNO}
+								</when>
+								<!-- 체크(코드) -->
+								<when test='column.BL_TYPE.equals(BOARD_COLUMN_TYPE_CHECK_CODE)'>
+							, (
+								SELECT LISTAGG(SC_CODENM,', ') WITHIN GROUP (ORDER BY SC_KEYNO) TYPE
+								FROM s_common_code_sub
+								WHERE INSTR(BCD${column.KEYNO}.BD_DATA, SC_KEYNO, 1, 1)  > 0
+							) COLUMN${column.KEYNO}	  
+								</when>
+								<!-- 체크  -->
+								<when test='column.BL_TYPE.equals(BOARD_COLUMN_TYPE_CHECK)'>
+							,  REPLACE(BCD${column.KEYNO}.BD_DATA,'|',', ') COLUMN${column.KEYNO}
+								</when>
+								<otherwise>
+							,  BCD${column.KEYNO}.BD_DATA COLUMN${column.KEYNO}	
+								</otherwise>
+							</choose>
+							</foreach>
+				FROM b_board_notice B
+				LEFT JOIN u_userinfo U
+				ON			B.BN_REGNM	=	U.UI_KEYNO
+	            LEFT JOIN s_common_file_sub FS
+           		ON          B.BN_THUMBNAIL = FS.FS_KEYNO
+				<foreach collection="BoardColumnList" item="column">
+				LEFT JOIN b_board_column_data BCD${column.KEYNO}
+				ON			B.BN_KEYNO	=	BCD${column.KEYNO}.BD_BN_KEYNO AND BCD${column.KEYNO}.BD_BL_KEYNO = #{column.BL_KEYNO}
+				<!-- 라디오(코드), 셀렉트(코드)  -->
+				<if test='column.BL_TYPE.equals(BOARD_COLUMN_TYPE_RADIO_CODE) or column.BL_TYPE.equals(BOARD_COLUMN_TYPE_SELECT_CODE)'>
+				LEFT JOIN s_common_code_sub SC${column.KEYNO}
+				ON			BCD${column.KEYNO}.BD_DATA = SC${column.KEYNO}.SC_KEYNO		
+				</if> 
+				</foreach>
+				WHERE 		BN_MN_KEYNO = #{MN_KEYNO}
+				AND BN_DEL_YN = 'N'
+				AND BN_USE_YN = 'Y'
+				<!-- 답글의 경우 표시 X  -->
+				AND BN_PARENTKEY IS NULL
+			)AA
+			<choose>
+				<when test="BMM_SORT_COLUMN != null and BMM_SORT_COLUMN != '' ">
+				ORDER BY	${BMM_SORT_COLUMN} ${BMM_SORT_DIRECTION}
+				</when>
+				<otherwise>
+				ORDER BY	BN_KEYNO DESC
+				</otherwise>
+			</choose>
+	)AAA
+	<![CDATA[
+   	WHERE ROWNUM <= #{SIZE}
+   	]]>
+    </select>
+    
+     <select id="BMM_getFormList" resultType="hashmap" resultMap="MainMiniMap">
+    	SELECT BMM_KEYNO, BMM_FORM, 'FORM'||TO_NUMBER(SUBSTR(BMM_KEYNO,-10)) FORM_NAME, BMM_SUBJECT
+    	FROM b_board_mainmini
+    	WHERE BMM_DELYN = 'N'
+    </select>
+    
+    <select id="getSkinForm" resultType="String">
+        SELECT     BMM_FORM
+        FROM b_board_mainmini
+        WHERE     BMM_KEYNO = #{BMM_KEYNO}
+    </select>
+</mapper>
+ 

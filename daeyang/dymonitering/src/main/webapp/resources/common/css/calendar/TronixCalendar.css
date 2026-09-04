@@ -1,0 +1,25 @@
+.year_month{ font-size: 19px; color: #434343; text-align: center; margin:15px 0px;}
+.tronixTable{ width: 100%; border: 1px solid #d1d1d1;}
+.colTitle{ height: 28px;}
+.colTitle > th { text-align: center;}
+.tronixTr{ height: 94px; }
+.tronixTr > td > span { text-align: left;display: block;}
+.tronixTh{ border: 1px solid #d1d1d1; font-weight: normal; width: 14%; vertical-align: middle;} 
+.tronixTd{ border: 1px solid #d1d1d1; vertical-align: top; color: #000000; padding: 3px;text-align: center;}
+.tronixThead{ font-size: 12px; color: #66666c; background-color: #edeef2;}
+.tronixThead th{text-align: center;}
+ul.tronixSchedules:HOVER {box-shadow:2px 2px 2px #bbb; }
+.prevMonth, .nextMonth{margin: 0 18px; cursor: pointer; height: 19px;}
+.tronixSunday{color: #eb0026;}
+.tronixSaturday{color: #0078ff;}
+.tronixSchedules li{font-size: 11px; color: #66666c; }
+.tronixSchedules li a{font-size: 11px; color: #66666c; }
+.tronixSchedules li a.acclink:HOVER{ background-color: #666; color:white;}
+.ticketDay{background: #c8e4ec; cursor: pointer;}
+.clickDay span{color: #fff;}
+.clickDay{background: #397fc6;}
+.ticketDay:HOVER{background: #397fc6;}
+.ticketDay:HOVER span{ color: #fff;}
+.tronixThead .sun{color: #eb0026;}
+.tronixThead .sat{color: #0078ff;}
+.click{background-color: yellow;}

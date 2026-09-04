@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="li"> 
+	
+
+	<!-- 허가신청(append표) 데이터 추출 -->
+	<select id="main_liView" resultType="LicenseDTO">
+		
+		select *
+		from dy_license_main
+		where dlm_dpp_keyno = #{dls_dpp_keyno}
+		and dlm_now = #{dls_now}
+		
+	</select>
+	
+	
+	<!-- 허가신청데이터(append표) 등록 -->
+	<insert id="main_liInsert" parameterType="LicenseDTO">
+       	INSERT INTO dy_license_main
+		(
+				  dlm_address
+				, dlm_street
+				, dlm_area
+				, dlm_land
+				, dlm_use
+				, dlm_usage
+				, dlm_dpp_keyno
+				, dlm_type
+				, dlm_now
+				, dlm_purpose
+				, dlm_trueAddress
+				, dlm_connDate
+				, dlm_endDate
+		)
+		VALUES
+		(
+				  #{dlm_address}
+				, #{dlm_street}
+				, #{dlm_area}
+				, #{dlm_land}
+				, #{dlm_use}
+				, #{dlm_usage}
+				, #{dls_dpp_keyno}
+				, #{dlm_type}
+				, #{dls_now}
+				, #{dlm_purpose}
+				, #{dlm_trueAddress}
+				, #{dlm_connDate}
+				, #{dlm_endDate}
+		)
+    </insert>
+    
+    <!-- 허가신청데이터(append표) 업데이트 -->
+    <update id="main_liUpdate" parameterType="LicenseDTO">
+       	UPDATE dy_license_main
+       	SET 
+			  dlm_address 	=  #{dlm_address}
+			, dlm_street 	=  #{dlm_street}
+			, dlm_area		=  #{dlm_area}
+			, dlm_land		=  #{dlm_land}
+			, dlm_use		=  #{dlm_use}
+			, dlm_usage		=  #{dlm_usage}
+			, dlm_type		=  #{dlm_type}
+			, dlm_purpose	=  #{dlm_purpose}
+			, dlm_trueAddress	=  #{dlm_trueAddress}
+			, dlm_connDate	=  #{dlm_connDate}
+			, dlm_endDate	=  #{dlm_endDate}
+		
+		WHERE dlm_dpp_keyno 	= #{dls_dpp_keyno}
+		and dlm_now =  #{dls_now}
+    </update>
+    
+    <!-- 신청내역 전체 데이터 추출 -->
+	<select id="app_liView" resultType="LicenseDTO">
+		
+		select *
+		from dy_license_app
+		where dls_app_dpp_keyno = #{dls_dpp_keyno}
+		and dls_now = #{dls_now}
+		
+	</select>
+    
+    
+    <!-- 신청내역 전체 데이터 등록 -->
+	<insert id="app_liInsert" parameterType="LicenseDTO">
+       	INSERT INTO dy_license_app
+		(
+		      dls_app_dpp_keyno,
+		      dls_app_plant,
+		      dls_app_vol1,
+		      dls_app_vol2,
+		      dls_app_address,
+		      dls_app_form,
+		      dls_app_appDate,
+		      dls_app_dueDate,
+		      dls_app_appNum,
+		      dls_app_cusNum,
+		      dls_app_appPeriod,
+		      dls_app_module,
+		      dls_app_inverter,
+		      dls_app_appModule,
+		      dls_app_weight,
+		      dls_app_jsgDate,
+		      dls_app_swgDate,
+		      dls_app_jgjDate,
+		      dls_app_jgpDate,
+		      dls_now
+		)
+		VALUES
+		(
+		      #{dls_dpp_keyno},
+		      #{dls_app_plant},
+		      #{dls_app_vol1},
+		      #{dls_app_vol2},
+		      #{dls_app_address},
+		      #{dls_app_form},
+		      #{dls_app_appDate},
+		      #{dls_app_dueDate},
+		      #{dls_app_appNum},
+		      #{dls_app_cusNum},
+		      #{dls_app_appPeriod},
+		      #{dls_app_module},
+		      #{dls_app_inverter},
+		      #{dls_app_appModule},
+		      #{dls_app_weight},
+		      #{dls_app_jsgDate},
+		      #{dls_app_swgDate},
+		      #{dls_app_jgjDate},
+		      #{dls_app_jgpDate},
+		      #{dls_now}
+		);
+    </insert>
+	
+	<!-- 신청내역 전체 데이터 업데이트 -->
+	<update id="app_liUpdate" parameterType="LicenseDTO">
+       	UPDATE dy_license_app
+       	SET 
+			dls_app_plant       = #{dls_app_plant},
+			dls_app_vol1        = #{dls_app_vol1},
+			dls_app_vol2        = #{dls_app_vol2},
+			dls_app_address     = #{dls_app_address},
+			dls_app_form        = #{dls_app_form},
+			dls_app_appDate     = #{dls_app_appDate},
+			dls_app_dueDate     = #{dls_app_dueDate},
+			dls_app_appNum      = #{dls_app_appNum},
+			dls_app_cusNum      = #{dls_app_cusNum},
+			dls_app_appPeriod   = #{dls_app_appPeriod},
+			dls_app_module      = #{dls_app_module},
+			dls_app_inverter    = #{dls_app_inverter},
+			dls_app_appModule   = #{dls_app_appModule},
+			dls_app_weight      = #{dls_app_weight},
+			dls_app_jsgDate     = #{dls_app_jsgDate},
+			dls_app_swgDate     = #{dls_app_swgDate},
+			dls_app_jgjDate     = #{dls_app_jgjDate},
+			dls_app_jgpDate     = #{dls_app_jgpDate}
+		
+		WHERE dls_app_dpp_keyno 	= #{dls_dpp_keyno}
+		and dls_now =  #{dls_now}
+    </update>
+    
+    
+    <!-- 담당자 데이터 추출 -->
+	<select id="man_liView" resultType="LicenseDTO">
+		
+		select *
+		from dy_license_man
+		where dls_man_dpp_keyno = #{dls_dpp_keyno}
+		and dls_now = #{dls_now}
+		
+	</select>
+	
+    <!-- 담당자 데이터 연동을 위한 발전사업허가 담당자 추출 -->
+	<select id="man_liView_link" resultType="LicenseDTO">
+		select *
+		from dy_license_man
+		where dls_man_dpp_keyno = #{dls_dpp_keyno}
+		and dls_now = '1'
+	</select>
+	
+	<!-- 담당자 데이터 등록 -->
+	<insert id="man_liInsert" parameterType="LicenseDTO">
+       	INSERT INTO dy_license_man
+		(
+		      dls_man_dpp_keyno,
+		      dls_man_ceoName,
+		      dls_man_ceoAddress,
+		      dls_man_ceoPhone,
+		      dls_man_ceoEmail,
+		      dls_man_daeName,
+		      dls_man_daeDepart,
+		      dls_man_daePostion,
+		      dls_man_daePhone,
+		      dls_man_daeEmail,
+		      dls_man_govName,
+		      dls_man_govDepart,
+		      dls_man_govPhone,
+		      dls_man_serCoName,
+		      dls_man_serName,
+		      dls_man_serDepart,
+		      dls_man_serPhone,
+		      dls_man_serEmail,
+		      dls_man_gamName,
+		      dls_man_gamPeriod,
+		      dls_now,
+		      dls_man_type
+		)
+		VALUES
+		(
+		      #{dls_dpp_keyno},
+		      #{dls_man_ceoName},
+		      #{dls_man_ceoAddress},
+		      #{dls_man_ceoPhone},
+		      #{dls_man_ceoEmail},
+		      #{dls_man_daeName},
+		      #{dls_man_daeDepart},
+		      #{dls_man_daePostion},
+		      #{dls_man_daePhone},
+		      #{dls_man_daeEmail},
+		      #{dls_man_govName},
+		      #{dls_man_govDepart},
+		      #{dls_man_govPhone},
+		      #{dls_man_serCoName},
+		      #{dls_man_serName},
+		      #{dls_man_serDepart},
+		      #{dls_man_serPhone},
+		      #{dls_man_serEmail},
+		      #{dls_man_gamName},
+		      #{dls_man_gamPeriod},
+		      #{dls_now},
+		      #{dls_man_type}
+		);
+    </insert>
+    
+    <!-- 담당자 데이터 업데이트 -->
+    <update id="man_liUpdate" parameterType="LicenseDTO">
+       	UPDATE dy_license_man
+		SET
+		    dls_man_ceoName     = #{dls_man_ceoName},
+		    dls_man_ceoAddress  = #{dls_man_ceoAddress},
+		    dls_man_ceoPhone    = #{dls_man_ceoPhone},
+		    dls_man_ceoEmail    = #{dls_man_ceoEmail},
+		    dls_man_daeName     = #{dls_man_daeName},
+		    dls_man_daeDepart   = #{dls_man_daeDepart},
+		    dls_man_daePostion  = #{dls_man_daePostion},
+		    dls_man_daePhone    = #{dls_man_daePhone},
+		    dls_man_daeEmail    = #{dls_man_daeEmail},
+		    dls_man_govName     = #{dls_man_govName},
+		    dls_man_govDepart   = #{dls_man_govDepart},
+		    dls_man_govPhone    = #{dls_man_govPhone},
+		    dls_man_serCoName   = #{dls_man_serCoName},
+		    dls_man_serName     = #{dls_man_serName},
+		    dls_man_serDepart   = #{dls_man_serDepart},
+		    dls_man_serPhone    = #{dls_man_serPhone},
+		    dls_man_serEmail    = #{dls_man_serEmail},
+		    dls_man_gamName     = #{dls_man_gamName},
+		    dls_man_gamPeriod   = #{dls_man_gamPeriod},
+		    dls_man_type   = #{dls_man_type}
+		
+		WHERE dls_man_dpp_keyno  	= #{dls_dpp_keyno}
+		and dls_now =  #{dls_now}
+    </update>
+	
+	<!-- 설비구성 데이터 추출 -->
+	<select id="com_liView" resultType="LicenseDTO">
+		
+		select *
+		from dy_license_com
+		where dls_com_dpp_keyno = #{dls_dpp_keyno}
+		and dls_now = #{dls_now}
+		
+	</select>
+	
+	<!-- 설비구성 데이터 등록 -->
+	<insert id="com_liInsert" parameterType="LicenseDTO">
+       	INSERT INTO dy_license_com
+		(
+		      dls_com_dpp_keyno,
+		      dls_com_moName,
+		      dls_com_moVolum,
+		      dls_com_moQuantity,
+		      dls_com_moEtc,
+		      dls_com_inName,
+		      dls_com_invVolum,
+		      dls_com_inQuantity,
+		      dls_com_inEtc,
+		      dls_com_connName,
+		      dls_com_connVolum,
+		      dls_com_connQuantity,
+		      dls_com_connEtc,
+		      dls_now
+		)
+		VALUES
+		(
+		      #{dls_dpp_keyno},
+		      #{dls_com_moName},
+		      #{dls_com_moVolum},
+		      #{dls_com_moQuantity},
+		      #{dls_com_moEtc},
+		      #{dls_com_inName},
+		      #{dls_com_invVolum},
+		      #{dls_com_inQuantity},
+		      #{dls_com_inEtc},
+		      #{dls_com_connName},
+		      #{dls_com_connVolum},
+		      #{dls_com_connQuantity},
+		      #{dls_com_connEtc},
+		      #{dls_now}
+		);
+    </insert>
+    
+    <!-- 설비구성 데이터 업데이트 -->
+    <update id="com_liUpdate" parameterType="LicenseDTO">
+       	UPDATE dy_license_com
+		SET
+		    dls_com_moName       = #{dls_com_moName},
+		    dls_com_moVolum      = #{dls_com_moVolum},
+		    dls_com_moQuantity   = #{dls_com_moQuantity},
+		    dls_com_moEtc        = #{dls_com_moEtc},
+		    dls_com_inName       = #{dls_com_inName},
+		    dls_com_invVolum     = #{dls_com_invVolum},
+		    dls_com_inQuantity   = #{dls_com_inQuantity},
+		    dls_com_inEtc        = #{dls_com_inEtc},
+		    dls_com_connName     = #{dls_com_connName},
+		    dls_com_connVolum    = #{dls_com_connVolum},
+		    dls_com_connQuantity = #{dls_com_connQuantity},
+		    dls_com_connEtc      = #{dls_com_connEtc}
+		
+		WHERE dls_com_dpp_keyno  	= #{dls_dpp_keyno}
+		and dls_now =  #{dls_now}
+    </update>
+	
+	<!-- 서브 업데이트시 현재진행 최신화 -->
+	<update id="li_plant_update" parameterType="LicenseDTO">
+		UPDATE dy_power_plant
+		SET DPP_DLS_KEYNO = #{dls_now}
+		WHERE DPP_KEYNO = #{dls_dpp_keyno}
+	</update>
+	
+	
+	
+</mapper>

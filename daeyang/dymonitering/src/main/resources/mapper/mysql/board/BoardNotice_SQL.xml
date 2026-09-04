@@ -1,0 +1,1298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BoardNotice"> 
+  	
+  	
+  	<sql id="BN_getDataListBody">
+		FROM(
+			SELECT 		BN_KEYNO
+						<choose>
+							<when test='NumberingType != null and NumberingType.equals("V")'>
+						, @rownum:=@rownum+1 as NUM
+							</when>
+							<otherwise>
+						, CAST(RIGHT(BN_KEYNO,10) AS UNSIGNED ) NUM	
+							</otherwise>
+						</choose>
+						, IFNULL(U.UI_REP_NAME,BN_REGNM) BN_UI_NAME
+						, LEFT(BN_REGDT,19) BN_REGDT
+						, BN_USE_YN  
+						, BN_DEL_YN
+						, BN_CATEGORY_NAME
+						, CASE
+							WHEN BN_DEL_YN = 'Y' THEN BN_DELETE_IP
+							WHEN BN_DEL_YN = 'N' AND BN_UPDATE_IP IS NOT NULL THEN BN_UPDATE_IP
+							ELSE BN_INSERT_IP
+						END BN_IP
+						, CASE 
+							WHEN BN_DEL_YN = 'Y' THEN '삭제'
+							WHEN BN_USE_YN = 'Y' THEN '사용'
+							ELSE '미사용'
+						END BN_USE
+						<foreach collection="BoardColumnList" item="column">
+						<choose>
+							<!-- 라디오(코드), 셀렉트(코드)  -->
+							<when test='column.BL_TYPE.equals(BOARD_COLUMN_TYPE_RADIO_CODE) or column.BL_TYPE.equals(BOARD_COLUMN_TYPE_SELECT_CODE)'>
+						,  SC${column.KEYNO}.SC_CODENM BD_DATA_${column.KEYNO}
+							</when>
+							<!-- 체크(코드) -->
+							<when test='column.BL_TYPE.equals(BOARD_COLUMN_TYPE_CHECK_CODE)'>
+						, (
+							SELECT	GROUP_CONCAT(SC_CODENM SEPARATOR ', ')
+							FROM	s_common_code_sub
+							WHERE	INSTR(BCD${column.KEYNO}.BD_DATA,SC_KEYNO) > 0
+						) BD_DATA_${column.KEYNO}	  
+							</when>
+							<!-- 체크  -->
+							<when test='column.BL_TYPE.equals(BOARD_COLUMN_TYPE_CHECK)'>
+						,  REPLACE(BCD${column.KEYNO}.BD_DATA,'|',', ') BD_DATA_${column.KEYNO}
+							</when>
+							<otherwise>
+						,  BCD${column.KEYNO}.BD_DATA BD_DATA_${column.KEYNO}	
+							</otherwise>
+						</choose>
+						</foreach>
+			FROM b_board_notice B
+			LEFT JOIN 	u_userinfo U
+			ON			B.BN_REGNM	=	U.UI_KEYNO
+			<foreach collection="BoardColumnList" item="column">
+			LEFT JOIN b_board_column_data BCD${column.KEYNO}
+			ON			B.BN_KEYNO	=	BCD${column.KEYNO}.BD_BN_KEYNO AND BCD${column.KEYNO}.BD_BL_KEYNO = #{column.BL_KEYNO}
+			<!-- 라디오(코드), 셀렉트(코드)  -->
+			<if test='column.BL_TYPE.equals(BOARD_COLUMN_TYPE_RADIO_CODE) or column.BL_TYPE.equals(BOARD_COLUMN_TYPE_SELECT_CODE)'>
+			LEFT JOIN	s_common_code_sub SC${column.KEYNO}
+			ON			BCD${column.KEYNO}.BD_DATA = SC${column.KEYNO}.SC_KEYNO		
+			</if> 
+			</foreach>
+			,(SELECT @rownum:=0)TMP
+			WHERE 		BN_MN_KEYNO = #{MN_KEYNO}
+		)AA
+		WHERE 1=1
+		
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		NUM 						LIKE CONCAT('%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		BN_UI_NAME					LIKE CONCAT('%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		BN_REGDT 					LIKE CONCAT('%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		BN_IP				LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		BN_USE						LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				NUM 						LIKE CONCAT('%',#{item.searchKeyword},'%') 	OR
+ 				BN_UI_NAME					LIKE CONCAT('%',#{item.searchKeyword},'%') 	OR
+ 				BN_REGDT 					LIKE CONCAT('%',#{item.searchKeyword},'%') 	OR
+ 				<foreach collection="BoardColumnList" item="column">
+				BD_DATA_${column.KEYNO}		LIKE CONCAT('%',#{item.searchKeyword},'%')	OR
+				</foreach>
+ 				BN_USE						LIKE CONCAT( '%',#{item.searchKeyword},'%') OR					
+ 				BN_IP						LIKE CONCAT( '%',#{item.searchKeyword},'%')  						
+ 		)							
+	 			</when>
+	 			<otherwise>
+		 			<foreach collection="BoardColumnList" item="column">
+		 				<if test='item.searchIndex.equals("data"+column.KEYNO)'>
+		AND		BD_DATA_${column.KEYNO}		LIKE CONCAT('%',#{item.searchKeyword},'%')
+		 				</if>
+					</foreach>
+	 			</otherwise>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+		
+	</sql>
+	
+	<!--  게시물 관리 - 게시물  갯수-->
+    <select id="BN_getDataListCnt" resultType="int">
+			SELECT	COUNT(*)
+		<include  refid="BN_getDataListBody"/>
+    </select>
+    
+    <!--  게시물 관리 - 게시물 -->
+    <select id="BN_getDataList" resultType="hashmap" resultMap="ResultMap.rownumHashMap2">
+		SELECT	*
+		<include  refid="BN_getDataListBody"/>
+		
+		<choose>
+	 		<when test='orderBy.equals("1")'>
+	 		ORDER BY	NUM ${sortDirect}
+	 		</when>
+	 		<when test='orderBy.equals("2")'>
+	 		ORDER BY	BN_UI_NAME ${sortDirect}
+	 		</when>
+	 		<when test='orderBy.equals("3")'>
+	 		ORDER BY	BN_REGDT ${sortDirect}
+	 		</when>
+	 		<when test='orderBy.equals("4")'>
+	 		ORDER BY	BN_IP ${sortDirect}
+	 		</when>
+	 		<when test='orderBy.equals("5")'>
+	 		ORDER BY	BN_USE ${sortDirect}
+	 		</when>
+	 		<when test='orderBy.equals("")'>
+	 		ORDER BY 	BN_REGDT DESC
+	 		</when>
+	 		<otherwise>
+	 		<foreach collection="BoardColumnList" item="column">
+ 				<if test='orderBy.equals("data"+column.KEYNO)'>
+			ORDER BY	BD_DATA_${column.KEYNO} ${sortDirect}
+ 				</if>
+			</foreach>
+	 		</otherwise>
+	 	</choose>
+		<if test="recordCountPerPage != 0">
+		 	LIMIT  	#{recordCountPerPage} OFFSET #{firstIndex}
+		</if> 	
+		
+    </select>
+	
+  	<!-- 메인 리스트 -->
+	<select id="BN_getList" resultType="hashmap" parameterType="BoardNotice">
+		SELECT * 
+		FROM b_board_notice BN
+		LEFT JOIN b_board_column_data BD
+		ON BN.BN_KEYNO = BD.BD_BN_KEYNO
+		WHERE BN_USE_YN = 'Y'
+		AND   BN_DEL_YN = 'N'
+		AND	  BD_BL_TYPE = 
+		    <choose>
+		    	<when test='BN_MN_KEYNO.equals("MN_0000000364")'>
+		    	'SC_SACUX'
+		    	</when>
+		    	<otherwise>
+		    	'SC_URZCF'
+		    	</otherwise>
+		    </choose>
+		AND   BN_MN_KEYNO = #{BN_MN_KEYNO}
+		ORDER BY BN_REGDT DESC
+		LIMIT 9
+    </select>
+    
+
+    
+  	<select id="BN_getDataAdmin" resultType="HashMap" parameterType="String">
+		SELECT BN.*
+			   , CONCAT(FS.FS_FOLDER, FS.FS_CHANGENM , '.' , FS.FS_EXT) AS THUMBNAIL_PATH
+			   , FS.FS_ORINM AS THUMBNAIL_ORINM 
+			   , FS.FS_PUBLIC_PATH THUMBNAIL_PUBLIC_PATH
+			   ,IFNULL(U.UI_REP_NAME,BN_REGNM) BN_UI_NAME
+			   ,IFNULL(U2.UI_REP_NAME,BN_MODNM) BN_MOD_UI_NAME 
+			   ,IFNULL(U3.UI_REP_NAME,BN_DELNM) BN_DEL_UI_NAME 
+		FROM b_board_notice BN
+		LEFT JOIN s_common_file_sub FS
+		ON BN.BN_THUMBNAIL = FS.FS_KEYNO
+		LEFT JOIN 	u_userinfo U
+		ON			BN.BN_REGNM	=	U.UI_KEYNO
+		LEFT JOIN 	u_userinfo U2
+		ON			BN.BN_MODNM	=	U2.UI_KEYNO
+		LEFT JOIN 	u_userinfo U3
+		ON			BN.BN_DELNM	=	U3.UI_KEYNO
+		WHERE BN_KEYNO  = #{BN_KEYNO}
+		
+    </select> 
+  	
+  	
+  	<select id="BN_getData" resultMap="ResultMap.rownumHashMap4">
+		SELECT 	BN.*
+				, BND.BN_REGNM WRITE_ID
+			    , CONCAT(FS.FS_FOLDER, FS.FS_CHANGENM , '.' , FS.FS_EXT) AS THUMBNAIL_PATH
+			    , FS.FS_ORINM AS THUMBNAIL_ORINM
+			    , FS.FS_PUBLIC_PATH THUMBNAIL_PUBLIC_PATH
+			    , IFNULL(U.UI_REP_NAME, BN.BN_REGNM) BN_UI_NAME 
+			    , IFNULL(U2.UI_REP_NAME,BN.BN_MODNM) BN_MOD_UI_NAME 
+		FROM b_board_notice BN
+		LEFT JOIN 	s_common_file_sub FS
+		ON 			BN.BN_THUMBNAIL = FS.FS_KEYNO
+		LEFT JOIN 	u_userinfo U
+		ON			BN.BN_REGNM	=	U.UI_KEYNO
+		LEFT JOIN 	u_userinfo U2
+		ON			BN.BN_MODNM	=	U2.UI_KEYNO
+		LEFT JOIN b_board_notice BND
+		ON			BN.BN_PARENTKEY = BND.BN_KEYNO 
+		WHERE BN.BN_KEYNO  = #{BN_KEYNO}
+		
+    </select> 
+    
+  	<select id="BN_getDataForDetail" resultMap="ResultMap.rownumHashMap4">
+		SELECT 	BN.*
+				, BND.BN_REGNM WRITE_ID
+			    , CONCAT(FS.FS_FOLDER, FS.FS_CHANGENM , '.' , FS.FS_EXT) AS THUMBNAIL_PATH
+			    , FS.FS_ORINM AS THUMBNAIL_ORINM
+			    , FS.FS_PUBLIC_PATH THUMBNAIL_PUBLIC_PATH
+			    , IFNULL(U.UI_REP_NAME, BN.BN_REGNM) BN_UI_NAME 
+			    , IFNULL(U2.UI_REP_NAME,BN.BN_MODNM) BN_MOD_UI_NAME 
+			    , (SELECT COUNT(*)
+					FROM b_board_comment
+					WHERE BC_BN_KEYNO = #{BN_KEYNO}
+					<if test='BT_DEL_COMMENT_YN == "N"'>
+					AND   BC_DEL_YN = 'N'
+					</if>
+				  ) REPLYCOUNT
+				, (
+					SELECT BOARD_NUMBER
+					FROM (
+						SELECT	B.*
+								, @ROWNUM := @ROWNUM + 1 AS BOARD_NUMBER
+						FROM b_board_notice B, (SELECT @ROWNUM := 0) R
+						WHERE 	B.BN_MN_KEYNO = (SELECT BN_MN_KEYNO FROM b_board_notice WHERE BN_KEYNO = #{BN_KEYNO})
+						AND     B.BN_USE_YN   = 'Y'
+						AND     B.BN_DEL_YN   = 'N'
+						<if test='BT_SHOW_MINE_YN == "Y" and isAdmin != "Y"'>
+						AND		B.BN_REGNM = #{UI_KEYNO}
+						</if>
+						ORDER BY BN_MAINKEY, BN_SEQ DESC
+					) A 
+					WHERE A.BN_KEYNO = BN.BN_KEYNO
+				)  BOARD_NUMBER
+		FROM b_board_notice BN
+		LEFT JOIN 	s_common_file_sub FS
+		ON 			BN.BN_THUMBNAIL = FS.FS_KEYNO
+		LEFT JOIN 	u_userinfo U
+		ON			BN.BN_REGNM	=	U.UI_KEYNO
+		LEFT JOIN 	u_userinfo U2
+		ON			BN.BN_MODNM	=	U2.UI_KEYNO
+		LEFT JOIN b_board_notice BND
+		ON			BN.BN_PARENTKEY = BND.BN_KEYNO 
+		WHERE BN.BN_KEYNO  = #{BN_KEYNO}
+		
+    </select> 
+    
+    <!-- 이전 / 다음글 -->
+    <select id="BN_getPrevNext" resultType="hashmap">
+		SELECT 	CASE BOARD_NUMBER WHEN #{BOARD_NUMBER} - 1 THEN 'prevBoardNotice' ELSE 'nextBoardNotice' END prevNextType
+				, A.*
+		FROM (
+			SELECT	BN_TITLE
+					, BN_KEYNO
+					, @ROWNUM := @ROWNUM + 1 AS BOARD_NUMBER
+			FROM b_board_notice B, (SELECT @ROWNUM := 0) R
+			WHERE 	B.BN_MN_KEYNO = (SELECT BN_MN_KEYNO FROM b_board_notice WHERE BN_KEYNO = #{BN_KEYNO})
+			AND     B.BN_USE_YN   = 'Y'
+			AND     B.BN_DEL_YN   = 'N'
+			<if test='BT_SHOW_MINE_YN == "Y" and isAdmin != "Y"'>
+			AND		B.BN_REGNM = #{UI_KEYNO}
+			</if>
+			ORDER BY BN_MAINKEY, BN_SEQ DESC
+		) A 
+		WHERE BOARD_NUMBER  in(#{BOARD_NUMBER} - 1,#{BOARD_NUMBER} + 1)
+		
+    </select>
+    
+    
+    <!-- 게시물 답글 등록시 정렬순서 셋팅 -->
+    <update id="BN_updateSeq" parameterType="BoardNotice">
+    	UPDATE b_board_notice
+    	SET		BN_SEQ		=	BN_SEQ + 1
+    	WHERE	BN_SEQ		>=	#{BN_SEQ}
+    	AND		BN_MAINKEY	=	#{BN_MAINKEY}		
+    
+    </update>
+    
+    <insert id="BN_insert" parameterType="BoardNotice">
+    
+	<![CDATA[
+		INSERT INTO b_board_notice(
+				BN_KEYNO,
+				BN_MN_KEYNO,
+				BN_FM_KEYNO,
+				BN_TITLE,
+				BN_CONTENTS,
+				BN_REGNM,
+				BN_PWD,
+				BN_REGDT,
+				BN_USE_YN,
+				BN_SECRET_YN,
+				BN_THUMBNAIL,
+				BN_IMPORTANT,
+				BN_MAINKEY,
+				BN_PARENTKEY,
+				BN_SEQ,
+				BN_DEPTH,
+				BN_CATEGORY_NAME,
+				BN_INSERT_IP,
+                BN_CONTENTS_SEARCH,
+                BN_PLANT_NAME,
+                BN_HTMLMAKER_PLUS_TYPE
+			]]>
+				<if test="BN_IMPORTANT_DATE != null and BN_IMPORTANT_DATE != '' ">
+				<![CDATA[
+				,BN_IMPORTANT_DATE
+				]]>
+				</if>
+				,BN_GONGNULI_TYPE
+				,BN_SEND_CHECK
+		<![CDATA[
+				)
+		VALUES(
+				#{BN_KEYNO},
+				#{BN_MN_KEYNO},
+				#{BN_FM_KEYNO},
+				#{BN_TITLE},
+				#{BN_CONTENTS},
+				#{BN_REGNM},
+				#{BN_PWD},
+				SYSDATE(),
+				'Y',
+				#{BN_SECRET_YN},
+				#{BN_THUMBNAIL},
+				#{BN_IMPORTANT},
+				#{BN_MAINKEY},
+				#{BN_PARENTKEY},
+				#{BN_SEQ},
+				#{BN_DEPTH},
+				#{BN_CATEGORY_NAME},
+				#{BN_INSERT_IP},
+                #{BN_CONTENTS_SEARCH},
+                #{BN_PLANT_NAME},
+                #{BN_HTMLMAKER_PLUS_TYPE}
+			]]>
+				<if test="BN_IMPORTANT_DATE != null and BN_IMPORTANT_DATE != '' ">
+				<![CDATA[
+				,#{BN_IMPORTANT_DATE}
+				]]>
+				</if>
+				<![CDATA[
+				,#{BN_GONGNULI_TYPE}
+				,#{BN_SEND_CHECK}
+				)
+		]]>
+	</insert>
+	
+	<update id="BN_update" parameterType="BoardNotice">
+		<![CDATA[
+		UPDATE b_board_notice 
+		SET		BN_FM_KEYNO			= #{BN_FM_KEYNO},
+				BN_TITLE			= #{BN_TITLE},
+				BN_CONTENTS			= #{BN_CONTENTS},
+				BN_MODNM			= #{BN_MODNM},
+				BN_MODDT			= SYSDATE(),
+				BN_SECRET_YN		= #{BN_SECRET_YN},
+				BN_THUMBNAIL		= #{BN_THUMBNAIL},
+				BN_GONGNULI_TYPE	= #{BN_GONGNULI_TYPE},
+				BN_IMPORTANT		= #{BN_IMPORTANT},
+				BN_CATEGORY_NAME 	= #{BN_CATEGORY_NAME},
+				BN_UPDATE_IP        = #{BN_UPDATE_IP},
+                BN_CONTENTS_SEARCH  = #{BN_CONTENTS_SEARCH},
+                BN_PLANT_NAME   	= #{BN_PLANT_NAME}
+		]]>
+		<if test="BN_IMPORTANT_DATE != null and BN_IMPORTANT_DATE != '' ">
+			<![CDATA[
+			,BN_IMPORTANT_DATE	= #{BN_IMPORTANT_DATE}
+			]]>
+		</if>
+		<if test="BN_MOVE_MEMO != null and BN_MOVE_MEMO != '' ">
+			<![CDATA[
+			,BN_MOVE_MEMO	= #{BN_MOVE_MEMO}
+			]]>
+		</if>
+		<if test="BN_IMPORTANT_DATE == null or BN_IMPORTANT_DATE == '' ">
+			<![CDATA[
+			,BN_IMPORTANT_DATE	= null
+			]]>
+		</if>
+		<![CDATA[
+		WHERE   BN_KEYNO		= #{BN_KEYNO}
+		]]>
+	</update>
+	
+	<update id="BN_stateModify" parameterType="BoardNotice">
+		UPDATE b_board_notice
+		<if test="BN_DEL_YN != null and BN_DEL_YN != ''">
+		SET	 BN_DEL_YN		= #{BN_DEL_YN},
+			 BN_DEL_MEMO	= #{BN_DEL_MEMO},
+			 BN_DELDT		= SYSDATE(),
+			 BN_DELNM		= #{BN_DELNM},
+			 BN_DELETE_IP	= #{BN_DELETE_IP}
+		</if>
+		<if test="BN_USE_YN != null and BN_USE_YN != ''">
+		SET	 BN_USE_YN		= #{BN_USE_YN}
+		</if>		  
+		WHERE	 BN_KEYNO 		= #{BN_KEYNO}	
+	 </update>
+	 
+	 <delete id="BN_columnHistoryDelete" parameterType="BoardNotice">
+	 	DELETE	FROM b_board_column_data_history
+	 	WHERE	BDH_BD_BN_KEYNO 	=	#{BN_KEYNO}	
+	 </delete>
+	 <delete id="BN_columnDataDelete" parameterType="BoardNotice">
+	 	DELETE	FROM b_board_column_data
+	 	WHERE	BD_BN_KEYNO		=	#{BN_KEYNO}	
+	 </delete>
+	 <delete id="BN_historyDelete" parameterType="BoardNotice">
+	 	DELETE	FROM b_board_notice_history
+	 	WHERE	BNH_BN_KEYNO	=	#{BN_KEYNO}	
+	 </delete>
+	 <delete id="BN_delete" parameterType="BoardNotice">
+	 	DELETE	FROM b_board_notice
+	 	WHERE	BN_KEYNO	=	#{BN_KEYNO}	
+	 </delete>
+    
+    <select id="BN_getUserDataCount" resultType="int">
+		<choose>
+			<when test='searchCondition == "file"'>
+				SELECT COUNT(*)
+				FROM (
+					SELECT 		BN.*
+					FROM b_board_notice BN
+					WHERE     	BN.BN_MN_KEYNO 	= 	#{BN_MN_KEYNO}
+					AND       	BN.BN_USE_YN   	= 	'Y'
+					<if test='BT_REPLY_YN == "N"'>
+					AND		  	BN.BN_DEPTH		=	0
+					</if>
+					<if test='BT_DEL_LISTVIEW_YN == "N"'>
+					AND		  	BN.BN_DEL_YN	=	'N'
+					</if>
+					<if test='BT_SHOW_MINE_YN == "Y" and isAdmin != "Y"'>
+					AND			BN.BN_REGNM = #{UI_KEYNO}
+					</if>
+					<if test="BN_CATEGORY_NAME != null and BN_CATEGORY_NAME !=''" >
+				    AND       	BN.BN_CATEGORY_NAME = #{BN_CATEGORY_NAME}
+				    </if>
+					<if test="DPPKEY != null and DPPKEY !=''" >
+				    AND       	BN.BN_PLANT_NAME = #{DPPKEY}
+				    </if>
+				    <foreach collection="plantList" item="plant" open="(" close=")" separator="OR" >
+								BN.BN_PLANT_NAME = ${plant.DPP_KEYNO}
+					</foreach>
+					AND			(
+								BN.BN_IMPORTANT 		= 	'N' 
+								OR			
+								(BN.BN_IMPORTANT 		= 	'Y' AND BN.BN_IMPORTANT_DATE	<![CDATA[<]]> CURRENT_DATE())
+							)
+				) A	
+				LEFT JOIN   s_common_file_sub FS
+				ON 			A.BN_FM_KEYNO  = FS.FS_FM_KEYNO
+				<if test="searchKeyword != null and searchKeyword != '' ">
+				WHERE	 FS.FS_ORINM LIKE '%' #{searchKeyword} '%'	
+				</if>
+			</when>
+			<otherwise>
+				SELECT 		COUNT(*)
+				FROM b_board_notice BN
+				LEFT JOIN 	u_userinfo U
+				ON			BN.BN_REGNM	=	U.UI_KEYNO
+				WHERE     	BN.BN_MN_KEYNO 	= 	#{BN_MN_KEYNO}
+				AND       	BN.BN_USE_YN   	= 	'Y'
+				<if test='BT_REPLY_YN == "N"'>
+				AND		  	BN.BN_DEPTH		=	0
+				</if>
+				<if test='BT_DEL_LISTVIEW_YN == "N"'>
+				AND		  	BN.BN_DEL_YN	=	'N'
+				</if>
+				<if test='BT_SHOW_MINE_YN == "Y" and isAdmin != "Y"'>
+				AND			BN.BN_REGNM = #{UI_KEYNO}
+				</if>
+				<if test="BN_CATEGORY_NAME != null and BN_CATEGORY_NAME !=''" >
+				AND       	BN.BN_CATEGORY_NAME = #{BN_CATEGORY_NAME}
+				</if>
+				<if test="DPPKEY != null and DPPKEY !=''" >
+			    AND       	BN.BN_PLANT_NAME = #{DPPKEY}
+			    </if>
+				AND
+			    <foreach collection="plantList" item="plant" open="(" close=")" separator="OR" >
+							BN.BN_PLANT_NAME = ${plant.DPP_KEYNO}
+				</foreach>
+				AND			(
+								BN.BN_IMPORTANT 		= 	'N' 
+								OR			
+								(BN.BN_IMPORTANT 		= 	'Y' AND BN.BN_IMPORTANT_DATE	<![CDATA[<]]> CURRENT_DATE())
+							)
+				<if test="searchKeyword != null and searchKeyword != '' ">
+					<choose>
+						<when test='searchCondition == "all"'>
+						AND		(
+									(
+										SELECT CONCAT(GROUP_CONCAT(IFNULL(BD_DATA,'')) ,GROUP_CONCAT(IFNULL(SC_CODENM,''))) 
+									    FROM b_board_column_data A
+									    LEFT JOIN s_common_code_sub B
+									    ON A.BD_DATA = B.SC_KEYNO 
+									    WHERE BD_BN_KEYNO = BN.BN_KEYNO
+									)	LIKE '%' #{searchKeyword} '%'
+									OR
+									BN.BN_CONTENTS LIKE '%' #{searchKeyword} '%'
+									OR
+									IFNULL(U.UI_REP_NAME,BN_REGNM) LIKE '%' #{searchKeyword} '%'
+								)		
+						</when>
+						<when test='searchCondition == "title"'>
+						AND		 BN.BN_TITLE LIKE '%' #{searchKeyword} '%' 			
+						</when>
+						<when test='searchCondition == "contents"'>
+						AND		 ( BN.BN_TITLE LIKE '%' #{searchKeyword} '%' OR BN.BN_CONTENTS LIKE '%' #{searchKeyword} '%' )		
+						</when>
+						<when test='searchCondition == "writer"'>
+						AND		 IFNULL(U.UI_REP_NAME,BN_REGNM) LIKE '%' #{searchKeyword} '%'		
+						</when>
+						<otherwise>
+						AND		(
+									SELECT CONCAT(IFNULL(BD_DATA,'') ,IFNULL(SC_CODENM,''))
+								    FROM b_board_column_data A
+								    LEFT JOIN s_common_code_sub B
+								    ON A.BD_DATA = B.SC_KEYNO 
+								    WHERE BD_BL_KEYNO = #{searchCondition} 
+								    AND BD_BN_KEYNO = BN.BN_KEYNO
+								)	LIKE '%' #{searchKeyword} '%'
+						</otherwise>
+					</choose>
+				</if>
+			</otherwise>
+		</choose>
+    </select>
+    
+    <!-- 비밀글 답글작성시 원본글 작성자가 답글 읽을수 있게 수정  cf 쪽에 적용 -->
+    <select id="BN_getUserDataList" resultType="HashMap">
+		<choose>
+			<when test='searchCondition == "file"'>
+				SELECT A.*, file.FS_KEYNO, GROUP_CONCAT(file.FS_ORINM) fileNames
+				FROM (
+					SELECT 	BOARD_TYPE
+							, NUM
+							, BN.*
+							, BND.BN_REGNM WRITE_ID
+							,(SELECT COUNT(*) FROM b_board_column_data WHERE BD_BL_TYPE = 'SC_PJDGH' AND BD_BN_KEYNO = BN.BN_KEYNO AND BD_DATA != '') BN_LINK
+							, CONCAT(FS.FS_FOLDER, FS.FS_CHANGENM , '.' , FS.FS_EXT) AS THUMBNAIL_PATH
+							, FS.FS_PUBLIC_PATH THUMBNAIL_PUBLIC_PATH
+							,IFNULL(U.UI_REP_NAME, BN.BN_REGNM) BN_UI_NAME
+							,CASE WHEN DATE_FORMAT(BN.BN_REGDT,'%Y%m%d') = DATE_FORMAT(NOW(),'%Y%m%d') THEN '1' ELSE '0' END BN_NEW 
+							,(SELECT COUNT(*) FROM s_common_file_sub WHERE FS_FM_KEYNO = BN.BN_FM_KEYNO) FILE_COUNT
+							,(SELECT COUNT(*) FROM b_board_comment WHERE BC_BN_KEYNO = BN.BN_KEYNO
+							<if test='BT_DEL_COMMENT_YN == "N"'>
+							AND BC_DEL_YN = 'N'
+							</if>
+							) BN_BC_COUNT
+							<foreach collection="BoardColumnList" item="column">
+							<choose>
+								<!-- 라디오(코드), 셀렉트(코드)  -->
+								<when test='column.BL_TYPE.equals(BOARD_COLUMN_TYPE_RADIO_CODE) or column.BL_TYPE.equals(BOARD_COLUMN_TYPE_SELECT_CODE)'>
+							,  SC${column.KEYNO}.SC_CODENM BD_DATA_${column.KEYNO}
+								</when>
+								<!-- 체크(코드) -->
+								<when test='column.BL_TYPE.equals(BOARD_COLUMN_TYPE_CHECK_CODE)'>
+							, (
+								SELECT	GROUP_CONCAT(SC_CODENM SEPARATOR ', ')
+								FROM	s_common_code_sub
+								WHERE	INSTR(BCD${column.KEYNO}.BD_DATA,SC_KEYNO) > 0
+							) BD_DATA_${column.KEYNO}	  
+								</when>
+								<!-- 체크  -->
+								<when test='column.BL_TYPE.equals(BOARD_COLUMN_TYPE_CHECK)'>
+							,  REPLACE(BCD${column.KEYNO}.BD_DATA,'|',', ') BD_DATA_${column.KEYNO}
+								</when>
+							<when test='column.BL_TYPE.equals(BOARD_COLUMN_TYPE_TITLE)'>
+							 <choose>
+							 	<when test="BT_SUBJECT_NUM != null and BT_SUBJECT_NUM != ''">
+							 	,	CASE
+							 			WHEN CHAR_LENGTH(BCD${column.KEYNO}.BD_DATA) > #{BT_SUBJECT_NUM}
+							 			THEN CONCAT(LEFT(BCD${column.KEYNO}.BD_DATA, #{BT_SUBJECT_NUM}),"...")
+							 			ELSE BCD${column.KEYNO}.BD_DATA
+										END BD_DATA_${column.KEYNO}
+							 	</when>
+							 	<otherwise>
+								,  BCD${column.KEYNO}.BD_DATA BD_DATA_${column.KEYNO}	
+							 	</otherwise>
+							 </choose>
+							</when>
+								<otherwise>
+							,  BCD${column.KEYNO}.BD_DATA BD_DATA_${column.KEYNO}	
+								</otherwise>
+							</choose>
+							</foreach>
+							, P.DPP_NAME
+					FROM (
+						SELECT * FROM (
+							SELECT		'NOTICE' BOARD_TYPE
+										, '' NUM
+										, BN.BN_KEYNO
+										, '' BN_MAINKEY
+										, '' BN_SEQ
+										, '' BN_HITS
+										, '' BN_PLANT_NAME
+							FROM b_board_notice BN
+							WHERE		BN.BN_MN_KEYNO 			= 	#{BN_MN_KEYNO}
+							AND			BN.BN_USE_YN   			= 	'Y'
+							AND			BN.BN_DEL_YN   			= 	'N'
+							AND			BN.BN_IMPORTANT 		= 	'Y' 
+							AND			(IFNULL(BN.BN_IMPORTANT_DATE,'') = '' OR BN.BN_IMPORTANT_DATE	>= 	CURRENT_DATE())
+							ORDER BY  	BN.BN_KEYNO 	DESC
+							LIMIT		10000	-- 바로 위의 오더바이가 무시되서 LIMIT을 임의로 추가함 
+						) AA
+						UNION ALL
+						SELECT * FROM (
+							SELECT * FROM (    
+								SELECT 		'NORMAL' BOARD_TYPE
+											<choose>
+												<when test='NumberingType != null and NumberingType.equals("V")'>
+											, @rownum:=@rownum+1 as NUM
+												</when>
+												<otherwise>
+											, CAST(RIGHT(BN.BN_KEYNO,10) AS UNSIGNED ) NUM									
+												</otherwise>
+											</choose>
+											, BN.BN_KEYNO
+											, BN.BN_MAINKEY
+											, BN.BN_SEQ
+											, BN.BN_HITS
+											, BN.BN_PLANT_NAME
+									FROM 	  	(SELECT @rownum:=0) TMP, B_BOARD_NOTICE BN
+								LEFT JOIN 	u_userinfo U
+								ON			BN.BN_REGNM	=	U.UI_KEYNO					WHERE     	BN.BN_MN_KEYNO 	= 	#{BN_MN_KEYNO}
+								AND       	BN.BN_USE_YN   	= 	'Y'
+								<if test='BT_REPLY_YN == "N"'>
+								AND		  	BN.BN_DEPTH		=	0
+								</if>
+								<if test='BT_DEL_LISTVIEW_YN == "N"'>
+								AND		  	BN.BN_DEL_YN	=	'N'
+								</if>
+								<if test='BT_SHOW_MINE_YN == "Y" and isAdmin != "Y"'>
+								AND			BN.BN_REGNM = #{UI_KEYNO}
+								</if>
+								<if test="BN_CATEGORY_NAME != null and BN_CATEGORY_NAME !=''" >
+						        AND       	BN.BN_CATEGORY_NAME = #{BN_CATEGORY_NAME}
+						        </if>
+						        <if test="DPPKEY != null and DPPKEY !=''" >
+							    AND       	BN.BN_PLANT_NAME = #{DPPKEY}
+							    </if>
+						        AND
+							    <foreach collection="plantList" item="plant" open="(" close=")" separator="OR" >
+											BN.BN_PLANT_NAME = ${plant.DPP_KEYNO}
+								</foreach>
+								AND			(
+												BN.BN_IMPORTANT 		= 	'N' 
+												OR			
+												(BN.BN_IMPORTANT 		= 	'Y' AND BN.BN_IMPORTANT_DATE	<![CDATA[<]]> CURRENT_DATE())
+											)
+							) CC
+							<choose>
+								<when test='orderCondition == "A"'>
+							ORDER BY  CC.BN_MAINKEY DESC, BN_SEQ 		
+								</when>
+								<when test='orderCondition == "B"'>
+							ORDER BY  CC.BN_HITS DESC,CC.BN_MAINKEY DESC, BN_SEQ 	
+								</when>
+								<otherwise>
+							ORDER BY  CC.BN_MAINKEY DESC, BN_SEQ 
+								</otherwise>
+							</choose>
+						) BB
+					) A
+					LEFT JOIN b_board_notice BN 
+					ON A.BN_KEYNO = BN.BN_KEYNO
+					LEFT JOIN dy_power_plant P 
+					ON A.BN_PLANT_NAME = P.DPP_KEYNO
+					LEFT JOIN u_userinfo U
+					ON BN.BN_REGNM = U.UI_KEYNO
+					LEFT JOIN s_common_file_sub FS
+					ON BN.BN_THUMBNAIL = FS.FS_KEYNO
+					LEFT JOIN b_board_notice BND
+					ON BN.BN_PARENTKEY = BND.BN_KEYNO
+					<foreach collection="BoardColumnList" item="column">
+					LEFT JOIN b_board_column_data BCD${column.KEYNO}
+					ON			BN.BN_KEYNO	=	BCD${column.KEYNO}.BD_BN_KEYNO AND BCD${column.KEYNO}.BD_BL_KEYNO = #{column.BL_KEYNO}
+					<!-- 라디오(코드), 셀렉트(코드)  -->
+					<if test='column.BL_TYPE.equals(BOARD_COLUMN_TYPE_RADIO_CODE) or column.BL_TYPE.equals(BOARD_COLUMN_TYPE_SELECT_CODE)'>
+					LEFT JOIN	s_common_code_sub SC${column.KEYNO}
+					ON			BCD${column.KEYNO}.BD_DATA = SC${column.KEYNO}.SC_KEYNO		
+					</if> 
+					</foreach>	
+				) A	
+				LEFT JOIN   s_common_file_sub file
+				ON 			A.BN_FM_KEYNO  = file.FS_FM_KEYNO
+				<if test="searchKeyword != null and searchKeyword != '' ">
+				WHERE	 file.FS_ORINM LIKE '%' #{searchKeyword} '%'	
+		    	</if>
+		    	GROUP BY A.BN_KEYNO
+		    	LIMIT  	#{recordCountPerPage} OFFSET #{firstIndex}
+			</when>
+			<otherwise>
+				SELECT 	BOARD_TYPE
+						, NUM
+						, BN.*
+						, BND.BN_REGNM WRITE_ID
+						,(SELECT COUNT(*) FROM b_board_column_data WHERE BD_BL_TYPE = 'SC_PJDGH' AND BD_BN_KEYNO = BN.BN_KEYNO AND BD_DATA != '') BN_LINK
+						, CONCAT(FS.FS_FOLDER, FS.FS_CHANGENM , '.' , FS.FS_EXT) AS THUMBNAIL_PATH
+						, FS.FS_PUBLIC_PATH THUMBNAIL_PUBLIC_PATH
+						,IFNULL(U.UI_REP_NAME, BN.BN_REGNM) BN_UI_NAME
+						,CASE WHEN DATE_FORMAT(BN.BN_REGDT,'%Y%m%d') = DATE_FORMAT(NOW(),'%Y%m%d') THEN '1' ELSE '0' END BN_NEW 
+						,(SELECT COUNT(*) FROM s_common_file_sub WHERE FS_FM_KEYNO = BN.BN_FM_KEYNO) FILE_COUNT
+						,(SELECT COUNT(*) FROM b_board_comment WHERE BC_BN_KEYNO = BN.BN_KEYNO
+						<if test='BT_DEL_COMMENT_YN == "N"'>
+						AND BC_DEL_YN = 'N'
+						</if>
+						) BN_BC_COUNT
+						<foreach collection="BoardColumnList" item="column">
+						<choose>
+							<!-- 라디오(코드), 셀렉트(코드)  -->
+							<when test='column.BL_TYPE.equals(BOARD_COLUMN_TYPE_RADIO_CODE) or column.BL_TYPE.equals(BOARD_COLUMN_TYPE_SELECT_CODE)'>
+						,  SC${column.KEYNO}.SC_CODENM BD_DATA_${column.KEYNO}
+							</when>
+							<!-- 체크(코드) -->
+							<when test='column.BL_TYPE.equals(BOARD_COLUMN_TYPE_CHECK_CODE)'>
+						, (
+							SELECT	GROUP_CONCAT(SC_CODENM SEPARATOR ', ')
+							FROM	s_common_code_sub
+							WHERE	INSTR(BCD${column.KEYNO}.BD_DATA,SC_KEYNO) > 0
+						) BD_DATA_${column.KEYNO}	  
+							</when>
+							<!-- 체크  -->
+							<when test='column.BL_TYPE.equals(BOARD_COLUMN_TYPE_CHECK)'>
+						,  REPLACE(BCD${column.KEYNO}.BD_DATA,'|',', ') BD_DATA_${column.KEYNO}
+							</when>
+							<when test='column.BL_TYPE.equals(BOARD_COLUMN_TYPE_TITLE)'>
+							 <choose>
+							 	<when test="BT_SUBJECT_NUM != null and BT_SUBJECT_NUM != ''">
+							 	,	CASE
+							 			WHEN CHAR_LENGTH(BCD${column.KEYNO}.BD_DATA) > #{BT_SUBJECT_NUM}
+							 			THEN CONCAT(LEFT(BCD${column.KEYNO}.BD_DATA, #{BT_SUBJECT_NUM}),"...")
+							 			ELSE BCD${column.KEYNO}.BD_DATA
+										END BD_DATA_${column.KEYNO}
+							 	</when>
+							 	<otherwise>
+								,  BCD${column.KEYNO}.BD_DATA BD_DATA_${column.KEYNO}	
+							 	</otherwise>
+							 </choose>
+							</when>
+							<otherwise>
+						,  BCD${column.KEYNO}.BD_DATA BD_DATA_${column.KEYNO}	
+							</otherwise>
+						</choose>
+						</foreach>
+						, P.DPP_NAME
+				FROM (
+					SELECT * FROM (
+						SELECT		'NOTICE' BOARD_TYPE
+									, '' NUM
+									, BN.BN_KEYNO
+									, '' BN_MAINKEY
+									, '' BN_SEQ
+									, '' BN_HITS
+									, '' BN_PLANT_NAME
+						FROM b_board_notice BN
+						WHERE		BN.BN_MN_KEYNO 			= 	#{BN_MN_KEYNO}
+						AND			BN.BN_USE_YN   			= 	'Y'
+						AND			BN.BN_DEL_YN   			= 	'N'
+						AND			BN.BN_IMPORTANT 		= 	'Y' 
+						AND			(IFNULL(BN.BN_IMPORTANT_DATE,'') = '' OR BN.BN_IMPORTANT_DATE	>= 	CURRENT_DATE())
+						ORDER BY  	BN.BN_KEYNO 	DESC
+						LIMIT		10000	-- 바로 위의 오더바이가 무시되서 LIMIT을 임의로 추가함 
+					) AA
+					UNION ALL
+					SELECT * FROM (
+						SELECT * FROM (    
+							SELECT 		'NORMAL' BOARD_TYPE
+										<choose>
+											<when test='NumberingType != null and NumberingType.equals("V")'>
+										, @rownum:=@rownum+1 as NUM
+											</when>
+											<otherwise>
+										, CAST(RIGHT(BN.BN_KEYNO,10) AS UNSIGNED ) NUM									
+											</otherwise>
+										</choose>
+										, BN.BN_KEYNO
+										, BN.BN_MAINKEY
+										, BN.BN_SEQ
+										, BN.BN_HITS
+										, BN.BN_PLANT_NAME 
+								FROM 	  	(SELECT @rownum:=0) TMP, B_BOARD_NOTICE BN
+							LEFT JOIN 	u_userinfo U
+							ON			BN.BN_REGNM	=	U.UI_KEYNO					WHERE     	BN.BN_MN_KEYNO 	= 	#{BN_MN_KEYNO}
+							AND       	BN.BN_USE_YN   	= 	'Y'
+							<if test='BT_REPLY_YN == "N"'>
+							AND		  	BN.BN_DEPTH		=	0
+							</if>
+							<if test='BT_DEL_LISTVIEW_YN == "N"'>
+							AND		  	BN.BN_DEL_YN	=	'N'
+							</if>
+							<if test='BT_SHOW_MINE_YN == "Y" and isAdmin != "Y"'>
+							AND			BN.BN_REGNM = #{UI_KEYNO}
+							</if>
+							<if test="BN_CATEGORY_NAME != null and BN_CATEGORY_NAME !=''" >
+					        AND       	BN.BN_CATEGORY_NAME = #{BN_CATEGORY_NAME}
+					        </if>
+					        <if test="DPPKEY != null and DPPKEY !=''" >
+						    AND       	BN.BN_PLANT_NAME = #{DPPKEY}
+						    </if>
+					        AND
+						    <foreach collection="plantList" item="plant" open="(" close=")" separator="OR" >
+										BN.BN_PLANT_NAME = ${plant.DPP_KEYNO}
+							</foreach>
+							AND			(
+											BN.BN_IMPORTANT 		= 	'N' 
+											OR			
+											(BN.BN_IMPORTANT 		= 	'Y' AND BN.BN_IMPORTANT_DATE	<![CDATA[<]]> CURRENT_DATE())
+										)
+							<if test="searchKeyword != null and searchKeyword != '' ">
+								<choose>
+									<when test='searchCondition == "all"'>
+									AND		(
+												(
+													SELECT CONCAT(GROUP_CONCAT(IFNULL(BD_DATA,'')) ,GROUP_CONCAT(IFNULL(SC_CODENM,''))) 
+												    FROM b_board_column_data A
+												    LEFT JOIN s_common_code_sub B
+												    ON A.BD_DATA = B.SC_KEYNO 
+												    WHERE BD_BN_KEYNO = BN.BN_KEYNO
+												)	LIKE '%' #{searchKeyword} '%'
+												OR
+												BN.BN_CONTENTS LIKE '%' #{searchKeyword} '%'
+												OR
+												IFNULL(U.UI_REP_NAME,BN_REGNM) LIKE '%' #{searchKeyword} '%'
+											)		
+									</when>
+									<when test='searchCondition == "title"'>
+									AND		 BN.BN_TITLE LIKE '%' #{searchKeyword} '%' 			
+									</when>
+									<when test='searchCondition == "contents"'>
+									AND		 ( BN.BN_TITLE LIKE '%' #{searchKeyword} '%' OR BN.BN_CONTENTS LIKE '%' #{searchKeyword} '%' )		
+									</when>
+									<when test='searchCondition == "writer"'>
+									AND		 IFNULL(U.UI_REP_NAME,BN_REGNM) LIKE '%' #{searchKeyword} '%'		
+									</when>
+									<otherwise>
+									AND		(
+												SELECT CONCAT(IFNULL(BD_DATA,'') ,IFNULL(SC_CODENM,''))
+											    FROM b_board_column_data A
+											    LEFT JOIN s_common_code_sub B
+											    ON A.BD_DATA = B.SC_KEYNO 
+											    WHERE BD_BL_KEYNO = #{searchCondition} 
+											    AND BD_BN_KEYNO = BN.BN_KEYNO
+											)	LIKE '%' #{searchKeyword} '%'
+									</otherwise>
+								</choose>
+							
+					    	</if>
+						) CC
+						<choose>
+							<when test='orderCondition == "A"'>
+						ORDER BY  CC.BN_MAINKEY DESC, BN_SEQ 		
+							</when>
+							<when test='orderCondition == "B"'>
+						ORDER BY  CC.BN_HITS DESC,CC.BN_MAINKEY DESC, BN_SEQ 	
+							</when>
+							<otherwise>
+						ORDER BY  CC.BN_MAINKEY DESC, BN_SEQ 
+							</otherwise>
+						</choose>
+						LIMIT  	#{recordCountPerPage} OFFSET #{firstIndex}
+					) BB
+				) A
+				LEFT JOIN b_board_notice BN 
+				ON A.BN_KEYNO = BN.BN_KEYNO
+				LEFT JOIN dy_power_plant P 
+				ON A.BN_PLANT_NAME = P.DPP_KEYNO 
+				LEFT JOIN u_userinfo U
+				ON BN.BN_REGNM = U.UI_KEYNO
+				LEFT JOIN s_common_file_sub FS
+				ON BN.BN_THUMBNAIL = FS.FS_KEYNO
+				LEFT JOIN b_board_notice BND
+				ON BN.BN_PARENTKEY = BND.BN_KEYNO
+				<foreach collection="BoardColumnList" item="column">
+				LEFT JOIN b_board_column_data BCD${column.KEYNO}
+				ON			BN.BN_KEYNO	=	BCD${column.KEYNO}.BD_BN_KEYNO AND BCD${column.KEYNO}.BD_BL_KEYNO = #{column.BL_KEYNO}
+				<!-- 라디오(코드), 셀렉트(코드)  -->
+				<if test='column.BL_TYPE.equals(BOARD_COLUMN_TYPE_RADIO_CODE) or column.BL_TYPE.equals(BOARD_COLUMN_TYPE_SELECT_CODE)'>
+				LEFT JOIN	s_common_code_sub SC${column.KEYNO}
+				ON			BCD${column.KEYNO}.BD_DATA = SC${column.KEYNO}.SC_KEYNO		
+				</if> 
+				</foreach>	
+				<choose>
+					<when test='orderCondition == "A"'>
+				ORDER BY  FIELD(BOARD_TYPE,'NOTICE','NORMAL'), A.BN_MAINKEY DESC, BN_SEQ 		
+					</when>
+					<when test='orderCondition == "B"'>
+				ORDER BY  FIELD(BOARD_TYPE,'NOTICE','NORMAL'), A.BN_HITS DESC,A.BN_MAINKEY DESC, BN_SEQ 	
+					</when>
+					<otherwise>
+				ORDER BY  FIELD(BOARD_TYPE,'NOTICE','NORMAL'), A.BN_MAINKEY DESC, BN_SEQ 
+					</otherwise>
+				</choose>
+			</otherwise>
+		</choose>
+    </select>
+    
+    <!-- 답글 리스트 -->
+    <select id="BN_getReplyList" parameterType="Integer" resultType="BoardNotice">
+    	SELECT  BN.*
+    			,IFNULL(U.UI_REP_NAME,BN_REGNM) BN_UI_NAME
+    	FROM b_board_notice BN
+    	LEFT JOIN u_userinfo U
+      	ON 	  	  BN.BN_REGNM = U.UI_KEYNO
+    	WHERE	BN_PARENTKEY	=	#{BN_KEYNO}
+    	ORDER BY 	BN_SEQ
+    </select>
+		
+	
+	<update id="BN_addHits">
+		UPDATE b_board_notice 
+		SET		BN_HITS		= BN_HITS + 1
+		WHERE   BN_KEYNO		= #{BN_KEYNO}
+	</update>
+	
+	
+	<insert id="BNH_insert" parameterType="BoardNotice" useGeneratedKeys="true" keyProperty="BNH_KEYNO">
+	<![CDATA[
+		INSERT INTO b_board_notice_history
+		 ( 		
+				BNH_BN_KEYNO,
+				BNH_BN_MN_KEYNO,
+				BNH_BN_FM_KEYNO,
+				BNH_BN_TITLE,
+				BNH_BN_CONTENTS,
+				BNH_BN_REGNM,
+				BNH_BN_REGDT,
+				BNH_BN_MODNM,
+				BNH_BN_MODDT,
+				BNH_BN_USE_YN,
+                BNH_BN_SECRET_YN,
+                BNH_BN_THUMBNAIL,
+                BNH_BN_HITS,
+                BNH_BN_IMPORTANT,
+                BNH_BN_IMPORTANT_DATE	)
+		SELECT 
+				BN_KEYNO,
+                BN_MN_KEYNO,
+                BN_FM_KEYNO,
+                BN_TITLE,
+                BN_CONTENTS,
+                BN_REGNM,
+                BN_REGDT,
+                BN_MODNM,
+                BN_MODDT,
+                BN_USE_YN,
+                BN_SECRET_YN,
+                BN_THUMBNAIL,
+                BN_HITS,
+                BN_IMPORTANT,
+                BN_IMPORTANT_DATE	
+		FROM b_board_notice 
+		WHERE   BN_KEYNO = #{BN_KEYNO}
+		]]>
+	</insert>
+	
+	<select id="BNH_getList" resultType="BoardNotice" parameterType="Integer">
+		SELECT 		BNH.*,U.UI_NAME BN_UI_NAME
+		FROM b_board_notice_history BNH
+		LEFT JOIN	u_userinfo U
+		ON			BNH.BNH_BN_REGNM = U.UI_KEYNO
+		WHERE BNH_BN_KEYNO  =	#{BNH_BN_KEYNO}
+		ORDER BY	BNH_KEYNO DESC
+    </select>
+    
+    <select id="BNH_getContents" resultType="BoardNotice" parameterType="Integer">
+		SELECT 		BNH.BNH_BN_CONTENTS 
+		FROM b_board_notice_history BNH
+		WHERE 		BNH_KEYNO  =	#{BNH_KEYNO}
+    </select>
+	
+	<select id="BNH_compareData" parameterType="BoardNotice" resultType="BoardNotice">
+		<if test='BN_COMPARE != "undefined"'>
+		SELECT 		IFNULL(BN_CONTENTS,'') AS BN_CONTENTS, 
+					IFNULL(BN_SECRET_YN,'') AS BN_SECRET_YN,					
+					IFNULL(BN_USE_YN,'') AS BN_USE_YN,
+					IFNULL(BN_IMPORTANT,'') AS BN_IMPORTANT,
+					IFNULL(BN_IMPORTANT_DATE,'') AS BN_IMPORTANT_DATE,
+					IFNULL(BN_MODNM,'') AS BN_MODNM,
+					IFNULL(BN_FM_KEYNO,'') AS BN_FM_KEYNO,
+					IFNULL(FS.FS_ORINM,'') AS THUMBNAIL_ORINM 
+		FROM b_board_notice 
+		LEFT JOIN s_common_file_sub FS
+		ON 			BN_THUMBNAIL = FS.FS_KEYNO
+		WHERE 		BN_KEYNO	=	#{BN_KEYNO}
+		UNION ALL
+		</if>
+		<![CDATA[
+		(
+		SELECT 	  ifnull(BNH_BN_CONTENTS,'') AS BN_CONTENTS
+				, ifnull(BNH_BN_SECRET_YN,'') AS BNH_BN_SECRET_YN
+				, ifnull(BNH_BN_USE_YN,'') AS BN_USE_YN
+				, ifnull(BNH_BN_IMPORTANT,'') AS BN_IMPORTANT
+				, ifnull(BNH_BN_IMPORTANT_DATE,'') AS BN_IMPORTANT_DATE
+				, ifnull(BNH_BN_MODNM,'') AS BN_MODNM
+				, ifnull(BNH_BN_FM_KEYNO,'') AS BN_FM_KEYNO
+				, ifnull(FS.FS_ORINM,'') AS THUMBNAIL_ORINM 
+		FROM b_board_notice_history
+		LEFT JOIN s_common_file_sub FS
+		ON 			BNH_BN_THUMBNAIL = FS.FS_KEYNO
+		WHERE		BNH_BN_KEYNO	= #{BN_KEYNO}									  
+        AND			BNH_KEYNO		<=  #{BNH_KEYNO}
+        ORDER BY BNH_BN_MODDT DESC
+        LIMIT 2
+		)
+		]]>
+	</select>
+	
+	<update id="BN_restore_update" parameterType="BoardNotice">
+		<![CDATA[
+		UPDATE b_board_notice A, B_BOARD_NOTICE_HISTORY B
+		SET
+			A.BN_KEYNO 			= B.BNH_BN_KEYNO,
+		    A.BN_MN_KEYNO		= B.BNH_BN_MN_KEYNO,
+		    A.BN_FM_KEYNO		= B.BNH_BN_FM_KEYNO,
+		    A.BN_TITLE			= B.BNH_BN_TITLE,
+		    A.BN_CONTENTS		= B.BNH_BN_CONTENTS,
+		    A.BN_REGNM			= B.BNH_BN_REGNM,
+		    A.BN_REGDT			= B.BNH_BN_REGDT,
+		    A.BN_MODNM			= B.BNH_BN_MODNM,
+		    A.BN_MODDT			= B.BNH_BN_MODDT,
+		    A.BN_USE_YN			= B.BNH_BN_USE_YN,
+		    A.BN_SECRET_YN		= B.BNH_BN_SECRET_YN,
+		    A.BN_THUMBNAIL		= B.BNH_BN_THUMBNAIL,
+		    A.BN_HITS			= B.BNH_BN_HITS,
+		    A.BN_IMPORTANT		= B.BNH_BN_IMPORTANT,
+		    A.BN_IMPORTANT_DATE	= B.BNH_BN_IMPORTANT_DATE
+		WHERE A.BN_KEYNO = B.BNH_BN_KEYNO
+		AND   B.BNH_KEYNO = #{BNH_KEYNO};
+		]]>
+	</update>
+	
+	
+	
+	
+    
+    <!-- 캘린더형 ajax 쿼리 -->
+    <select id="BN_getUserDataListCalendar" resultType="hashmap" parameterType="hashmap">
+    	<![CDATA[
+		SELECT * FROM (
+		SELECT (SELECT BD_DATA FROM b_board_column_data WHERE BD_BN_KEYNO = BN.BN_KEYNO AND BD_BL_KEYNO = #{NAME_BL_KEYNO}) BN_NAME
+		     , (SELECT BD_DATA FROM b_board_column_data WHERE BD_BN_KEYNO = BN.BN_KEYNO AND BD_BL_KEYNO = #{STDT_BL_KEYNO}) BN_STDT 
+		     , (SELECT BD_DATA FROM b_board_column_data WHERE BD_BN_KEYNO = BN.BN_KEYNO AND BD_BL_KEYNO = #{ENDT_BL_KEYNO}) BN_ENDT
+		     , BN.*
+		FROM b_board_notice BN
+		
+		WHERE     BN.BN_MN_KEYNO = #{MN_KEYNO}
+		AND       BN.BN_USE_YN   = 'Y'
+				  
+		ORDER BY  BN.BN_REGDT DESC
+		) A
+		WHERE !(BN_STDT > #{BN_ENDT} OR BN_ENDT < #{BN_STDT}) 
+		]]>
+    </select>
+    
+    <!-- 캘린더형 컬럼데이터 겟 -->
+    <select id="BN_getBLkeys" resultType="hashmap" parameterType="hashmap">
+	    SELECT 'TITLE' TYPE,BL_KEYNO
+		FROM b_board_column BL
+		LEFT JOIN s_menu_manager MN
+		ON			BL.BL_BT_KEYNO = MN.MN_BT_KEYNO
+		WHERE		MN_KEYNO	=	#{MN_KEYNO}
+		AND			BL_TYPE	=	#{BOARD_COLUMN_TYPE_TITLE}
+		UNION
+		(
+		SELECT 'STDT',BL_KEYNO 
+		FROM b_board_column BL
+		LEFT JOIN s_menu_manager MN
+		ON			BL.BL_BT_KEYNO = MN.MN_BT_KEYNO
+		WHERE		MN_KEYNO	=	#{MN_KEYNO}
+		AND			BL_TYPE	=	#{BOARD_COLUMN_TYPE_CALENDAR_START}
+		ORDER BY	BL_COLUMN_LEVEL
+		LIMIT 1
+		)
+		UNION
+		(
+		SELECT 'ENDT',BL_KEYNO
+		FROM b_board_column BL
+		LEFT JOIN s_menu_manager MN
+		ON			BL.BL_BT_KEYNO = MN.MN_BT_KEYNO
+		WHERE		MN_KEYNO	=	#{MN_KEYNO}
+		AND			BL_TYPE	=	#{BOARD_COLUMN_TYPE_CALENDAR_END}
+		ORDER BY	BL_COLUMN_LEVEL DESC
+		LIMIT 1
+		)
+    </select>
+    
+    <!-- 게시물 이동  -->
+    <update id="BN_moveBoard" parameterType="hashmap">
+    	UPDATE b_board_notice
+    	SET		BN_MN_KEYNO	=	#{MN_KEYNO}
+    	WHERE	BN_KEYNO	=	#{BN_KEYNO}
+    </update>
+    
+    <!-- 게시물 이동 체크 -->
+    <select id="BN_moveCheck" parameterType="BoardNotice" resultType="int">
+    	SELECT COUNT(*) 
+ 		FROM b_board_notice 
+ 		WHERE BN_PARENTKEY = #{BN_KEYNO}
+ 		AND BN_DEL_YN = 'N'
+    </select>
+    
+     <!-- 게시물 이동 시 히스토리 삭제 처리 -->
+    <delete id="BNH_delete" parameterType="hashmap">
+    	DELETE 	FROM b_board_notice_history
+    	WHERE	BNH_BN_KEYNO	=	#{BN_KEYNO}
+    </delete>
+    
+    <!-- 유저 정보 삭제 시 작성 게시물 논리 삭제 처리 -->
+	<update id="BN_userDelete">
+	    UPDATE b_board_notice
+	    SET         BN_DEL_YN        = 'Y'
+	            ,BN_USE_YN        = 'N'
+	    WHERE     BN_REGNM    = #{UI_KEYNO}    
+	</update>
+    
+      <select id="get_selfBoard" resultType="String">
+    	SELECT BN_REGNM
+		FROM b_board_notice
+		WHERE BN_KEYNO = #{BN_KEYNO}
+    </select>
+    
+    <select id="getData_boardNotice" parameterType="BoardNotice" resultType="BoardNotice">
+    	SELECT * 
+    	FROM b_board_notice
+    	WHERE BN_KEYNO = #{BN_KEYNO}
+    </select>
+    
+    <!-- boardNotice에 썸네일 값 지우기 -->
+    <update id="Thumbnail_delete" parameterType="String">
+    	UPDATE b_board_notice 
+    	SET BN_THUMBNAIL = null
+    	WHERE BN_KEYNO = #{BN_KEYNO}
+    </update>
+    
+    
+      	<sql id="BN_getDelListBody">
+		FROM(
+			SELECT 		BN_KEYNO
+						<choose>
+							<when test='NumberingType != null and NumberingType.equals("V")'>
+						, @rownum:=@rownum+1 as NUM
+							</when>
+							<otherwise>
+						, CAST(RIGHT(BN_KEYNO,10) AS UNSIGNED ) NUM	
+							</otherwise>
+						</choose>
+						, IFNULL(U.UI_REP_NAME,BN_REGNM) BN_UI_NAME
+						, LEFT(BN_REGDT,19) BN_REGDT
+						, LEFT(BN_DELDT,19) BN_DELDT
+						, BN_USE_YN  
+						, BN_DEL_YN
+						, BN_CATEGORY_NAME
+						, BN_TITLE
+						, S.MN_NAME MN_NAME
+						, (SELECT MN_NAME FROM s_menu_manager WHERE MN_KEYNO=S.MN_MAINKEY) MN_MAIN_NAME
+						, BN_DELETE_IP
+			FROM b_board_notice B
+			LEFT JOIN 	u_userinfo U
+			ON			B.BN_REGNM	=	U.UI_KEYNO
+			LEFT JOIN s_menu_manager S
+			ON			B.BN_MN_KEYNO = S.MN_KEYNO
+			,(SELECT @rownum:=0)TMP
+			WHERE
+			<choose>
+				<when test="keyList != null">
+					<foreach collection="keyList" item="item" separator="OR">
+						BN_MN_KEYNO = #{item.MN_KEYNO}
+					</foreach>
+				</when>
+				<otherwise>
+						1!=1
+				</otherwise>
+			</choose>
+		)AA
+		WHERE BN_DEL_YN='Y' AND 1=1
+		
+		<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 			<if test='item.searchIndex.equals("1")'>
+ 		AND		NUM 						LIKE CONCAT('%',#{item.searchKeyword},'%')					
+	 			</if>
+	 			<if test='item.searchIndex.equals("2")'>
+ 		AND		MN_MAIN_NAME				LIKE CONCAT('%',#{item.searchKeyword},'%')					
+	 			</if>
+	 			<if test='item.searchIndex.equals("3")'>
+ 		AND		MN_NAME						LIKE CONCAT('%',#{item.searchKeyword},'%')					
+	 			</if>
+	 			<if test='item.searchIndex.equals("4")'>
+ 		AND		BN_TITLE					LIKE CONCAT('%',#{item.searchKeyword},'%')					
+	 			</if>
+	 			<if test='item.searchIndex.equals("5")'>
+ 		AND		BN_UI_NAME					LIKE CONCAT('%',#{item.searchKeyword},'%')					
+	 			</if>
+	 			<if test='item.searchIndex.equals("6")'>
+ 		AND		BN_REGDT 					LIKE CONCAT('%',#{item.searchKeyword},'%')					
+	 			</if>
+	 			<if test='item.searchIndex.equals("7")'>
+ 		AND		BN_DELDT 					LIKE CONCAT('%',#{item.searchKeyword},'%')					
+	 			</if>
+	 			<if test='item.searchIndex.equals("8")'>
+ 		AND		BN_DELETE_IP				LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</if>
+	 			<if test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				NUM 						LIKE CONCAT('%',#{item.searchKeyword},'%') 	OR
+ 				MN_MAIN_NAME 				LIKE CONCAT('%',#{item.searchKeyword},'%') 	OR
+ 				MN_NAME 					LIKE CONCAT('%',#{item.searchKeyword},'%') 	OR
+ 				BN_TITLE 					LIKE CONCAT('%',#{item.searchKeyword},'%') 	OR
+ 				BN_UI_NAME					LIKE CONCAT('%',#{item.searchKeyword},'%') 	OR
+ 				BN_REGDT 					LIKE CONCAT('%',#{item.searchKeyword},'%') 	OR				
+ 				BN_DELDT 					LIKE CONCAT('%',#{item.searchKeyword},'%') 	OR				
+ 				BN_DELETE_IP				LIKE CONCAT( '%',#{item.searchKeyword},'%')  						
+ 		)							
+	 			</if>
+	 	</foreach>
+	 	</if>
+	</sql>
+    
+        <!--  게시물 관리 - 게시물 삭제대장 -->
+    <select id="BN_getDelList" resultType="hashmap" resultMap="ResultMap.rownumHashMap2">
+		SELECT	*
+		<include  refid="BN_getDelListBody"/>
+	 		<if test='orderBy.equals("1")'>
+	 		ORDER BY	NUM ${sortDirect}
+	 		</if>
+	 		<if test='orderBy.equals("2")'>
+	 		ORDER BY	MN_MAIN_NAME ${sortDirect}
+	 		</if>
+	 		<if test='orderBy.equals("3")'>
+	 		ORDER BY	MN_NAME ${sortDirect}
+	 		</if>
+	 		<if test='orderBy.equals("4")'>
+	 		ORDER BY	BN_TITLE ${sortDirect}
+	 		</if>
+	 		<if test='orderBy.equals("5")'>
+	 		ORDER BY	BN_UI_NAME ${sortDirect}
+	 		</if>
+	 		<if test='orderBy.equals("6")'>
+	 		ORDER BY	BN_REGDT ${sortDirect}
+	 		</if>
+	 		<if test='orderBy.equals("7")'>
+	 		ORDER BY	BN_DELDT ${sortDirect}
+	 		</if>
+	 		<if test='orderBy.equals("8")'>
+	 		ORDER BY	BN_DELETE_IP ${sortDirect}
+	 		</if>
+	 		<if test='orderBy.equals("")'>
+	 		ORDER BY	BN_DELDT DESC
+	 		</if>
+		<if test="recordCountPerPage != 0">
+		 	LIMIT  	#{recordCountPerPage} OFFSET #{firstIndex}
+		</if> 	
+    </select>
+    
+    <!--  게시물 관리 - 삭제 게시물  갯수-->
+    <select id="BN_getDelListCnt" resultType="int">
+			SELECT	COUNT(*)
+		<include  refid="BN_getDelListBody"/>
+    </select>
+    
+            
+    <select id="test" resultType="BoardNotice">
+        select BN_KEYNO , BN_CONTENTS 
+        from B_BOARD_NOTICE
+        where BN_CONTENTS is not null
+    </select>
+    
+    <update id="test_update">
+        update B_BOARD_NOTICE
+        set BN_CONTENTS_SEARCH = #{BN_CONTENTS_SEARCH}
+        where BN_KEYNO = #{BN_KEYNO}
+    </update>
+</mapper>
+ 

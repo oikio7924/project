@@ -1,0 +1,213 @@
+package com.tx.dyAdmin.program.application.dto;
+
+import com.tx.common.dto.Common;
+
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+/**
+ * 프로그램 신청 DTO
+ * @author admin
+ *
+ */
+@Data
+@EqualsAndHashCode(callSuper=false)
+public class ApplicationDTO extends Common {
+	
+	private static final long serialVersionUID = -6182340712352883221L;
+	private String  
+		/* T_APPLICAITON_MANAGER */
+		  AP_KEYNO
+		, AP_NAME
+		, AP_SUMMARY
+		, AP_LIMIT_AGE_YN
+		, AP_LIMIT_AGE_MIN
+		, AP_LIMIT_AGE_MAX
+		, AP_PLACE
+		, AP_PRICE
+		, AP_STDT
+		, AP_ENDT
+		, AP_DATE_COMMENT
+		, AP_REGDT
+		, AP_MODDT
+		, AP_REGNM
+		, AP_MODNM
+		, AP_USE
+		, AP_USE_NM
+		, AP_SEAT_YN
+		, AP_LIMIT_PERSON
+		, AP_APPLY_ST_DATE
+		, AP_APPLY_EN_DATE
+		, AP_DEADLINE
+		, AP_BUTTON_TEXT1
+		, AP_BUTTON_TEXT2
+		, AP_BUTTON_TEXT3
+		, AP_TICKET_CNT
+		, AP_HOILDAY
+		, AP_TYPE
+		, AP_WAITING_YN
+		, AP_WAITING_TEXT
+		, AP_EXPIRED
+		, AP_MN_HOMEDIV_C
+		
+		/* T_APPLICATION_CHARGE */
+		, APC_KEYNO
+		, APC_AP_KEYNO
+		, APC_NAME
+		, APC_PRICE
+		, APC_TARGET
+		, APC_DELYN
+		
+		/* T_APPLICATION_PARTICIPATE */
+		, APP_KEYNO
+		, APP_AP_KEYNO
+		, APP_ASM_KEYNO
+		, APP_APU_KEYNO
+		, APP_DELYN
+		, APP_ST_DATE
+		, APP_ST_TIME
+		, APP_COUNT
+		, APP_REGDT
+		, APP_ASS_KEYNO
+		, APP_SEQUENCE
+		, APP_STATUS
+		, APP_DIVISION
+		, APP_EXPIRED
+		
+		, App_type
+		,APP_SEATLIST
+		
+		
+		
+		/*T_APPLY_PARTICIPATE_SEAT*/
+		, APS_KEYNO
+		, APS_APP_KEYNO
+		, APS_SEATNAME
+		, APS_AP_KEYNO
+		, APS_APP_ST_TIME
+		, APS_APP_ST_DATE
+		
+		/*T_APPLY_PARTICIPATE_DISCOUNT*/
+		, APD_AD_KEYNO
+		, APD_APP_KEYNO
+		, APD_CNT
+		, APD_PRICE
+		
+		/* T_APPLICATION_SCHEDULE_MAIN */
+		, ASM_KEYNO
+		, ASM_AP_KEYNO
+		, ASM_NAME
+		, ASM_STDT
+		, ASM_ENDT
+		, ASM_DELYN
+		, ASM_DAY
+		
+		/* T_APPLICATION_SCHEDULE_SUB */
+		, ASS_KEYNO
+		, ASS_ASM_KEYNO
+		, ASS_ST_TIME
+		, ASS_EN_TIME
+		, ASS_MAXIMUM
+		, ASS_SUBTITLE
+		
+		/* T_APPLICATION_USER */
+		, APU_KEYNO
+		, APU_UI_KEYNO
+		, APU_NAME
+		, APU_RELATION
+		, APU_PHONE
+		, APU_BIRTH
+		, APU_DELYN
+		, APU_REGDT
+		, APU_GENDER
+		, APU_SELFYN
+		
+		/* T_APPLICATION_DISCOUNT */
+		, AD_KEYNO
+		, AD_NAME
+		, AD_TYPE
+		, AD_MONEY
+		, AD_COMENT
+		, AD_DEFAULT_YN
+		, AD_USE
+		;
+	private String apTiles;
+	
+	private String  
+	/* T_GROUP_MANAGER */
+	  GM_KEYNO
+	, GM_NAME
+	, GM_SUMMARY
+	, GM_PLACE
+	, GM_DATE
+	, GM_DELYN
+	, GM_REGDT
+	, GM_MODDT
+	, GM_REGNM
+	, GM_MODNM
+	, GM_DIVISION
+	, GM_MINIMUM
+	, GM_MAXIMUM
+	, GM_INTRODUCE
+	, GM_HOLIDAY
+	, GM_USE
+	, GM_MN_HOMEDIV_C
+	
+	/* T_GROUP_PARTICIPATE */
+	, GP_YUMOCAR
+	, GP_WHEELCHAIR
+	, GP_GROUPNAME
+	, GP_GSM_KEYNO
+	, GP_DATE
+	, GP_TIME
+	, GP_TRAFFIC_EXP
+	, GP_KEYNO
+	, GP_GM_KEYNO
+	, GP_GSS_KEYNO
+	, GP_UI_KEYNO
+	, GP_NAME
+	, GP_PHONE
+	, GP_HEADCOUNT
+	, GP_TRAFFIC
+	, GP_DELYN
+	, GP_REGDT
+	
+	/* T_GROUP_SCHEDULE_MAIN */
+	, GSM_KEYNO
+	, GSM_GM_KEYNO
+	, GSM_STDT
+	, GSM_DELYN
+	, GSM_ENDT
+	 
+	
+	/* T_GROUP_SCHEDULE_SUB */
+	, GSS_KEYNO
+	, GSS_GSM_KEYNO
+	, GSS_ST_TIME
+	, GSS_EN_TIME
+	, GSS_MAXIMUM
+	, GSS_SUBTITLE
+	;
+
+String GSM_DAY;
+
+
+
+public String getGM_KEYNO() {
+	return GM_KEYNO;
+}
+
+public String setGM_KEYNO(String gM_KEYNO) {
+	return GM_KEYNO = gM_KEYNO;
+}
+
+
+public String getGSM_KEYNO() {
+	return GSM_KEYNO;
+}
+
+public String setGSM_KEYNO(String gSM_KEYNO) {
+	return GSM_KEYNO = gSM_KEYNO;
+}
+
+}

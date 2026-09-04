@@ -1,0 +1,1050 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="bills">
+	
+		<select id="billsSelect" resultType="hashmap" >
+			SELECT * 
+			FROM dy_bills_provider
+		</select>
+
+		<select id="billsSelect_one" resultType="hashmap" parameterType="String">
+			SELECT * 
+			FROM dy_bills_provider
+			WHERE dbp_keyno = #{dbp_keyno}
+		</select>
+		
+		
+		<insert id="billsProvideInsert" parameterType="billDTO">
+			INSERT INTO dy_bills_provider
+			(
+				dbp_id,
+				dbp_pass,
+				dbp_apikey,
+				dbp_co_num,
+				dbp_biztype,
+				dbp_name,
+				dbp_bizclassification,
+				dbp_ceoname,
+				dbp_busename,
+				dbp_ir_name,
+				dbp_ir_cell,
+				dbp_email,
+				dbp_address
+			)VALUES(
+				#{hometaxbill_id},
+				#{spass},
+				#{apikey},
+				#{ir_companynumber},
+				#{ir_biztype},
+				#{ir_companyname},
+				#{ir_bizclassification},
+				#{ir_ceoname},
+				#{ir_busename},
+				#{ir_name},
+				#{ir_cell},
+				#{ir_email},
+				#{ir_companyaddress}
+			)
+		</insert>
+		
+		<update id="billsProvideUPdate" parameterType="billDTO">
+			UPDATE dy_bills_provider 
+			SET dbp_id = #{hometaxbill_id},
+				dbp_pass = #{spass},
+				dbp_apikey = #{apikey},
+				dbp_co_num = #{ir_companynumber},
+				dbp_biztype = #{ir_biztype},
+				dbp_name = #{ir_companyname},
+				dbp_bizclassification = #{ir_bizclassification},
+				dbp_ceoname = #{ir_ceoname},
+				dbp_busename = #{ir_busename},
+				dbp_ir_name = #{ir_name},
+				dbp_ir_cell = #{ir_cell},
+				dbp_email = #{ir_email},
+				dbp_address = #{ir_companyaddress}
+			WHERE dbp_keyno = #{dbp_keyno}
+		</update>
+		
+		<update id="registNumberUpdate" parameterType="billDTO">
+		UPDATE dy_bills_provider 
+		SET dbp_homemunseo_id = #{homemunseo_id}
+		WHERE dbp_keyno = #{dbp_keyno}
+	</update>	
+		
+		<!-- 사업등록번호 카운팅 -->
+		<select id="billCount" resultType="int" parameterType="billDTO">
+			SELECT COUNT(*) FROM dy_bills_provider WHERE dbp_co_num = #{ir_companynumber}
+		</select>
+
+		<select id="SuppliedSelect" resultType="hashmap">
+			SELECT *
+			FROM dy_bills_supplied
+		</select>
+		<select id="SuppliedSelect_one" resultType="hashmap" parameterType="String">
+			SELECT * 
+			FROM dy_bills_supplied
+			WHERE dbs_keyno = #{dbs_keyno}
+		</select>
+	
+	
+		<insert id="billsProvideInsert2" parameterType="billDTO">
+		INSERT INTO dy_bills_supplied
+		(
+			dbs_co_num,
+			dbs_biztype ,
+			dbs_name,
+			dbs_bizclassification,
+			dbs_taxnum,
+			dbs_ceoname,
+			dbs_busename1,
+			dbs_name1,
+			dbs_cell1,
+			dbs_email1,
+			dbs_busename2,
+			dbs_name2,
+			dbs_cell2,
+			dbs_email2,
+			dbs_address
+		)VALUES(
+			#{ie_companynumber},
+			#{ie_biztype},
+			#{ie_companyname},
+			#{ie_bizclassification},
+			#{ie_taxnumber},
+			#{ie_ceoname},
+			#{ie_busename1},
+			#{ie_name1},
+			#{ie_cell1},
+			#{ie_email1},
+			#{ie_busename2},
+			#{ie_name2},
+			#{ie_cell2},
+			#{ie_email2},
+			#{ie_companyaddress}
+		)
+	</insert>
+	
+	<update id="billsProvideUPdate2" parameterType="billDTO">
+		UPDATE dy_bills_supplied 
+		SET dbs_co_num = #{ie_companynumber},
+			dbs_biztype = #{ie_biztype},
+			dbs_name = #{ie_companyname},
+			dbs_bizclassification = #{ie_bizclassification},
+			dbs_taxnum = #{ie_taxnumber},
+			dbs_ceoname = #{ie_ceoname},
+			dbs_busename1 = #{ie_busename1},
+			dbs_name1 = #{ie_name1},
+			dbs_cell1 = #{ie_cell1},
+			dbs_email1 = #{ie_email1},
+			dbs_busename2 = #{ie_busename2},
+			dbs_name2 = #{ie_name2},
+			dbs_cell2 = #{ie_cell2},
+			dbs_email2 = #{ie_email2},
+			dbs_address = #{ie_companyaddress}
+		WHERE dbs_keyno = #{dbs_keyno}
+	</update>
+	
+	<!-- 사업등록번호 카운팅 공급받는자 -->
+	<select id="billCount2" resultType="int" parameterType="billDTO">
+		SELECT COUNT(*) FROM dy_bills_supplied WHERE dbs_co_num = #{ie_companynumber}
+	</select>
+	
+	<select id="billLogCount" resultType="String" parameterType="billDTO">
+	SELECT dbl_keyno
+	FROM dy_bills_log l
+	left join dy_bills_provider p
+	on l.dbl_provider_key = p.dbp_keyno
+	left join dy_bills_supplied s
+	on l.dbl_supplied_key = s.dbs_keyno
+	WHERE p.dbp_keyno = #{dbp_keyno}
+	and s.dbs_keyno = #{dbs_keyno}
+	and l.dbl_sub_keyno = #{dbl_sub_keyno}
+	and date_format(l.Conn_date , '%Y-%m') = date_format(now(), '%Y-%m')
+	</select>
+	
+	<insert id="billsInfoInsert" parameterType="String">
+			INSERT INTO dy_bills_log
+			(
+				dbl_provider_key,
+				dbl_supplied_key,
+				dbl_cash,
+				dbl_scheck,
+				dbl_draft,
+				dbl_uncollected,
+				dbl_chargetotal,
+				dbl_taxtotal,
+				dbl_grandtotal,
+				dbl_subject,
+				dbl_unit,
+				dbl_quantity,
+				dbl_unitprice,
+				dbl_supplyprice,
+				dbl_tax,
+				dbl_description,
+				dbl_p_name,
+				dbl_s_name,
+				dbl_purposetype,
+				dbl_partytypecode,
+				dbl_issueid,
+				dbl_typecode1,
+				dbl_typecode2,
+				dbl_sub_description,
+				dbl_issuedate,
+				dbl_sub_issuedate,
+				dbl_sub_keyno,
+				dbl_si_hcnt,
+				dbl_homeid
+				
+			)VALUES(
+				#{dbp_keyno},
+				#{dbs_keyno},
+				#{cash},
+				#{scheck},
+				#{draft},
+				#{uncollected},
+				#{chargetotal},
+				#{taxtotal},
+				#{grandtotal},
+				#{subject},
+				#{unit},
+				#{quantity},
+				#{unitprice},
+				#{supplyprice},
+				#{tax},
+				#{description},
+				#{ir_companyname},
+				#{ie_companyname},
+				#{purposetype},
+				#{partytypecode},
+				#{issueid},
+				#{typecode1},
+				#{typecode2},
+				#{sub_description},
+				#{issuedate},
+				#{sub_issuedate},
+				#{dbl_sub_keyno},
+				#{si_hcnt},
+				#{homemunseo_id}
+				
+			)
+	</insert>
+	
+	<insert id="billInfoInsertAuto" parameterType="Hashmap">
+			INSERT INTO dy_bills_log
+			(
+				dbl_provider_key,
+				dbl_supplied_key,
+				dbl_cash,
+				dbl_scheck,
+				dbl_draft,
+				dbl_uncollected,
+				dbl_chargetotal,
+				dbl_taxtotal,
+				dbl_grandtotal,
+				dbl_subject,
+				dbl_unit,
+				dbl_quantity,
+				dbl_unitprice,
+				dbl_supplyprice,
+				dbl_tax,
+				dbl_description,
+				dbl_p_name,
+				dbl_s_name,
+				dbl_purposetype,
+				dbl_partytypecode,
+				dbl_issueid,
+				dbl_typecode1,
+				dbl_typecode2,
+				dbl_sub_description,
+				dbl_issuedate,
+				dbl_sub_issuedate,
+				dbl_sub_keyno,
+				dbl_si_hcnt,
+				dbl_homeid,
+				dbl_update
+				
+			)VALUES(
+				#{dbl_provider_key},
+				#{dbl_supplied_key},
+				#{dbl_cash},
+				#{dbl_scheck},
+				#{dbl_draft},
+				#{dbl_uncollected},
+				#{dbl_chargetotal},
+				#{dbl_taxtotal},
+				#{dbl_grandtotal},
+				#{dbl_subject},
+				#{dbl_unit},
+				#{dbl_quantity},
+				#{dbl_unitprice},
+				#{dbl_supplyprice},
+				#{dbl_tax},
+				#{dbl_description},
+				#{dbl_p_name},
+				#{dbl_s_name},
+				#{dbl_purposetype},
+				#{dbl_partytypecode},
+				#{dbl_issueid},
+				#{dbl_typecode1},
+				#{dbl_typecode2},
+				#{dbl_sub_description},
+				#{dbl_issuedate},
+				#{dbl_sub_issuedate},
+				#{dbl_sub_keyno},
+				#{dbl_si_hcnt},
+				#{dbl_homeid},
+				#{dbl_update}
+				
+			)
+	</insert>
+	
+	<delete id="billInfoDeleteAuto" parameterType="String">
+			DELETE  FROM dy_bills_log 
+			where date_format(Conn_date, '%Y-%m') = date_format(now(), '%Y-%m')
+			and dbl_sub_keyno = #{subkey}
+			and dbl_status = '1'
+			and dbl_update = 'up'
+	</delete>
+	
+	<select id="billInfoAutoSelect" parameterType="String" resultType="String">
+			select count(*)
+			FROM dy_bills_log
+			where date_format(Conn_date, '%Y-%m') = date_format(now(), '%Y-%m')
+			and dbl_sub_keyno = #{subkey}
+			and dbl_update = 'up'
+	</select>
+	
+	<update id="billsInfoUpdate" parameterType="billDTO">
+		UPDATE dy_bills_log
+		SET dbl_provider_key = #{dbp_keyno},
+			dbl_supplied_key = #{dbs_keyno},
+			dbl_cash = #{cash},
+			dbl_scheck = #{scheck},
+			dbl_draft = #{draft},
+			dbl_uncollected = #{uncollected},
+			dbl_chargetotal = #{chargetotal},
+			dbl_taxtotal = #{taxtotal},
+			dbl_grandtotal = #{grandtotal},
+			dbl_subject = #{subject},
+			dbl_unit = #{unit},
+			dbl_quantity = #{quantity},
+			dbl_unitprice = #{unitprice},
+			dbl_supplyprice = #{supplyprice},
+			dbl_tax = #{tax},
+			dbl_description = #{description},
+			dbl_p_name = #{ir_companyname},
+			dbl_s_name = #{ie_companyname},
+			dbl_purposetype = #{purposetype},
+			dbl_partytypecode = #{partytypecode},
+			dbl_sub_description = #{sub_description},
+			dbl_issuedate = #{issuedate},
+			dbl_sub_issuedate = #{sub_issuedate},
+			dbl_si_hcnt = #{si_hcnt},
+			dbl_homeid = #{homemunseo_id}
+		WHERE dbl_keyno = #{dbl_keyno}
+	</update>
+	
+	<!-- 전송완료(Y)로 업데이트 -->
+	<update id="checkYN" parameterType="billDTO">
+	UPDATE dy_bills_log
+	SET dbl_checkYN = 'Y'
+	WHERE dbl_keyno = #{dbl_keyno}
+	</update>
+	
+	<!-- 전송대기(W)로 업데이트 -->
+	<update id="checkYW" parameterType="billDTO">
+	UPDATE dy_bills_log
+	SET dbl_checkYN = 'W',
+		dbl_status = '2'
+	WHERE dbl_keyno = #{dbl_keyno}
+	</update>
+	
+	<!-- 전송중(I)로 업데이트 -->
+	<update id="checkYI" parameterType="billDTO">
+	UPDATE dy_bills_log
+	SET dbl_checkYN = 'I',
+		dbl_status = '3'
+	WHERE dbl_keyno = #{dbl_keyno}
+	</update>
+	
+	<select id="billslogselect" resultType="hashmap" >
+			SELECT * 
+			FROM dy_bills_log
+	</select>
+	
+	<select id="selectAllView" parameterType="billDTO" resultType="billDTO">
+			SELECT * 
+			FROM dy_bills_log l
+			left join dy_bills_provider p
+			on l.dbl_provider_key = p.dbp_keyno
+			left join dy_bills_supplied s
+			on l.dbl_supplied_key = s.dbs_keyno
+			where l.dbl_keyno = #{dbl_keyno}
+
+	</select>
+	<delete id="billsDelete" parameterType="arraylist">
+			DELETE  FROM dy_bills_log 
+			where
+			<foreach item = "l" index="index" collection="array" open="(" close=")" separator="or">
+			dbl_keyno = #{l}
+			</foreach>
+	</delete>
+	<select id="logList1" resultType="hashmap">
+	select *
+	from dy_bills_log
+	where dbl_sub_keyno = 1
+	and date_format(Conn_date, '%Y-%m') = date_format(now(), '%Y-%m')
+	</select>
+	
+	<select id="logList2" resultType="hashmap">
+	select *
+	from dy_bills_log
+	where dbl_sub_keyno = 2
+	and date_format(Conn_date, '%Y-%m') = date_format(now(), '%Y-%m')
+	</select>
+	
+	<select id="logList3" resultType="hashmap">
+	select *
+	from dy_bills_log
+	where dbl_sub_keyno = 3
+	and date_format(Conn_date, '%Y-%m') = date_format(now(), '%Y-%m')
+	</select>
+	
+	<update id="subkey1Insert" parameterType="String" >
+	UPDATE dy_bills_provider
+	SET dbp_subkey1 = #{dbs_keyno}
+	WHERE dbp_keyno = #{dbp_keyno}
+	</update>
+	
+	<update id="subkey2Insert" parameterType="String" >
+	UPDATE dy_bills_provider
+	SET dbp_subkey2 = #{dbs_keyno}
+	WHERE dbp_keyno = #{dbp_keyno}
+	</update>
+	
+	<update id="subkey3Insert" parameterType="String" >
+	UPDATE dy_bills_provider
+	SET dbp_subkey3 = #{dbs_keyno}
+	WHERE dbp_keyno = #{dbp_keyno}
+	</update>
+	
+	<!-- 등록번호 호출 -->
+	<select id="CodeNumberSelect" parameterType="String" resultType="hashmap">
+		select dbl_homeid
+		from dy_bills_log
+		where dbl_provider_key = #{dbp_keyno}
+		order by Conn_date desc
+		limit 1
+	</select>
+	
+	<select id="proAndSupSelect1" parameterType="String" resultType="hashmap">
+	select *
+	from dy_bills_provider a
+	left join dy_bills_supplied b
+	on b.dbs_keyno =
+	(
+		SELECT dbp_subkey1
+		FROM dy_bills_provider
+		where dbp_keyno = #{dbp_keyno}
+	)
+	where dbp_keyno = #{dbp_keyno}
+	</select>
+	
+	<select id="proAndSupSelect2" parameterType="String" resultType="hashmap">
+	select *
+	from dy_bills_provider a
+	left join dy_bills_supplied b
+	on b.dbs_keyno =
+	(
+		SELECT dbp_subkey2
+		FROM dy_bills_provider
+		where dbp_keyno = #{dbp_keyno}
+	)
+	where dbp_keyno = #{dbp_keyno}
+	</select>
+	
+	<select id="proAndSupSelect3" parameterType="String" resultType="hashmap">
+	select *
+	from dy_bills_provider a
+	left join dy_bills_supplied b
+	on b.dbs_keyno =
+	(
+		SELECT dbp_subkey3
+		FROM dy_bills_provider
+		where dbp_keyno = #{dbp_keyno}
+	)
+	where dbp_keyno = #{dbp_keyno}
+	</select>
+	
+	<sql id="Log_getListBody1">
+	from (
+		select B.*
+			, @ROWNUM:=@ROWNUM+1 as COUNT
+		from (
+			select *
+			from dy_bills_log 
+			where dbl_sub_keyno = 1
+			and date_format(Conn_date, '%Y-%m') = date_format(now(), '%Y-%m')
+			order by dbl_keyno
+		) B
+		where (@ROWNUM:=0)=0
+	)AA
+	where 1=1
+	<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT 				LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		dbl_p_name			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		dbl_s_name			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		dbl_subject			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		dbl_grandtotal			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("6")'>
+ 		AND		dbl_issuedate			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("7")'>
+ 		AND		dbl_status			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT					LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_p_name 				LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_s_name				LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_subject				LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_grandtotal			LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_issuedate			LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR			
+ 				dbl_status				LIKE CONCAT( '%',#{item.searchKeyword},'%') 	
+ 				
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+	</sql>
+	
+	<select id="Log_getListCnt1" resultType="int">
+		SELECT	COUNT(*)
+		<include  refid="Log_getListBody1"/>
+    </select>
+    
+    <select id="Log_getList1" resultMap="ResultMap.rownumHashMap">
+    	SELECT	* 
+		<include  refid="Log_getListBody1"/>
+		<choose>
+			<when test="orderBy == 1">
+	 		ORDER BY	COUNT ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 2">
+	 		ORDER BY	dbl_p_name ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 3">
+	 		ORDER BY	dbl_s_name ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 4">
+	 		ORDER BY	dbl_subject ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 5">
+	 		ORDER BY	dbl_grandtotal ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 6">
+	 		ORDER BY	dbl_issuedate ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 7">
+	 		ORDER BY	dbl_status ${sortDirect}
+	 		</when>
+	 		<otherwise>
+	 		ORDER BY 	COUNT DESC
+	 		</otherwise>
+ 		</choose>
+		<if test=" recordCountPerPage != 0">
+		LIMIT  	#{recordCountPerPage} OFFSET #{firstIndex} 
+		</if>  
+    </select>
+    
+    
+    	<sql id="Log_getListBody2">
+	from (
+		select B.*
+			, @ROWNUM:=@ROWNUM+1 as COUNT
+		from (
+			select *
+			from dy_bills_log 
+			where dbl_sub_keyno = 2
+			and date_format(Conn_date, '%Y-%m') = date_format(now(), '%Y-%m')
+			order by dbl_keyno
+		) B
+		where (@ROWNUM:=0)=0
+	)AA
+	where 1=1
+	<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT 				LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		dbl_p_name			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		dbl_s_name			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		dbl_subject			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		dbl_grandtotal			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("6")'>
+ 		AND		dbl_issuedate			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("7")'>
+ 		AND		dbl_status			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT					LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_p_name 				LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_s_name				LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_subject				LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_grandtotal			LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_issuedate			LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_status				LIKE CONCAT( '%',#{item.searchKeyword},'%')
+ 				
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+	</sql>
+	
+	<select id="Log_getListCnt2" resultType="int">
+		SELECT	COUNT(*)
+		<include  refid="Log_getListBody2"/>
+    </select>
+    
+    <select id="Log_getList2" resultMap="ResultMap.rownumHashMap">
+    	SELECT	* 
+		<include  refid="Log_getListBody2"/>
+		<choose>
+			<when test="orderBy == 1">
+	 		ORDER BY	COUNT ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 2">
+	 		ORDER BY	dbl_p_name ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 3">
+	 		ORDER BY	dbl_s_name ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 4">
+	 		ORDER BY	dbl_subject ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 5">
+	 		ORDER BY	dbl_grandtotal ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 6">
+	 		ORDER BY	dbl_issuedate ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 7">
+	 		ORDER BY	dbl_status ${sortDirect}
+	 		</when>
+	 		<otherwise>
+	 		ORDER BY 	COUNT DESC
+	 		</otherwise>
+ 		</choose>
+		<if test=" recordCountPerPage != 0">
+		LIMIT  	#{recordCountPerPage} OFFSET #{firstIndex} 
+		</if>  
+    </select>
+    
+    <sql id="Log_getListBody3">
+	from (
+		select B.*
+			, @ROWNUM:=@ROWNUM+1 as COUNT
+		from (
+			select *
+			from dy_bills_log 
+			where dbl_sub_keyno = 3
+			and date_format(Conn_date, '%Y-%m') = date_format(now(), '%Y-%m')
+			order by dbl_keyno
+		) B
+		where (@ROWNUM:=0)=0
+	)AA
+	where 1=1
+	<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT 				LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		dbl_p_name			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		dbl_s_name			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		dbl_subject			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		dbl_grandtotal			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("6")'>
+ 		AND		dbl_issuedate			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("7")'>
+ 		AND		dbl_status			LIKE CONCAT( '%',#{item.searchKeyword},'%')			
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT					LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_p_name 				LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_s_name				LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_subject				LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_grandtotal			LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_issuedate			LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_status				LIKE CONCAT( '%',#{item.searchKeyword},'%')	
+ 				
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+	</sql>
+	
+	<select id="Log_getListCnt3" resultType="int">
+		SELECT	COUNT(*)
+		<include  refid="Log_getListBody3"/>
+    </select>
+    
+    <select id="Log_getList3" resultMap="ResultMap.rownumHashMap">
+    	SELECT	* 
+		<include  refid="Log_getListBody3"/>
+		<choose>
+			<when test="orderBy == 1">
+	 		ORDER BY	COUNT ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 2">
+	 		ORDER BY	dbl_p_name ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 3">
+	 		ORDER BY	dbl_s_name ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 4">
+	 		ORDER BY	dbl_subject ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 5">
+	 		ORDER BY	dbl_grandtotal ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 6">
+	 		ORDER BY	dbl_issuedate ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 7">
+	 		ORDER BY	dbl_status ${sortDirect}
+	 		</when>
+	 		<otherwise>
+	 		ORDER BY 	COUNT DESC
+	 		</otherwise>
+ 		</choose>
+		<if test=" recordCountPerPage != 0">
+		LIMIT  	#{recordCountPerPage} OFFSET #{firstIndex} 
+		</if>  
+    </select>
+    
+    <!-- 세금계산서 로그페이지 페이징, 정렬, 검색 -->
+    <sql id="Log_getListBody4">
+	from (
+		select B.*
+			, @ROWNUM:=@ROWNUM+1 as COUNT
+		from (
+			select *
+			from dy_bills_log
+			where dbl_status = "-1"
+			or dbl_status = "2"
+			or dbl_status = "0"
+			order by dbl_keyno
+		) B
+		where (@ROWNUM:=0)=0
+		<if test="AH_HOMEDIV_C != null and AH_HOMEDIV_C != ''">
+	 		AND			dbl_sub_keyno 	=	#{AH_HOMEDIV_C}
+		 	</if>
+		 	<if test="UI_ID != null and UI_ID != ''">
+	 		AND			dbl_p_name 			=	#{UI_ID}
+		 	</if>
+	        <if test="searchBeginDate != null and searchBeginDate != ''">
+	 		AND			DATE_FORMAT(Conn_date,'%Y-%m-%d') 	>=	#{searchBeginDate}
+		 	</if>
+		 	<if test="searchEndDate != null and searchEndDate != ''">
+		 	<![CDATA[
+	 		AND			DATE_FORMAT(Conn_date,'%Y-%m-%d') 	<=	#{searchEndDate}
+		 	]]>
+		 	</if>
+	)AA
+	where 1=1
+	<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT 				LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		dbl_sub_keyno 		LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		dbl_p_name			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		dbl_s_name			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		dbl_subject			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("6")'>
+ 		AND		dbl_grandtotal			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("7")'>
+ 		AND		dbl_issuedate			LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("8")'>
+ 		AND		dbl_status			LIKE CONCAT( '%',#{item.searchKeyword},'%')			
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT					LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_p_name 				LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_sub_keyno 			LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_s_name				LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_subject				LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_grandtotal			LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_issuedate			LIKE CONCAT( '%',#{item.searchKeyword},'%') 	OR
+ 				dbl_status				LIKE CONCAT( '%',#{item.searchKeyword},'%')	
+ 				
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+	 	</if>
+	</sql>
+	
+	
+	
+	<select id="Log_getListCnt4" resultType="int">
+		SELECT	COUNT(*)
+		<include  refid="Log_getListBody4"/>
+    </select>
+    
+    
+    
+    
+    <select id="Log_getList4" resultMap="ResultMap.rownumHashMap">
+    	SELECT	* 
+		<include  refid="Log_getListBody4"/>
+		<choose>
+			<when test="orderBy == 1">
+	 		ORDER BY	COUNT ${sortDirect}
+	 		</when>
+			<when test="orderBy == 2">
+	 		ORDER BY	dbl_sub_keyno ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 3">
+	 		ORDER BY	dbl_p_name ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 4">
+	 		ORDER BY	dbl_s_name ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 5">
+	 		ORDER BY	dbl_subject ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 6">
+	 		ORDER BY	dbl_grandtotal ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 7">
+	 		ORDER BY	dbl_issuedate ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 8">
+	 		ORDER BY	dbl_status ${sortDirect}
+	 		</when>
+	 		<otherwise>
+	 		ORDER BY 	COUNT DESC
+	 		</otherwise>
+ 		</choose>
+		<if test=" recordCountPerPage != 0">
+		LIMIT  	#{recordCountPerPage} OFFSET #{firstIndex} 
+		</if>  
+    </select>
+    
+    <update id="codemsgUpdate" parameterType="String" >
+		UPDATE dy_bills_log 
+			SET dbl_status = #{dbl_status},
+				dbl_errormsg = #{dbl_errormsg},
+				dbl_issuedate = #{dbl_issuedate},
+				dbl_sub_issuedate = #{dbl_sub_issuedate}
+			WHERE dbl_keyno = #{dbl_keyno}
+	</update>
+	
+    <update id="homeIdUpdate_f" parameterType="List" >
+		UPDATE dy_bills_log 
+			SET dbl_homeid = #{dbl_homeid},
+				dbl_issuedate = #{dbl_issuedate},
+				dbl_sub_issuedate = #{sub_issuedate}
+			WHERE dbl_keyno = #{dbl_keyno}
+	</update>
+	
+	<select id="ErrorrMsg" parameterType="hashmap" resultType="hashmap">
+		SELECT * 
+		FROM dy_bills_log
+		WHERE dbl_keyno = #{dbl_keyno}
+	</select>
+	
+		<select id="homeidSelect" parameterType="hashmap" resultType="hashmap">
+		SELECT dbl_homeid 
+		FROM dy_bills_log a
+		left join dy_bills_provider b
+		on a.dbl_provider_key = b.dbp_keyno
+		where b.dbp_keyno = #{dbp_keyno}
+		order by dbl_homeid desc
+		limit 1
+	</select>
+	
+	<!-- 한전발행,거래처발행용 카카오톡 전송용 전화번호 select -->
+	<select id="AlimSelect" parameterType="String" resultType="String">
+			SELECT p.dbp_ir_cell 
+			FROM dy_bills_log l
+			left join dy_bills_provider p
+			on l.dbl_provider_key = p.dbp_keyno
+			left join dy_bills_supplied s
+			on l.dbl_supplied_key = s.dbs_keyno
+			where l.dbl_keyno = #{dbl_keyno}
+	</select>
+	
+	<!-- 안전관리자용 카카오톡 전송용 전화번호 select -->
+	<select id="AlimSelect2" parameterType="String" resultType="String">
+			SELECT s.dbs_cell1 
+			FROM dy_bills_log l
+			left join dy_bills_provider p
+			on l.dbl_provider_key = p.dbp_keyno
+			left join dy_bills_supplied s
+			on l.dbl_supplied_key = s.dbs_keyno
+			where l.dbl_keyno = #{dbl_keyno}
+	</select>
+	
+	
+	<!-- 국세청 전송 여부 select -->
+	<select id="checkYNselect" parameterType="billDTO" resultType="String">
+		select dbl_checkYN
+		from dy_bills_log
+		where dbl_keyno = #{dbl_keyno}
+	</select>
+	
+	<!-- 전송실패시 checkYN N으로 변경 -->
+	<update id="checkChange" parameterType="billDTO">
+		UPDATE dy_bills_log
+		SET dbl_checkYN = 'N'
+		WHERE dbl_keyno = #{dbl_keyno}
+	</update>
+	
+	<!-- 공급자 삭제 -->
+	<delete id="proDelete" parameterType="String">
+		DELETE  FROM dy_bills_provider 
+		where dbp_keyno  = #{dbp_keyno}
+	</delete>
+	
+	<!-- 공급받는자 삭제 -->
+	<delete id="supDelete" parameterType="String">
+		DELETE  FROM dy_bills_supplied 
+		where dbs_keyno  = #{dbs_keyno}
+	</delete>
+	
+	<select id="LogSelect" parameterType="String" resultType="hashmap">
+			SELECT * 
+			FROM dy_bills_log l
+			left join dy_bills_provider p
+			on l.dbl_provider_key = p.dbp_keyno
+			left join dy_bills_supplied s
+			on l.dbl_supplied_key = s.dbs_keyno
+			where l.dbl_keyno = #{listtable}
+	</select>
+	
+	<!-- status 전송대기(2)인 keyno 뽑기 -->
+	<select id="status2select"  resultType="hashmap">
+			select dbl_keyno
+			from dy_bills_log
+			where dbl_status = '2'
+	</select>
+	
+	<!-- 자동등록을 위한 전달 전송리스트 뽑기 -->
+	<select id="PreMonthData"  resultType="hashmap" parameterType="String">
+			SELECT * 
+			FROM dy_bills_log
+			where date_format(Conn_date, '%Y-%m') = date_format(now()-interval 1 month, '%Y-%m')
+			and dbl_sub_keyno = #{subkey}
+	</select>
+	
+	<!-- 고유번호 설정을 위한 homekey테이블 조회 -->
+	<select id="homekey"  resultType="String">
+			SELECT homekey
+			FROM dy_bill_keytable
+	</select>
+	
+	<!-- 마지막 homekey 업데이트 -->
+	<update id="changeHomekey" parameterType="String">
+		update dy_bill_keytable
+		set homekey = #{key}
+	</update>
+	
+	
+	<!-- 	전송 결과값을 위한 쿼리 -->
+	<select id="LogResultNeedData" resultType="billDTO">
+		select a.dbl_keyno , b.dbp_id , b.dbp_pass , b.dbp_apikey , a.dbl_homeid ,b.dbp_name, a.dbl_s_name, a.dbl_sub_keyno, b.dbp_co_num
+		from dy_bills_log a
+		left join dy_bills_provider b
+		on a.dbl_provider_key  = b.dbp_keyno
+		where (dbl_status = 0 or dbl_status = -1)
+		and date_format(a.Conn_date, '%Y-%m') = date_format(now(), '%Y-%m')
+	</select>
+	
+	<select id="LogResultNeedData2" resultType="billDTO">
+		select a.dbl_keyno , b.dbp_id , b.dbp_pass , b.dbp_apikey , a.dbl_homeid ,b.dbp_name, b.dbp_co_num, a.dbl_s_name
+		from dy_bills_log a
+		left join dy_bills_provider b
+		on a.dbl_provider_key  = b.dbp_keyno
+		where (dbl_status = 0 or dbl_status = -1)
+		and dbl_sub_keyno = '1'
+		and date_format(a.Conn_date, '%Y-%m') = date_format(now(), '%Y-%m')
+	</select>
+	
+	<!-- 안전관리 부분 전체 전송 -->
+	<select id="AllsentNTS" resultType="String" parameterType="String">
+		select dbl_keyno
+		from dy_bills_log 
+		where dbl_sub_keyno = #{subkey}
+		and dbl_checkYN = 'N'
+		and date_format(Conn_date, '%Y-%m') = date_format(now(), '%Y-%m')
+	</select>
+	
+	<select id="f_ListSelect" resultType="Hashmap" parameterType="String">
+		select *
+		from dy_bills_log a
+		where dbl_sub_keyno = #{subkey}
+		and dbl_status = '-1'
+		and date_format(a.Conn_date, '%Y-%m') = date_format(now(), '%Y-%m')
+	</select>
+	
+	<update id="ChangeLogmsg" parameterType="billDTO">
+		update dy_bills_log
+		set dbl_status = #{dbl_status},
+			dbl_errormsg = #{dbl_errormsg},
+			dbl_checkYN = #{dbl_checkYN}
+		where dbl_keyno = #{dbl_keyno}
+	</update>
+	
+</mapper>
+ 

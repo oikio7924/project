@@ -1,0 +1,22 @@
+.classpath
+.project
+
+.gradle/
+.settings/
+bin/
+build/
+*_back.jsp
+.pmd
+# src/main/webapp/index.jsp
+# src/main/webapp/robots.txt
+# src/main/webapp/WEB-INF/jsp/publish/
+# src/main/webapp/WEB-INF/jsp/layout/user/defaultlayout/_*
+# src/main/webapp/resources/webfile/
+# src/main/webapp/resources/img/upload/
+# src/main/webapp/resources/publish/
+# src/main/webapp/resources/attach/
+# src/main/webapp/resources/data/
+# src/main/resources/config.properties
+
+
+

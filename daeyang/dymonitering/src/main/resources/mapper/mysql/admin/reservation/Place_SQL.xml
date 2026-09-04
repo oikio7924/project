@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Place">
+	
+	<!-- 장소관리 리스트 -->
+	<sql id="PM_getDataListBody">
+	FROM (
+		SELECT 	@ROWNUM := @ROWNUM + 1 AS COUNT
+				, AA.*
+		FROM (
+			SELECT 		CAST(RIGHT(PM_KEYNO,10) AS UNSIGNED) PM_KEYNO
+						, P.PM_NAME
+						, P.PM_NAME_EN
+						, P.PM_SEAT
+						, CASE PM_USE
+							WHEN 'Y' THEN 'O'
+							WHEN 'N' THEN 'X'
+						END PM_USE
+						, CASE PM_SEATPLAN_YN
+							WHEN 'Y' THEN 'O'
+							WHEN 'N' THEN 'X'
+						END PM_SEATPLAN_YN
+						, FS.*
+						, CONCAT(FS_FOLDER,FS_CHANGENM, '.',FS_EXT) THUMBNAIL_PATH
+    					, FS_PUBLIC_PATH  THUMBNAIL_PUBLIC_PATH
+			FROM t_place_manager P
+			LEFT JOIN s_common_file_sub FS
+			ON			P.PM_FS_KEYNO = FS.FS_KEYNO
+			WHERE		PM_USE		!=	'D'
+			ORDER BY	PM_KEYNO
+		) AA
+		WHERE (@ROWNUM:=0)=0
+	) BB
+	WHERE 1=1
+		<if test="searchList != null">
+		 	<foreach collection="searchList" item="item">
+		 		<choose>
+		 			<when test='item.searchIndex.equals("1")'>
+	 		AND		COUNT   LIKE CONCAT( '%',#{item.searchKeyword},'%')				
+		 			</when>
+		 			<when test='item.searchIndex.equals("2")'>
+	 		AND		PM_NAME  LIKE CONCAT( '%',#{item.searchKeyword},'%')				
+		 			</when>
+		 			<when test='item.searchIndex.equals("3")'>
+	 		AND		PM_NAME_EN  LIKE CONCAT( '%',#{item.searchKeyword},'%')						
+		 			</when>
+		 			<when test='item.searchIndex.equals("4")'>
+	 		AND		PM_SEAT 	LIKE CONCAT( '%',#{item.searchKeyword},'%')						
+		 			</when>
+		 			<when test='item.searchIndex.equals("5")'>
+	 		AND		PM_USE  	 = #{item.searchKeyword}								
+		 			</when>
+		 			<when test='item.searchIndex.equals("6")'>
+	 		AND		PM_SEATPLAN_YN   = #{item.searchKeyword}	 
+		 			</when>
+		 			<when test='item.searchIndex.equals("all")'>
+	 		AND (
+	 				COUNT   		LIKE CONCAT( '%',#{item.searchKeyword},'%')			OR
+	 				PM_NAME 		LIKE CONCAT( '%',#{item.searchKeyword},'%')			OR
+	 				PM_NAME_EN  	LIKE CONCAT( '%',#{item.searchKeyword},'%')			OR
+	 				PM_SEAT 		LIKE CONCAT( '%',#{item.searchKeyword},'%')			OR
+	 				PM_USE  		 = #{item.searchKeyword}						OR
+	 				PM_SEATPLAN_YN   = #{item.searchKeyword}
+	 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+ 	</if>
+</sql>
+
+	<!-- 프로그램신청관리 - 장소관리 카운트 -->
+	<select	id="PM_getDataListCnt" resultType="int">
+		SELECT COUNT(*) 
+		<include refid="PM_getDataListBody"/>
+	</select>
+	
+	<!-- 프로그램신청관리 - 장소관리 리스트  -->
+	<select	id="PM_getDataList" resultMap="ResultMap.rownumHashMap">
+		SELECT	* 
+		<include  refid="PM_getDataListBody"/>
+		<choose>
+	 		<when test="orderBy == 1">
+	 		ORDER BY	COUNT ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 2">
+	 		ORDER BY	PM_NAME ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 3"> 
+	 		ORDER BY	PM_NAME_EN ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 4"> 
+	 		ORDER BY	PM_SEAT ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 5">
+	 		ORDER BY	PM_USE ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 6"> 
+	 		ORDER BY	PM_SEATPLAN_YN ${sortDirect}
+	 		</when>
+	 		<otherwise>
+	 		ORDER BY	COUNT DESC
+	 		</otherwise>
+	 	</choose>
+		<if test="recordCountPerPage != 0">
+		LIMIT  	#{recordCountPerPage} OFFSET #{firstIndex}
+		</if>
+	</select>
+	
+	<select id="PM_getList" resultType="hashmap">
+		SELECT @ROWNUM := @ROWNUM + 1 AS NUMBER
+				,AA.*
+		FROM (
+			SELECT 		P.*
+						, FS.FS_KEYNO FS_KEYNO1
+						, FS.FS_ORINM FS_ORINM1
+						, CONCAT(FS.FS_FOLDER, FS.FS_CHANGENM, '.', FS.FS_EXT) THUMBNAIL_PATH
+						, FS.FS_PUBLIC_PATH  THUMBNAIL_PUBLIC_PATH
+						, FS2.FS_KEYNO FS_KEYNO2
+						, FS2.FS_ORINM FS_ORINM2
+						, CONCAT(FS2.FS_FOLDER, FS2.FS_CHANGENM, '.', FS2.FS_EXT) SEATBACKGROUND_PATH
+						, FS.FS_PUBLIC_PATH  SEATBACKGROUND_PUBLIC_PATH
+			FROM t_place_manager P
+			LEFT JOIN s_common_file_sub FS
+			ON			P.PM_FS_KEYNO = FS.FS_KEYNO
+			LEFT JOIN s_common_file_sub FS2
+			ON			P.PM_SEAT_FS_KEYNO = FS2.FS_KEYNO
+			WHERE		PM_USE		!=	'D'
+			ORDER BY	PM_KEYNO
+		) AA, (SELECT @ROWNUM := 0 ) R
+		<if test="PM_KEYNO != null and PM_KEYNO != ''">
+		WHERE		PM_KEYNO	=	#{PM_KEYNO}
+		</if>
+		ORDER BY	PM_KEYNO DESC
+	</select>
+	
+	<insert id="PM_insertData" parameterType="PlaceDTO">
+		INSERT INTO t_place_manager(
+				PM_KEYNO
+			,	PM_NAME
+			,   PM_NAME_EN
+			,	PM_FS_KEYNO
+			,	PM_USE
+			,	PM_SEAT
+			,	PM_SEATPLAN_YN
+			,	PM_SEATPLAN_WIDTH
+			,	PM_SEATPLAN_HEIGHT
+			,	PM_SEAT_FS_KEYNO
+		) VALUES (
+				#{PM_KEYNO}
+			,	#{PM_NAME}
+			,	#{PM_NAME_EN}
+			,	#{PM_FS_KEYNO}
+			,	#{PM_USE}
+			,	#{PM_SEAT}
+			,	#{PM_SEATPLAN_YN}
+			,	#{PM_SEATPLAN_WIDTH}
+			,	#{PM_SEATPLAN_HEIGHT}
+			,	#{PM_SEAT_FS_KEYNO}
+		)
+	</insert>
+	
+	<update id="PM_updateData" parameterType="PlaceDTO">
+		UPDATE t_place_manager
+		SET		PM_NAME				=	#{PM_NAME}
+			  , PM_NAME_EN			=	#{PM_NAME_EN}
+			  , PM_FS_KEYNO			=	#{PM_FS_KEYNO}
+			  , PM_USE				=	#{PM_USE}
+			  , PM_SEAT				=	#{PM_SEAT}
+			  , PM_SEATPLAN_YN		=	#{PM_SEATPLAN_YN}
+			  , PM_SEATPLAN_WIDTH	=	#{PM_SEATPLAN_WIDTH}
+			  , PM_SEATPLAN_HEIGHT	=	#{PM_SEATPLAN_HEIGHT}
+			  ,	PM_SEAT_FS_KEYNO	=	#{PM_SEAT_FS_KEYNO}
+		WHERE	PM_KEYNO			=	#{PM_KEYNO}
+	
+	</update>
+	
+	<select id="PM_getList2" resultType="hashmap">
+		SELECT 	@ROWNUM := @ROWNUM + 1 AS NUMBER
+				, AA.*
+		FROM (
+			SELECT 		P.*
+						, FS.*
+			FROM t_place_manager P
+			LEFT JOIN s_common_file_sub FS
+			ON			P.PM_FS_KEYNO = FS.FS_KEYNO
+			WHERE		PM_USE		=	'Y'
+			ORDER BY	PM_KEYNO
+		) AA, (SELECT @ROWNUM := 0 ) R
+		ORDER BY	PM_KEYNO DESC
+	</select>
+	
+	<update id="PM_deleteData" parameterType="PlaceDTO">
+		UPDATE t_place_manager
+		SET		PM_USE		=	'D'
+		WHERE	PM_KEYNO	=	#{PM_KEYNO}
+	
+	</update>
+	
+	
+	<insert id="PSM_insertData" parameterType="hashmap">
+		INSERT INTO t_place_seatgroup_main(
+			  PSM_KEYNO
+			, PSM_PM_KEYNO
+			, PSM_NAME
+			, PSM_ROW
+			, PSM_COL
+			, PSM_TOP
+			, PSM_LEFT
+		) 
+		VALUES
+		<foreach collection="seatMainList" item="item" separator=","> 
+		(
+				#{item.PSM_KEYNO}
+			,	#{item.PSM_PM_KEYNO}
+			,	#{item.PSM_NAME}
+			,	#{item.PSM_ROW}
+			,	#{item.PSM_COL}
+			,	#{item.PSM_TOP}
+			,	#{item.PSM_LEFT}
+		)
+		</foreach>
+	</insert>
+	
+	<insert id="PSS_insertData" parameterType="hashmap">
+		INSERT INTO t_place_seatgroup_sub(
+			  PSS_KEYNO
+			, PSS_PSM_KEYNO
+			, PSS_ROW
+			, PSS_COL
+			, PSS_CODE
+		) 
+		VALUES
+		<foreach collection="seatSubList" item="item" separator=","> 
+		(
+				#{item.PSS_KEYNO}
+			,	#{item.PSS_PSM_KEYNO}
+			,	#{item.PSS_ROW}
+			,	#{item.PSS_COL}
+			,	#{item.PSS_CODE}
+		)
+		</foreach>
+	</insert>
+	
+	<select id="PSM_getList" resultType="hashmap">
+		SELECT  AA.*, GROUP_CONCAT(CODES ORDER BY PSS_ROW ASC SEPARATOR '|') DATA
+		FROM (
+			SELECT	A.*, GROUP_CONCAT(PSS_CODE ORDER BY PSS_COL ASC) CODES
+		    FROM (
+		        SELECT		*
+		        FROM t_place_seatgroup_main M
+		        LEFT JOIN t_place_seatgroup_sub S
+		        ON			M.PSM_KEYNO = S.PSS_PSM_KEYNO
+		        WHERE		PSM_PM_KEYNO	=	#{PM_KEYNO}
+		        ORDER BY PSM_KEYNO,PSS_ROW,PSS_COL
+		    ) A
+		    GROUP BY PSM_KEYNO,PSS_ROW
+		) AA
+		GROUP BY PSM_KEYNO
+		
+	</select>
+	
+	<delete id="PSM_deleteData" parameterType="String">
+		DELETE FROM t_place_seatgroup_main
+		WHERE	PSM_PM_KEYNO	=	#{PM_KEYNO}	
+	</delete>
+	
+	<delete id="PSS_deleteData" parameterType="String">
+		DELETE FROM t_place_seatgroup_sub
+		WHERE	PSS_PSM_KEYNO	IN (
+			SELECT 	PSM_KEYNO
+			FROM t_place_seatgroup_main
+			WHERE	PSM_PM_KEYNO	=	#{PM_KEYNO}	
+		)	
+	</delete>
+	
+</mapper>
+ 

@@ -1,0 +1,421 @@
+
+
+legend, caption, hr, .blind {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    overflow: hidden;
+    line-height: 0.1%;
+    font-size: 0.1%;
+    width: 0.1%;
+    height: 0.1%;
+}
+
+
+/*교통정보*/
+.sightsee-title-2 {width:100%; margin-bottom: 20px; font-size: 25px; font-weight: 500; color:#333;}
+
+.sigthsee-iner-traffic {width:100%; margin-bottom: 50px; background-color:#fff; padding:45px; box-shadow: 5px 5px 5px rgba(0,0,0,0.1);}
+.sigthsee-iner-traffic .map-box {margin-bottom: 32px; width: 100%; border:1px solid #ddd; width: 100%; position: relative;}
+.map-in-top-tab-box {position: absolute; width: 100%;}
+.map-in-tab-1 {width:100%; height: 50px; border-bottom:1px solid #ddd;}
+.map-in-tab-1:after { visibility: hidden;display:block;font-size: 0;content:".";clear: both;height: 0;*zoom:1;}
+.map-in-tab-1 li {float:left; height: 100%; width: 14.285%;  text-align: center; border-left:1px solid #ddd; background-color:#fff;}
+.map-in-tab-1 li:first-child {border-left:none;}
+.map-in-tab-1 li a {display: block; width: 100%; height: 100%; padding:15px 5px;}
+
+.map-in-tab-1 li a span {display: inline-block; vertical-align: top;}
+.map-in-tab-1 li a .icon i {font-size: 21px; color:#888fd7;}
+.map-in-tab-1 li a .txt {font-size: 15px; color:#888;}
+.map-in-tab-1 li a .icon .map1, .map-in-tab-1 li a .map1 {color:#4f7cbe;}
+.map-in-tab-1 li a .icon .map2,.map-in-tab-1 li a .map2 {color:#e80c0c;}
+.map-in-tab-1 li a .icon .map3, .map-in-tab-1 li a .map3 {color:#01a546}
+
+.map-in-tab-1 li:hover {background-color:#888fd7;}
+.map-in-tab-1 li:hover a .icon i {color:#fff;}
+.map-in-tab-1 li:hover a .txt {color:#fff;}
+
+.map-in-tab-1 li.active {background-color:#888fd7;}
+.map-in-tab-1 li.active a .icon i {color:#fff;}
+.map-in-tab-1 li.active a .txt {color:#fff;}
+.map-in-tab-1 li.active2 {background-color:#888fd7;}
+.map-in-tab-1 li.active2 a .icon i {color:#fff;}
+.map-in-tab-1 li.active2 a .txt {color:#fff;}
+
+.mapWrap{margin-top: 50px;}
+
+.sigthsee-iner-traffic .letter-box {}
+.sigthsee-iner-traffic .letter-box h3 {font-size: 18px; font-weight: 500; color:#333; margin-bottom: 12px;}
+.sigthsee-iner-traffic .letter-box .detail-box {width:100%; position: relative;}
+.sigthsee-iner-traffic .letter-box .detail-box:after { visibility: hidden;display:block;font-size: 0;content:".";clear: both;height: 0;*zoom:1;}
+.sigthsee-iner-traffic .letter-box .detail-box .table-box {float:left; width:100%; padding-right:22%;}
+.sigthsee-iner-traffic .letter-box .detail-box .btn-box {position:absolute; top:0; right:0; width: 20%; height: 100%;}
+.btn-traffic-go {width:100%; height: 100%; background-color:#888fd7; text-align: center;
+	-webkit-transition: all 0.25s;
+	transition: all 0.25s;}
+.btn-traffic-go .icon {display: block; }
+.btn-traffic-go .text {display:block; padding-top:16px; font-size: 18px; font-weight: 500; color:#fff; }
+.btn-traffic-go:hover {background-color:#594fb1;}
+.btn-traffic-go .icon.tw {display: inline-block; vertical-align: middle;}
+.btn-traffic-go .text.tw {display: inline-block; vertical-align: middle; padding-left: 5px;}
+
+/*주변정보*/
+.sigthsee-iner-around {width:100%; background:#fff; border:1px solid #ddd; overflow-y:scroll;}
+.sigthsee-iner-around:after { visibility: hidden;display:block;font-size: 0;content:".";clear: both;height: 0;*zoom:1;}
+.sigthsee-iner-around .item {float:left; width:50%; height: 160px; border-right:1px solid #ddd;  border-bottom:1px solid #ddd; overflow: hidden; padding:17px 22px 13px; margin:-1px 0 -1px;}
+.sigthsee-iner-around .item:after { visibility: hidden;display:block;font-size: 0;content:".";clear: both;height: 0;*zoom:1;}
+.sigthsee-iner-around .item:nth-of-type(1) {border-top:none;}
+.sigthsee-iner-around .item:nth-of-type(2) {border-top:none;}
+.sigthsee-iner-around .item .img-box {float:left; width:190px; height: 118px; overflow: hidden; }
+.sigthsee-iner-around .item .img-box img {width: 100%; min-height: 100%;}
+.sigthsee-iner-around .item .letter-box {float:left; width:calc(100% - 190px); padding:10px 0 0 15px;}
+.sigthsee-iner-around .item .letter-box h2 {font-size:18px; margin-bottom: 15px; font-weight: 500;}
+.sigthsee-iner-around .item .letter-box .loca-txt {margin-bottom: 10px}
+.sigthsee-iner-around .item .letter-box .loca-txt .one {display: inline-block; margin-left: 10px;}
+.sigthsee-iner-around .item .letter-box .loca-txt .one:first-of-type {margin-left:0px;}
+.sigthsee-iner-around .item .letter-box .loca-txt .one .icon {display: inline-block; vertical-align: middle;}
+.sigthsee-iner-around .item .letter-box .loca-txt .one .icon i {font-size: 18px; color:#4b7abd;}
+.sigthsee-iner-around .item .letter-box .loca-txt .one .txt {display:inline-block; vertical-align: middle; font-size:13.5px; color:#555; margin-top: -2px;}
+.sigthsee-iner-around .item .letter-box .btn-box {}
+.btn-more-insi {min-width: 113px; height: 33px; border-radius: 5px; border:1px solid #888;
+	-webkit-transition: all 0.25s;
+	transition: all 0.25s;}
+.btn-more-insi:hover {background:#555; color:#fff;}
+
+
+
+@media all and (max-width:999px){
+
+	/*타이틀*/
+	.sigthsee-iner-title-box {margin: 0 0 15px;}
+	.sigthsee-iner-title-box h2 {font-size:23px;}
+	.sigthsee-iner-title-box .arrow {}
+	.sigthsee-iner-title-box .arrow i {font-size:25px; margin-top: 0px;}
+
+	/*교통정보*/
+	.sightsee-title-2 {margin-bottom: 10px; font-size: 18px;}
+
+	.sigthsee-iner-traffic {margin-bottom: 20px; padding:10px;}
+	.sigthsee-iner-traffic .map-box {margin-bottom: 15px; width:100%; border:1px solid #ddd;}
+	.sigthsee-iner-traffic .letter-box {}
+	.sigthsee-iner-traffic .letter-box h3 {font-size: 16px; margin-bottom: 5px;}
+	.sigthsee-iner-traffic .letter-box .detail-box .table-box {float:none; width:100%; padding-right:0px;}
+	.sigthsee-iner-traffic .letter-box .detail-box .btn-box {}
+	.sigthsee-iner-traffic .letter-box .detail-box .btn-box {float:none; width:100%; position:relative; top:0; right:0; height: 100%;}
+	.btn-traffic-go {width:100%; height: 45px;}
+	.btn-traffic-go .icon {display: inline-block; width:20px;}
+	.btn-traffic-go .text {display:inline-block; padding:2px 0 0 10px; font-size: 13px;}
+
+	.mapWrap{margin-top: 105px;}
+	.map-in-top-tab-box {}
+	.map-in-tab-1 {height: auto; border-bottom:none;}
+	.map-in-tab-1 li {width: 33.33%;border:1px solid #ddd;border-left: none;margin: -1px 0px 0 0px;}
+	.map-in-tab-1 li:first-child {border-left:none;}
+	.map-in-tab-1 li:nth-of-type(3n) {border-right:none;}
+	.map-in-tab-1 li a {display: block; width: 100%; height: 100%; padding:8px 5px;}
+	.map-in-tab-1 li a .icon i {font-size: 14px;}
+	.map-in-tab-1 li a .txt {font-size: 13px;}
+
+	/*주변정보*/
+	.sigthsee-iner-around {height: 300px; }
+	.sigthsee-iner-around .item {float:left; width:100%; height: auto; overflow: hidden; padding:10px 15px 9px;}
+	.sigthsee-iner-around .item .img-box {float:left; width:140px; height: auto; }
+	.sigthsee-iner-around .item .letter-box {float:left; width:calc(100% - 140px); padding:0px 0 0 10px;}
+	.sigthsee-iner-around .item .letter-box h2 {font-size:14px; margin-bottom: 5px; font-weight: 500;}
+	.sigthsee-iner-around .item .letter-box .loca-txt {margin-bottom: 5px;}
+	.sigthsee-iner-around .item .letter-box .loca-txt .one {display: inline-block; margin-left: 0px; width: 95%;}
+	.sigthsee-iner-around .item .letter-box .loca-txt .one .icon i {font-size: 15px;}
+	.sigthsee-iner-around .item .letter-box .loca-txt .one .txt {font-size:12px; }
+	.sigthsee-iner-around .item .letter-box .btn-box {}
+	.btn-more-insi {min-width: 113px; height: 25px; font-size: 12px;}
+	.btn-more-insi:hover {background:#888; color:#fff;}
+
+
+}
+
+
+/*코스안내 박스*/
+.course-guide-box {width: 100%;}
+.course-guide-box .title-box {width: 100%; height: 91px;}
+.course-guide-box .title-box:after { visibility: hidden;display:block;font-size: 0;content:".";clear: both;height: 0;*zoom:1;}
+.course-guide-box .title-box .icon-box {float:left; width: 93px; height: 100%; background-color:#005cc1; text-align: center; padding-top: 23px;}
+.course-guide-box .title-box .text-box {float:left; width: calc(100% - 93px); height: 100%; background-color:#678094; padding:0 35px;}
+.course-guide-box .title-box .text-box span {display: inline-block; vertical-align: middle;}
+.course-guide-box .title-box .text-box span.vertical {height: 100%; }
+.course-guide-box .title-box .text-box span.sbj {line-height: 1; font-size: 28px; font-weight: 800; color:#fff; padding-right: 15px; margin-right: 15px; border-right:1px solid #ddd;}
+.course-guide-box .title-box .text-box span.line {font-size: 18px; color:#fff;}
+
+.course-guide-box .map-box {width: 100%; border-left:1px solid #ddd; border-right:1px solid #ddd;}
+.course-guide-box .map-box img {width: 100%;}
+
+.course-guide-box .cour-box {width: 100%; background-color:#e7eaea; position: relative; padding:47px 40px 40px; }
+.course-guide-box .cour-box h4 {font-size: 16px; font-weight: 500; color:#444;}
+.course-guide-box .cour-box .row {width: 100%; text-align: center; position: relative; margin-bottom:10px;}
+.course-guide-box .cour-box .row:before {content:""; width: 100%; height: 1px; border-bottom:2px dotted #ccc; position: absolute; top: 8px; left: 0; z-index: 0;}
+.course-guide-box .cour-box .row > div {display: inline-block; vertical-align: top;}
+.course-guide-box .cour-box .row .map-btn {padding:0 5px; position: relative; z-index: 2; }
+.course-guide-box .cour-box .row .map-btn a {display: block;}
+.course-guide-box .cour-box .row .map-btn .cir {display: inline-block; width: 22px; height: 22px; border-radius: 50%; background-color:#bbbbbb; padding:5px; margin-bottom: 5px;}
+.course-guide-box .cour-box .row .map-btn .cir .inner {display: block; width:100%; height:100%; border-radius: 50%; background-color:#fff;}
+.course-guide-box .cour-box .row .map-btn .txt-box {font-size: 14px; font-weight: 500; line-height: 1.3;}
+.course-guide-box .cour-box .row .map-btn.active {}
+.course-guide-box .cour-box .row .map-btn.active .cir {background-color:#005cc1;}
+.course-guide-box .cour-box .row .map-btn.active .txt-box {font-weight: 800;}
+
+.course-guide-box .cour-box .row .distant-b {padding:0 3%; position: relative; z-index: 2; }
+.course-guide-box .cour-box .row .distant-b .km-tx {min-width: 118px; border:1px solid #bbbbbb; padding:5px 5px; border-radius: 15px; font-weight: 500; margin:-5px 0 5px; background-color:#e7eaea;}
+.course-guide-box .cour-box .row .distant-b .txt {color:#111;}
+
+
+
+/*코스버튼*/
+.list-course-w {width: 100%; background: #fff; border: 1px solid #ebebeb; padding:45px 30px 45px;}
+.list-course-w .list-gr {position:relative; display: table; table-layout:fixed; width:100%; margin:32px 0 50px; padding:0 15px 0 0;}
+.list-course-w .list-gr:last-of-type {margin-bottom: 0;}
+.list-course-w .list-gr .name {display: table-cell; text-align: center; vertical-align: top; position:relative;}
+.list-course-w .list-gr .name:before {content:""; width: 100%; height: 1px; border-top: 2px dashed #ccc; position: absolute; left:0; top:10px; z-index: 0;}
+
+.list-course-w .list-gr .name button {display: block; width: 100%; }
+.list-course-w .list-gr .name button .cir {display: inline-block; width: 22px; height: 22px; border-radius: 50%; background-color:#bbb; margin-bottom: 5px; padding:5px; position: relative; z-index: 1;}
+.list-course-w .list-gr .name button .cir .in {display:block; width: 100%; height: 100%; border-radius: 50%; background-color:#fff;}
+.list-course-w .list-gr .name button .txt {display: inline-block; width: 100%; font-size: 14px; font-weight: 500; line-height: 1.3;}
+.list-course-w .list-gr .name.active button .cir {background-color:#005cc1;}
+.list-course-w .list-gr .name.active button .txt {font-weight: 800;}
+
+.list-course-w .list-gr .name .km {position: absolute; top:-32px; right: -40px; text-align: center; min-width: 80px; font-size: 14px; font-weight: 500; padding:5px 10px 3px 13px; border:1px solid #ddd; border-radius: 15px; z-index: 3;}
+.list-course-w .list-gr .name.active .km {background-color:#ddd;}
+
+
+/*코스안내*/
+.course-in-title-box {margin:50px 0 18px;}
+.course-in-title-box h2 {font-size: 24px; font-weight: 500; color:#333;}
+
+.course-in-white-box {width: 100%; background-color:#fff; border:2px solid #ebebeb; padding:32px;}
+.course-in-white-box:after { visibility: hidden;display:block;font-size: 0;content:".";clear: both;height: 0;*zoom:1;}
+
+.course-in-white-box.guide-box {padding:32px 60px 32px 45px;}
+.course-in-white-box.guide-box h2 {font-size: 20px; font-weight: 500; color:#444; margin-bottom: 10px;}
+.course-in-white-box.guide-box .txt-p {font-size: 16px; color:#444; line-height: 1.5;}
+
+/*코스별 관광지*/
+.course-in-white-box.cour-tour {padding:35px 45px;}
+.course-in-white-box.cour-tour .c-row {margin-top: 48px; }
+.course-in-white-box.cour-tour .c-row:first-of-type {margin-top: 0px; }
+.course-in-white-box.cour-tour .c-row:after { visibility: hidden;display:block;font-size: 0;content:".";clear: both;height: 0;*zoom:1;}
+.course-in-white-box.cour-tour .c-row .img-box {float:left; width: 227px; height: 227px; position: relative;}
+.course-in-white-box.cour-tour .c-row .letter-box {float:left; width: calc(100% - 227px); padding:18px 30px 0 37px;}
+
+.course-in-white-box.cour-tour .c-row .img-box .s-img {display: block; width: 100%; height: 100%; border-radius: 50%; border:8px solid #e7eaea; background-size:cover; background-position: center center;}
+
+.course-in-white-box.cour-tour .c-row .img-box .num {position: absolute; left: 11px; top: 18px; width: 38px; height: 47px; background-image:url(/resources/tour/img/icon/icon_course_inner_1.png); background-repeat: no-repeat; background-position: left top; text-align: center; color:#fff; font-size: 15px; font-weight: 500; padding-top: 12px;  }
+
+.course-in-white-box.cour-tour .c-row .letter-box h3 {font-size: 22px; font-weight: 500; color:#333; margin-bottom: 12px;}
+.course-in-white-box.cour-tour .c-row .letter-box h4 {font-size: 16px; color:#555; margin-bottom: 15px;}
+.btn-dt {min-width: 196px; height: 45px; border:1px solid #3e6eb6;}
+.btn-dt .txt {float:left; width: 75%; height: 100%; padding-top: 13px; font-size: 15px; color:#3e6eb6;}
+.btn-dt .icon {float:right; width: 25%; height: 100%; border-left:1px solid #3e6eb6; padding: 10px 0 0;}
+.btn-dt .icon i { color:#3e6eb6; }
+.btn-dt:hover {background-color:#3e6eb6;}
+.btn-dt:hover .txt {color:#fff;}
+.btn-dt:hover .icon i {color:#fff;}
+
+
+@media all and (max-width:999px){
+	/* 테마코스 - 추천코스 상세 */
+	/*코스안내 박스*/
+	.course-guide-box {width: 100%;}
+	.course-guide-box .title-box {height: 50px;}
+	.course-guide-box .title-box .icon-box {width: 50px; padding-top: 10px;}
+	.course-guide-box .title-box .icon-box img {width: 20px;}
+	.course-guide-box .title-box .text-box {width: calc(100% - 50px); padding:0 5px 0 15px;}
+	.course-guide-box .title-box .text-box span.sbj {font-size: 18px; padding-right: 8px; margin-right: 8px;}
+	.course-guide-box .title-box .text-box span.line {font-size: 13px;}
+
+	.course-guide-box .map-box {}
+
+	.course-guide-box .cour-box {padding:15px 20px; }
+	.course-guide-box .cour-box h4 {font-size: 15px; margin-bottom: 0px;}
+	.course-guide-box .cour-box .row { text-align: left; padding:0 30px;}
+	.course-guide-box .cour-box .row:before {height: 0px; border-bottom:none;}
+	.course-guide-box .cour-box .row > div {vertical-align: middle;}
+	.course-guide-box .cour-box .row > div:nth-of-type(1) {margin-top: 0;}
+	.course-guide-box .cour-box .row > div:nth-of-type(2) {margin-top: 0;}
+	.course-guide-box .cour-box .row .map-btn {padding:0 3px; width: 45%; clear: both; margin-top:10px; text-align: center;}
+	.course-guide-box .cour-box .row .map-btn a {}
+	.course-guide-box .cour-box .row .map-btn .cir {width: 15px; height: 15px; border-radius: 50%; padding:3px; margin-bottom: 3px;}
+	.course-guide-box .cour-box .row .map-btn .txt-box {font-size: 13px;}
+
+	.course-guide-box .cour-box .row .distant-b {padding:20px 5px 0; width: 45%; text-align: center;}
+	.course-guide-box .cour-box .row .distant-b .km-tx {min-width: 90px; padding:2px 5px; margin-top: 0; font-size: 14px;}
+	.course-guide-box .cour-box .row .distant-b .txt {font-size:13px; color:#111;}
+
+
+	/*코스버튼*/
+	.list-course-w {padding:25px 20px}
+	.list-course-w .list-gr {display: block; width:100%; margin:0; padding:0 10px 0 0;}
+	.list-course-w .list-gr:after { visibility: hidden;display:block;font-size: 0;content:".";clear: both;height: 0;*zoom:1;}
+	.list-course-w .list-gr:last-of-type {}
+	.list-course-w .list-gr .name {display:block; width: 33.33%; float:left; margin:32px 0 10px;}
+	.list-course-w .list-gr .name:nth-of-type(3n+1) {clear: both;}
+	.list-course-w .list-gr .name:before {content:""; width: 100%; height: 1px; border-top: 2px dashed #ccc; position: absolute; left:0; top:10px; z-index: 0;}
+
+	.list-course-w .list-gr .name button {}
+	.list-course-w .list-gr .name button .cir {width: 18px; height: 18px; margin-bottom: 3px; padding:4px;}
+	.list-course-w .list-gr .name button .cir .in {}
+	.list-course-w .list-gr .name button .txt {font-size: 13px;}
+
+	.list-course-w .list-gr .name .km {top:-25px; right: -20px; text-align: center; min-width: 60px; font-size: 12px; padding:3px 5px 2px 9px;}
+	.list-course-w .list-gr .name.active .km {background-color:#fff;}
+
+
+	/*코스안내*/
+	.course-in-title-box {margin:20px 0 10px;}
+	.course-in-title-box h2 {font-size: 18px;}
+
+	.course-in-white-box {border-width:1px; padding:15px;}
+
+	.course-in-white-box.guide-box {padding:15px;}
+	.course-in-white-box.guide-box h2 {font-size: 16px; margin-bottom: 7px;}
+	.course-in-white-box.guide-box .txt-p {font-size: 13px;}
+
+	/*코스별 관광지*/
+	.course-in-white-box.cour-tour {padding:15px;}
+	.course-in-white-box.cour-tour .c-row {margin-top: 25px; }
+	.course-in-white-box.cour-tour .c-row .img-box {float:none; width: 100%; height:auto; text-align: center;}
+	.course-in-white-box.cour-tour .c-row .letter-box {float:none; width:100%; padding:15px;}
+
+	.course-in-white-box.cour-tour .c-row .img-box .s-img {display:inline-block; width: 150px; height: 150px; background-size: 100% auto; border-width: 5px;}
+	.course-in-white-box.cour-tour .c-row .img-box .num {left: 28%; top: 10px; width: 30px; height: 36px; background-size:100% auto; font-size: 13px; padding-top: 10px;  }
+
+	.course-in-white-box.cour-tour .c-row .letter-box h3 {font-size: 17px; margin-bottom: 8px; text-align: center;}
+	.course-in-white-box.cour-tour .c-row .letter-box h4 {font-size: 14px; margin-bottom: 15px;}
+	.course-in-white-box.cour-tour .c-row .letter-box .btn-box {text-align: center;}
+	.btn-dt {min-width: 160px; height: 40px;}
+	.btn-dt .txt {padding-top: 12px; font-size: 13px;}
+	.btn-dt .icon {padding: 10px 0 0;}
+	.btn-dt .icon i {font-size: 18px;}
+
+}
+
+
+
+
+
+/* 사진팝업 */
+.popUp_Pic_box1 {width:1250px; position:relative; margin:0 auto; background-color:#1f2531;}
+.popUp_Pic_box1 .top-header {width:100%; background-color:#273855; padding:25px 20px;}
+.popUp_Pic_box1 .top-header:after { visibility: hidden;display:block;font-size: 0;content:".";clear: both;height: 0;*zoom:1;}
+.popUp_Pic_box1 .top-header .logo-box {float:left; padding:0 30px 0 0; border-right:1px solid #777;}
+.popUp_Pic_box1 .top-header .txt-box {float:left; padding:3px 0 0 30px;}
+.popUp_Pic_box1 .top-header .txt-box p {font-size: 22px; font-weight: 800; color:#fff; margin-top: 5px;}
+
+.popUp_Pic_box1 .pic-content {width: 100%; padding:37px 20px 35px; text-align: center; position: relative; min-height:150px;}
+.popUp_Pic_box1 .pic-content .popSbtn {position: absolute; top:45%; width: 59px; height: 59px; background:url('/resources/img/icon/icon_m_banner_slide.png') no-repeat 0 0; z-index: 500;}
+.popUp_Pic_box1 .pic-content .popSbtn.prev {background-position: 0 0; left: 5%; }
+.popUp_Pic_box1 .pic-content .popSbtn.next {background-position: -59px 0; right: 5%; }
+
+.popUp_Pic_box1 .pic-content .popSlide-pic {}
+.popUp_Pic_box1 .pic-content .popSlide-pic .img-b {margin-bottom: 20px; width: 100%; height:500px;}
+.popUp_Pic_box1 .pic-content .popSlide-pic .txt-b {}
+.popUp_Pic_box1 .pic-content .popSlide-pic .txt-b h4 {font-size: 18px; font-weight: 500; color:#fff;}
+
+.popSlide-pic .one {vertical-align: middle;}
+.popSlide-pic .slick-slide img {display: inline-block;vertical-align: middle;/* display: block; */max-width: 100%; max-height: 100%;}
+
+
+.popUp_Pic_box1 .pic-thumnail-box {width:100%; padding:0px 15px 19px; position: relative; min-height: 100px;}
+.popUp_Pic_box1 .pic-thumnail-box .thum-Arrow {position: absolute; top:39px; width:30px; height: 30px; background-color:rgba(0,0,0,0.7); text-align: center; z-index: 1000;}
+.popUp_Pic_box1 .pic-thumnail-box .thum-Arrow button {width: 100%; height: 100%;}
+.popUp_Pic_box1 .pic-thumnail-box .thum-Arrow button i {color:#fff;}
+.popUp_Pic_box1 .pic-thumnail-box .thum-Arrow.prev {left:20px;}
+.popUp_Pic_box1 .pic-thumnail-box .thum-Arrow.next {right:20px;}
+
+.popSlide-thum .one {height: 110px; padding:5px;}
+.popSlide-thum .one a {display: block; width: 100%; height: 100%;}
+.popSlide-thum .one .img-s {display: block; width: 100%; height: 100%; background-repeat: no-repeat; background-size: cover; background-position: center center;}
+.popSlide-thum .slick-current a {border:3px solid #3e6fb6;}
+
+#receipt_pop_box{display: none;  position: fixed; z-index: 20000; top: 1%; left:18%;  height: 510px; border: none;}
+#pop_bg_opacity {width: 100%;  border: none;  height: 100%;    background-color: #000;   opacity: 0.5;   position: fixed;   top: 0;   left: 0;   z-index: 9000;  display: none;	}
+.contents_pop_cbtn {display: inline-block; width: 30px; height: 20px; position: absolute;  right: 30px; top: 30px;}
+
+@media all and (max-width:1240px){
+	/* 사진팝업 */
+	.popUp_Pic_box1 {width:100%;}
+	.popUp_Pic_box1 .top-header {width:100%; padding:15px 10px;}
+	.popUp_Pic_box1 .top-header .logo-box {padding:0 15px 0 0;}
+	.popUp_Pic_box1 .top-header .logo-box img {width: 80px;}
+	.popUp_Pic_box1 .top-header .txt-box {padding:0px 0 0 15px;}
+	.popUp_Pic_box1 .top-header .txt-box p {font-size: 17px;}
+
+	.popUp_Pic_box1 .pic-content {padding:20px 15px 20px; min-height:100px;}
+	.popUp_Pic_box1 .pic-content .popSbtn {top:45%; width: 30px; height: 30px; background-size: 60px auto;}
+	.popUp_Pic_box1 .pic-content .popSbtn.prev {background-position: 0 0; left: 2%; }
+	.popUp_Pic_box1 .pic-content .popSbtn.next {background-position: -30px 0; right: 2%; }
+
+	.popUp_Pic_box1 .pic-content .popSlide-pic {}
+	.popUp_Pic_box1 .pic-content .popSlide-pic .img-b {margin-bottom: 10px; height:200px;}
+	.popUp_Pic_box1 .pic-content .popSlide-pic .txt-b {}
+	.popUp_Pic_box1 .pic-content .popSlide-pic .txt-b h4 {font-size: 14px;}
+
+	.popUp_Pic_box1 .pic-thumnail-box {padding:0px 10px 15px; min-height: 80px;}
+	.popUp_Pic_box1 .pic-thumnail-box .thum-Arrow {top:20px;}
+	.popUp_Pic_box1 .pic-thumnail-box .thum-Arrow.prev {left:10px;}
+	.popUp_Pic_box1 .pic-thumnail-box .thum-Arrow.next {right:10px;}
+
+	.popSlide-thum .one {height: 70px; padding:2px;}
+
+	#receipt_pop_box {left:0; width:100%; height:100vh;}
+	.contents_pop_cbtn {display: inline-block; width: 20px; height: 20px; position: absolute; right: 20px; top: 20px;}
+	.contents_pop_cbtn img {width:100%;}
+}
+
+
+
+/*
+.customoverlay {color:black; display: none;position:relative;bottom:65px;right:27px;border-radius:6px;border: 1px solid #ccc;border-bottom:2px solid #ddd;float:left;text-align: center; background: #fff; padding: 10px 15px; font-size: 14px; font-weight: bold; z-index: 1;}
+ .customoverlay .title {display:block;text-align:center;background:#fff;padding:10px 15px;font-size:14px;font-weight:bold;}
+.customoverlay:after {content:'';position:absolute;margin-left:-12px;left:50%;bottom:-12px;width:22px;height:12px;background:url('http://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white.png')}
+
+.customoverlay2 {position:relative;bottom:85px;border-radius:6px;border: 1px solid #ccc;border-bottom:2px solid #ddd;float:left;}
+.customoverlay2 .title {display:block;text-align:center;background:#fff;padding:10px 15px;font-size:14px;font-weight:bold;}
+.customoverlay2:after {content:'';position:absolute;margin-left:-12px;left:50%;bottom:-12px;width:22px;height:12px;background:url('http://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white.png')}
+ */
+
+
+.customoverlay {
+	-webkit-box-sizing:border-box;
+	box-sizing:border-box;
+	color:black;
+	display:none;
+	position: absolute;
+	top: -10px;
+	left: 50%;
+	border-radius:6px;
+	border: 1px solid #ccc;
+	border-bottom:2px solid #ddd;
+	float:left;
+	text-align: center;
+	background: #fff;
+	padding: 10px 15px;
+	font-size: 14px;
+	font-weight: 600;
+	z-index: 0;
+	transform: translate(-50%,-100%);
+	/* min-width: 180px; */
+	white-space: nowrap;
+	}
+/* .customoverlay .title {display:block;text-align:center;background:#fff;padding:10px 15px;font-size:14px;font-weight:bold;} 
+.customoverlay:after {content:'';position:absolute; margin-left:-12px; left: 0;top: 0;width:22px;height:12px;background:url('http://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white.png');transform: translate(-50%,-50%);}
+*/
+.customoverlay:after {content:'';position:absolute; left: 50%; bottom: -11px; width:22px;height:12px;background:url('http://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white.png');transform: translateX(-50%);}
+
+.customoverlay2 {position:relative;bottom:85px;border-radius:6px;border: 1px solid #ccc;border-bottom:2px solid #ddd;float:left;}
+.customoverlay2 .title {display:block;text-align:center;background:#fff;padding:10px 15px;font-size:14px;font-weight:bold;}
+.customoverlay2:after {content:'';position:absolute;margin-left:-12px;left:50%;bottom:-12px;width:22px;height:12px;background:url('http://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white.png')}
+
+@media all and (max-width:900px){	
+	.customoverlay {white-space: normal;}
+}
+
+

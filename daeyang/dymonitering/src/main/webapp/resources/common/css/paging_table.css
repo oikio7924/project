@@ -1,0 +1,109 @@
+
+.jarviswidget .alert-info {text-align:left;}
+
+/* 페이지 넘버 */
+.pageNumberBox {
+		background:#fff;
+		border:none;
+		width:100%;
+		padding-bottom: 13px; 
+		font-size: 13px; 
+		position: relative;
+		padding-top: 9px;
+	    font-weight: 700;
+	    font-style: italic;
+	    color: #969696;
+}
+.pageNumberUl {display:inline-block; margin: 0;}
+.pageNumberUl:after { visibility: hidden; display:block;font-size: 0;content:".";clear: both;height: 0;*zoom:1;}
+.pageNumberUl li { float:left; margin:0 2px; padding:3px; border:1px solid #e5e6e5; vertical-align:middle;min-width:30px;}
+.pageNumberUl li a { font-size:13px; color:#58595b; display:inline-block; width:100%; height:100%; padding:2px 5px 3px; text-align:center;}
+.pageNumberUl li.active {background-color:#58595b;}
+.pageNumberUl li.active a {color:#fff;}
+.pagetext{font-size: 15px;}
+#textAlign th {cursor:pointer;}
+@media all and (max-width:850px){	
+	.pageNumberUl {margin-top:10px;}
+}
+
+
+
+
+table.dataTable.select tbody tr,
+table.dataTable thead th:first-child {
+  cursor: pointer;
+}
+table.pagingTable tbody {
+	border-bottom: 1px solid #ccc;
+}
+
+#Form{
+	text-align: center;
+}
+
+table.pagingTable th , 
+table.pagingTable td{
+	text-align: center;
+}
+
+table.pagingTable .hasinput input{
+	font-size: 11px;
+}
+
+
+table.pagingTable>thead>tr>th.arrow{
+    background: url(/resources/img/table/table_arow_01.png) no-repeat center right;
+    background-position-x: calc(100% - 5px);
+    padding-right: 20px;
+    cursor: pointer;
+}
+
+table.pagingTable>thead>tr>th.arrow.desc{
+    background: url(/resources/img/table/table_arow_down.png) no-repeat center right;
+    background-position-x: calc(100% - 5px);
+    color: red;
+}
+
+table.pagingTable>thead>tr>td>div>a.arrow.desc{
+    background-position-x: calc(100% - 5px);
+    color: red;
+}
+
+table.pagingTable>thead>tr>th.arrow.asc{
+    background: url(/resources/img/table/table_arow_up.png) no-repeat center right;
+    background-position-x: calc(100% - 5px);
+    color: blue;
+}
+
+table.pagingTable>thead>tr>td>div>a.arrow.asc{  
+    background-position-x: calc(100% - 5px);
+    color: blue;
+}
+
+@media all and (max-width:1300px){	
+	.middle{display: none;}
+	.middelwidth{width: 13%;}
+	.middlePage{width: 100%;}
+	.middlesearch{margin-bottom: 1px;}
+	.tableMobileWrap {overflow-x : scroll;}
+	.tableMobileWrap th {min-width:100px;}
+	.tableMobileWrap th.min200 {min-width:200px;}
+	.tableMobileWrap th.min400 {min-width:400px;}
+	
+}
+@media all and (max-width:850px){	
+	.small{display: none;}
+	.middelwidth{width: 13%;}
+	.samllmargin{ margin-bottom: 4px;}
+	.pageNumberUl li {    min-width: auto;}
+	.pageNumberUl li a {font-size:10px;padding:2px 3px 3px}
+}
+
+.selectFilter {font-size: 10px;min-width: 70px;}
+table.pagingTable .hasinput input {width:100% !important;}
+table.pagingTable pre {background-color:inherit !important;}
+
+
+
+
+

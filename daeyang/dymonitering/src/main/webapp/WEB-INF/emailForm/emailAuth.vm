@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+
+<body>
+	<div style="border: 1px solid #eee;width:585px; height:100%; margin:50px auto; position:relative; text-align:center;">
+    	<div style="position:absolute; top:2.5%; left:2%; width:96%; height:1px; background-color:#444;"></div>
+    	<div style="position:absolute; bottom:2.5%; left:2%; width:96%; height:1px; background-color:#cfcfd0;"></div>
+    	<div style="position:absolute; top:2.5%; right:2%; width:1px; height:95%; background-color:#444;">
+    		<div style="position:absolute; bottom:0; left:0; width:1px; height:66px; background-color:#cfcfd0;"></div>
+    	</div>
+    	<div style="position:absolute; top:2.5%; left:2%; width:1px; height:95%; background-color:#444;">
+    		<div style="position:absolute; bottom:0; left:0; width:1px; height:66px; background-color:#cfcfd0;}"></div>
+    	</div>
+        <div>
+        	<div style="background-color:#efeeed; padding:30px 0 20px;">
+            	<img src="${domain}/resources/img/logo/logo.png" alt="로고">
+            </div>
+            <div style="background-color:#fff; padding:30px 0;">
+            	<h1 style="font-size: 27px;font-weight: bodl;letter-spacing: -2px;font-family: 맑은고딕;">${UI_NAME}님<br>
+                	<span style="color:#e22931;">회원가입</span>을 진심으로 <span style="color:#e22931;">축하</span>합니다.
+                </h1>
+                <p style="margin: 15px 0 0;font-size: 13px;color: #444;line-height: 1.5;letter-spacing: -0.7px;font-family: 돋움;">
+                	회원님의 성원에 보답하고자 더욱 더 열심히 하겠습니다.<br>
+                    아래의 메일인증을 클릭하시면 회원가입이 완료됩니다.<br>
+                    감사합니다.
+                </p>
+            </div>
+            <div style="background-color:#4c4c4e; padding:20px 0 30px;">
+            	<a href="${AuthURL}" alt="메일인증" style="background: none;color: #fff;font-size: 16px;letter-spacing: -1px;cursor: pointer;border: none;font-weight: bold;font-family: 맑은고딕;">메일인증</a>
+            </div>
+        </div>
+    </div>	    
+</body>
+</html>

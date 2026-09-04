@@ -1,0 +1,63 @@
+/* font  */
+body {  	font-size:100%;	line-height:1.2;	font-family: "Nanum Gothic", "나눔고딕",  Verdana,  sans-serif; color:#222222;	margin:0;	padding:0;	background-color:transparent;	}
+input, select, textarea{ font-size:100%;	line-height:1.2;	font-family: "Nanum Gothic", "나눔고딕",  Verdana,  sans-serif; color:#222222; }
+
+/* anchor */
+a { color:#222222; text-decoration:none; }
+a:link { color:#222222; }
+a:visited { color:#222222; }
+a:hover { /*text-decoration:underline;*/ color:#222222; }
+a:focus { color:#222222; }
+
+/* skip ...*/
+legend, caption { position:absolute; top:0; left:0; text-indent:-9999px; width:0; height:0; line-height:0; font-size:0; overflow:hidden; /*visibility:hidden;*/ }
+.skip { position:absolute; top:0; left:0; text-indent:-9999px; width:0; height:0; line-height:0; font-size:0; overflow:hidden; /*visibility:hidden;*/ }
+hr { display:none; }
+
+/* common */
+.clear { clear:both; }
+.font-bold { font-weight:bold; }
+.pdb20 { padding-bottom:20px; }
+.pdb40 { padding-bottom:40px; }
+.pdb70 { padding-bottom:70px; }
+
+/* layout */
+#wrap  { width:100%; height:100%; position:relative; word-wrap:break-word; overflow:hidden; }
+#conteiner { width:1110px; overflow:hidden;  margin:0 auto; position:relative;  padding:30px; }
+
+/* common */
+#common { width:340px; float:left; overflow:hidden; }
+#header { padding-top:38px; }
+#header h1 { height:363px; }
+.programs { padding-top:59px; height:25px; }
+.programs h2 { float:left; width:132px; background:url(../img/common/bg-programs.png) top right no-repeat;  }
+.programs-gnb { float:left; padding-left:12px; height:25px;  }
+.programs-gnb li { float:left; height:25px; }
+.programs-gnb-first { padding-right:11px;  }
+
+.gnb { padding-top:20px; height:21px; }
+.gnb li  { float:left;  padding:1px 15px 0; background:url(../img/common/gnb-bg.png) 0 1px no-repeat; }
+.gnb li.first { padding-left:0; background:none; }
+.gnb li.sns { padding:0; background:none; }
+
+#footer { padding-top:55px;  font-size:75%; line-height:1.8; }
+.foot-title span { padding-left:14px; }
+#footer address{ padding-top:20px; }
+.foot-copy {  font-size:80%; }
+.foot-policy { padding-top:23px;  font-weight:bold; }
+.foot-policy  a { padding:0 8px; color:#222; font-weight:bold; }
+.foot-policy  a.foot-policy-first { padding-left:0; }
+
+
+/*main-con*/
+#main-con { width:680px; height:780px; float:left;  overflow:hidden;  }
+
+
+
+/* skip-navi */
+.skip-navigation{position:relative;}
+.skip-navigation ul{left:50%; margin-left:-40em; position:absolute;top:0;width:980px; display:block;}
+.skip-navigation li{overflow:hidden; position:absolute;top:0px;width:100%;}
+.skip-navigation li a{display:block;font-size:1em;height:1px;overflow:hidden;width:1px;color:#fff;padding:5px 0 5px 0px;text-align:center;font-weight:bold;}
+.skip-navigation a:focus, .skip-navigation a:active {height:100%;width:100%;background:#011a32;}
+

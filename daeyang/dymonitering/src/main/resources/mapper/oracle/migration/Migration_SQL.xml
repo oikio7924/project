@@ -1,0 +1,1571 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="migration"> 
+	
+<!-- 	select ', ' || column_name from 
+all_tab_columns
+where table_name = 'B_BOARD_NOTICE_HISTORY' AND owner ='KOPTIRFC';
+
+select ', #{item.' || column_name ||'}' from 
+all_tab_columns
+where table_name = 'B_BOARD_NOTICE_HISTORY' AND owner ='KOPTIRFC'; -->
+	
+	
+	
+	<select id="getRfcData" resultType="hashmap">
+	select *
+	from	RFC_BOARD_DATA_TB
+	where	DATA_SID = '451671'
+	</select>
+	<select id="getRfcFile" resultType="hashmap">
+	select *
+	from	RFC_BOARD_FILE_TB
+	where	DATA_SID = '451671'
+	</select>
+	
+	<insert id="createRfcData">
+	insert into RFC_BOARD_DATA_TB (
+		DATA_SID
+		  ,BOARD_SID
+		  ,DATA_IDX
+		  ,DATA_DEP
+		  ,USER_ID
+		  ,USER_NICK
+		  ,USER_LEVEL
+		  , DATA_TITLE
+		  , DATA_CONTENT
+		  , VIEW_COUNT
+		  , REGISTER_DT
+		  , TMP_FIELD3
+		  , TMP_FIELD4
+	)
+	VALUES (
+			#{DATA_SID}
+		  , #{BOARD_SID}
+		  , #{DATA_IDX}
+		  , #{DATA_DEP}
+		  , #{USER_ID}
+		  , #{USER_NICK}
+		  , #{USER_LEVEL}
+		  , #{DATA_TITLE}
+		  , #{DATA_CONTENT}
+		  , #{VIEW_COUNT}
+		  , #{REGISTER_DT}
+		  , #{TMP_FIELD3}
+		  , #{TMP_FIELD4}
+	)
+	</insert>
+	<insert id="createRfcFile">
+	insert into RFC_BOARD_FILE_TB (
+		  FILE_SID
+		, DATA_SID
+		, BOARD_SID
+		, FILE_NAME
+		, FILE_MASK
+		, FILE_STATUS
+		, DOWNLOAD_CNT
+		, REGISTER_DT
+		, FILE_DEL_STATUS
+	)
+	VALUES (
+		  #{FILE_SID}
+		, #{DATA_SID}
+		, #{BOARD_SID}
+		, #{FILE_NAME}
+		, #{FILE_MASK}
+		, #{FILE_STATUS}
+		, #{DOWNLOAD_CNT}
+		, #{REGISTER_DT}
+		, #{FILE_DEL_STATUS}
+	)
+	</insert>
+	
+	
+	<delete id="deleteTable">
+		DELETE FROM ${table}
+	</delete>
+	
+	<insert id="insertData_S_MENU_VIEW_DATA">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO s_menu_view_data
+		(
+			 MVD_KEYNO
+, MVD_MN_KEYNO
+, MVD_MN_HOMEDIV_C
+, MVD_DATA
+, MVD_REGDT
+, MVD_MODDT
+, MVD_REGNM
+, MVD_MODNM
+, MVD_DEL_YN 
+		)
+		VALUES (
+			 #{item.MVD_KEYNO}
+, #{item.MVD_MN_KEYNO}
+, #{item.MVD_MN_HOMEDIV_C}
+, #{item.MVD_DATA}
+, #{item.MVD_REGDT}
+, #{item.MVD_MODDT}
+, #{item.MVD_REGNM}
+, #{item.MVD_MODNM}
+, #{item.MVD_DEL_YN}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_T_ACHIEVEMENT_MANAGER">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO t_achievement_manager
+		(
+			 AM_KEYNO
+, AM_TITLE
+, AM_BACKGROUND
+, AM_CONTENTS
+, AM_ACHIEVEMENT
+, AM_APPLICATION
+, AM_IMG_FM_KEYNO
+, AM_REGNM
+, AM_REGDT
+, AM_DEL_YN
+, AM_TYPE
+, AM_THUMBNAIL
+, AM_HITS
+, AM_HOMEDIV_C
+		)
+		VALUES (
+			   #{item.AM_KEYNO}
+, #{item.AM_TITLE}
+, #{item.AM_BACKGROUND}
+, #{item.AM_CONTENTS}
+, #{item.AM_ACHIEVEMENT}
+, #{item.AM_APPLICATION}
+, #{item.AM_IMG_FM_KEYNO}
+, #{item.AM_REGNM}
+, #{item.AM_REGDT}
+, #{item.AM_DEL_YN}
+, #{item.AM_TYPE}
+, #{item.AM_THUMBNAIL}
+, #{item.AM_HITS}
+, #{item.AM_HOMEDIV_C}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_T_ACTIVITY_HISTORY">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO t_activity_history
+		(
+			 AH_KEYNO
+, AH_UI_KEYNO
+, AH_IP
+, AH_DATE
+, AH_URL
+, AH_DESC
+, AH_TIME
+, AH_MENU
+, AH_REFERER
+, AH_DEVICE
+, AH_AGENT
+, AH_SESSION
+		)
+		VALUES (
+			  #{item.AH_KEYNO}
+, #{item.AH_UI_KEYNO}
+, #{item.AH_IP}
+, #{item.AH_DATE}
+, #{item.AH_URL}
+, #{item.AH_DESC}
+, #{item.AH_TIME}
+, #{item.AH_MENU}
+, #{item.AH_REFERER}
+, #{item.AH_DEVICE}
+, #{item.AH_AGENT}
+, #{item.AH_SESSION}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_B_BOARD_COLUMN">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO b_board_column
+		(
+			 BL_KEYNO
+, BL_BT_KEYNO
+, BL_COLUMN_NAME
+, BL_COLUMN_SIZE
+, BL_COLUMN_LEVEL
+, BL_LISTVIEW_YN
+, BL_TYPE
+, BL_OPTION_DATA
+, BL_USE_YN
+, BL_REGDT
+, BL_VALIDATE
+		)
+		VALUES (
+			   #{item.BL_KEYNO}
+, #{item.BL_BT_KEYNO}
+, #{item.BL_COLUMN_NAME}
+, #{item.BL_COLUMN_SIZE}
+, #{item.BL_COLUMN_LEVEL}
+, #{item.BL_LISTVIEW_YN}
+, #{item.BL_TYPE}
+, #{item.BL_OPTION_DATA}
+, #{item.BL_USE_YN}
+, #{item.BL_REGDT}
+, #{item.BL_VALIDATE}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_B_BOARD_COLUMN_DATA">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO b_board_column_DATA
+		(
+			 BD_KEYNO
+, BD_BT_KEYNO
+, BD_BN_KEYNO
+, BD_BL_KEYNO
+, BD_MN_KEYNO
+, BD_BL_TYPE
+, BD_DATA
+		)
+		VALUES (
+			   #{item.BD_KEYNO}
+, #{item.BD_BT_KEYNO}
+, #{item.BD_BN_KEYNO}
+, #{item.BD_BL_KEYNO}
+, #{item.BD_MN_KEYNO}
+, #{item.BD_BL_TYPE}
+, #{item.BD_DATA}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_B_BOARD_COLUMN_DATA_HISTORY">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO b_board_column_DATA_HISTORY
+		(
+			 BDH_BNH_KEYNO
+, BDH_BD_KEYNO
+, BDH_BD_BT_KEYNO
+, BDH_BD_BN_KEYNO
+, BDH_BD_BL_KEYNO
+, BDH_BD_MN_KEYNO
+, BDH_BD_BL_TYPE
+, BDH_BD_DATA
+		)
+		VALUES (
+			  #{item.BDH_BNH_KEYNO}
+, #{item.BDH_BD_KEYNO}
+, #{item.BDH_BD_BT_KEYNO}
+, #{item.BDH_BD_BN_KEYNO}
+, #{item.BDH_BD_BL_KEYNO}
+, #{item.BDH_BD_MN_KEYNO}
+, #{item.BDH_BD_BL_TYPE}
+, #{item.BDH_BD_DATA}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_B_BOARD_COMMENT">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO B_BOARD_COMMENT
+		(
+			 BC_KEYNO
+, BC_BN_KEYNO
+, BC_CONTENTS
+, BC_REGNM
+, BC_REGDT
+, BC_DEL_YN
+, BC_DELDT
+, BC_MODDT
+, BC_UP_CNT
+, BC_DOWN_CNT
+, BC_MAINKEY
+, BC_ROOTKEY
+		)
+		VALUES (
+			  #{item.BC_KEYNO}
+, #{item.BC_BN_KEYNO}
+, #{item.BC_CONTENTS}
+, #{item.BC_REGNM}
+, #{item.BC_REGDT}
+, #{item.BC_DEL_YN}
+, #{item.BC_DELDT}
+, #{item.BC_MODDT}
+, #{item.BC_UP_CNT}
+, #{item.BC_DOWN_CNT}
+, #{item.BC_MAINKEY}
+, #{item.BC_ROOTKEY}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_B_BOARD_INTRO_HTML">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO B_BOARD_INTRO_HTML
+		(
+			 BIH_KEYNO
+, BIH_MN_KEYNO
+, BIH_BT_KEYNO
+, BIH_CONTENTS
+, BIH_REGNM
+, BIH_REGDT
+, BIH_MODDT
+, BIH_USE_YN
+, BIH_DIV_LOCATION
+		)
+		VALUES (
+			  #{item.BIH_KEYNO}
+, #{item.BIH_MN_KEYNO}
+, #{item.BIH_BT_KEYNO}
+, #{item.BIH_CONTENTS}
+, #{item.BIH_REGNM}
+, #{item.BIH_REGDT}
+, #{item.BIH_MODDT}
+, #{item.BIH_USE_YN}
+, #{item.BIH_DIV_LOCATION}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_B_BOARD_NOTICE">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO B_BOARD_NOTICE
+		(
+			 BN_KEYNO
+, BN_MN_KEYNO
+, BN_FM_KEYNO
+, BN_TITLE
+, BN_CONTENTS
+, BN_REGNM
+, BN_PWD
+, BN_REGDT
+, BN_MODNM
+, BN_MODDT
+, BN_USE_YN
+, BN_SECRET_YN
+, BN_THUMBNAIL
+, BN_HITS
+, BN_IMPORTANT
+, BN_IMPORTANT_DATE
+, BN_DEL_YN
+, BN_MAINKEY
+, BN_PARENTKEY
+, BN_SEQ
+, BN_DEPTH
+, BN_TEMP_DATA
+		)
+		VALUES (
+			  #{item.BN_KEYNO}
+, #{item.BN_MN_KEYNO}
+, #{item.BN_FM_KEYNO}
+, #{item.BN_TITLE}
+, #{item.BN_CONTENTS}
+, #{item.BN_REGNM}
+, #{item.BN_PWD}
+, #{item.BN_REGDT}
+, #{item.BN_MODNM}
+, #{item.BN_MODDT}
+, #{item.BN_USE_YN}
+, #{item.BN_SECRET_YN}
+, #{item.BN_THUMBNAIL}
+, #{item.BN_HITS}
+, #{item.BN_IMPORTANT}
+, #{item.BN_IMPORTANT_DATE}
+, #{item.BN_DEL_YN}
+, #{item.BN_MAINKEY}
+, #{item.BN_PARENTKEY}
+, #{item.BN_SEQ}
+, #{item.BN_DEPTH}
+, #{item.BN_TEMP_DATA}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_B_BOARD_NOTICE_HISTORY">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO B_BOARD_NOTICE_HISTORY
+		(
+			 BNH_KEYNO
+, BNH_BN_KEYNO
+, BNH_BN_MN_KEYNO
+, BNH_BN_FM_KEYNO
+, BNH_BN_TITLE
+, BNH_BN_CONTENTS
+, BNH_BN_REGNM
+, BNH_BN_REGDT
+, BNH_BN_MODNM
+, BNH_BN_MODDT
+, BNH_BN_USE_YN
+, BNH_BN_SECRET_YN
+, BNH_BN_THUMBNAIL
+, BNH_BN_HITS
+, BNH_BN_IMPORTANT
+, BNH_BN_IMPORTANT_DATE
+		)
+		VALUES (
+			   #{item.BNH_KEYNO}
+, #{item.BNH_BN_KEYNO}
+, #{item.BNH_BN_MN_KEYNO}
+, #{item.BNH_BN_FM_KEYNO}
+, #{item.BNH_BN_TITLE}
+, #{item.BNH_BN_CONTENTS}
+, #{item.BNH_BN_REGNM}
+, #{item.BNH_BN_REGDT}
+, #{item.BNH_BN_MODNM}
+, #{item.BNH_BN_MODDT}
+, #{item.BNH_BN_USE_YN}
+, #{item.BNH_BN_SECRET_YN}
+, #{item.BNH_BN_THUMBNAIL}
+, #{item.BNH_BN_HITS}
+, #{item.BNH_BN_IMPORTANT}
+, #{item.BNH_BN_IMPORTANT_DATE}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_B_BOARD_TYPE">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO B_BOARD_TYPE
+		(
+			BT_KEYNO
+, BT_TYPE_NAME
+, BT_CODEKEY
+, BT_REPLY_YN
+, BT_COMMENT_YN
+, BT_SECRET_YN
+, BT_UPLOAD_YN
+, BT_FILE_CNT_LIMIT
+, BT_FILE_SIZE_LIMIT
+, BT_REGNM
+, BT_REGDT
+, BT_MODNM
+, BT_MODDT
+, BT_USE_YN
+, BT_EDU_PR_YN
+, BT_TICKET_PR_YN
+, BT_SNS_YN
+, BT_RSS_YN
+, BT_HTML_YN
+, BT_THUMBNAIL_YN
+, BT_THUMBNAIL_WIDTH
+, BT_THUMBNAIL_HEIGHT
+, BT_PAGEUNIT
+, BT_PAGESIZE
+, BT_DEL_LISTVIEW_YN
+, BT_EMAIL_YN
+, BT_EMAIL_ADDRESS
+, BT_XSS_YN
+		)
+		VALUES (
+			  #{item.BT_KEYNO}
+, #{item.BT_TYPE_NAME}
+, #{item.BT_CODEKEY}
+, #{item.BT_REPLY_YN}
+, #{item.BT_COMMENT_YN}
+, #{item.BT_SECRET_YN}
+, #{item.BT_UPLOAD_YN}
+, #{item.BT_FILE_CNT_LIMIT}
+, #{item.BT_FILE_SIZE_LIMIT}
+, #{item.BT_REGNM}
+, #{item.BT_REGDT}
+, #{item.BT_MODNM}
+, #{item.BT_MODDT}
+, #{item.BT_USE_YN}
+, #{item.BT_EDU_PR_YN}
+, #{item.BT_TICKET_PR_YN}
+, #{item.BT_SNS_YN}
+, #{item.BT_RSS_YN}
+, #{item.BT_HTML_YN}
+, #{item.BT_THUMBNAIL_YN}
+, #{item.BT_THUMBNAIL_WIDTH}
+, #{item.BT_THUMBNAIL_HEIGHT}
+, #{item.BT_PAGEUNIT}
+, #{item.BT_PAGESIZE}
+, #{item.BT_DEL_LISTVIEW_YN}
+, #{item.BT_EMAIL_YN}
+, #{item.BT_EMAIL_ADDRESS}
+, #{item.BT_XSS_YN}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	
+	<insert id="insertData_U_USERINFO_SETTING">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO U_USERINFO_SETTING
+		(
+		 US_TYPE
+, US_UIA_KEYNO
+, US_AUTH
+, US_ID_FILTER
+, US_INFO1
+, US_INFO2
+		)
+		VALUES (
+		 #{item.US_TYPE}
+, #{item.US_UIA_KEYNO}
+, #{item.US_AUTH}
+, #{item.US_ID_FILTER}
+, #{item.US_INFO1}
+, #{item.US_INFO2}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_U_USERINFO_SECURED_RESOURCE">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO U_USERINFO_SECURED_RESOURCE
+		(
+		 USR_KEYNO
+, USR_NAME
+, USR_PATTERN
+, USR_TYPE
+, USR_ORDER
+, USR_ORDER_CLASS
+, USR_SYSTEM
+, USR_UIR_KEYNO
+		)
+		VALUES (
+		 #{item.USR_KEYNO}
+, #{item.USR_NAME}
+, #{item.USR_PATTERN}
+, #{item.USR_TYPE}
+, #{item.USR_ORDER}
+, #{item.USR_ORDER_CLASS}
+, #{item.USR_SYSTEM}
+, #{item.USR_UIR_KEYNO}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_U_USERINFO_ROLL">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO U_USERINFO_ROLL
+		(
+		 UIR_KEYNO
+, UIR_NAME
+, UIR_COMMENT
+, UIR_SYSTEM
+, UIR_TYPE
+		)
+		VALUES (
+		 #{item.UIR_KEYNO}
+, #{item.UIR_NAME}
+, #{item.UIR_COMMENT}
+, #{item.UIR_SYSTEM}
+, #{item.UIR_TYPE}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_U_USERINFO_RESOURCE_AUTHORITY">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO U_USERINFO_RESOURCE_AUTHORITY
+		(
+		 USR_KEYNO
+, UIA_KEYNO
+		)
+		VALUES (
+		 #{item.USR_KEYNO}
+, #{item.UIA_KEYNO}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_U_USERINFO_MEMBER_AUTHORITY">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO U_USERINFO_MEMBER_AUTHORITY
+		(
+		 UI_KEYNO
+, UIA_KEYNO
+		)
+		VALUES (
+		 #{item.UI_KEYNO}
+, #{item.UIA_KEYNO}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	
+	
+	<insert id="insertData_U_USERINFO_AUTHORITY">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO U_USERINFO_AUTHORITY
+		(
+		 UIA_KEYNO
+, UIA_NAME
+, UIA_COMMENT
+, UIA_SYSTEM
+		)
+		VALUES (
+		 #{item.UIA_KEYNO}
+, #{item.UIA_NAME}
+, #{item.UIA_COMMENT}
+, #{item.UIA_SYSTEM}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_U_USERINFO">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO U_USERINFO
+		(
+		 UI_KEYNO
+, UI_ID
+, UI_PASSWORD
+, UI_NAME
+, UI_EMAIL
+, UI_PHONE
+, UI_ZONECODE
+, UI_ADDRESS1
+, UI_ADDRESS2
+, UI_BIRTH
+, UI_ZENDER
+, UI_DELYN
+, UI_REGDT
+, UI_MODDT
+, UI_AUTH_YN
+, UI_AUTH_DATA
+, UI_DEL_REASON
+, UI_REP_NAME
+, UI_COMPANY
+, UI_RANK
+, UI_REGION
+, UI_LOCALGOV
+, UI_SESSIONID
+		)
+		VALUES (
+		 #{item.UI_KEYNO}
+, #{item.UI_ID}
+, #{item.UI_PASSWORD}
+, #{item.UI_NAME}
+, #{item.UI_EMAIL}
+, #{item.UI_PHONE}
+, #{item.UI_ZONECODE}
+, #{item.UI_ADDRESS1}
+, #{item.UI_ADDRESS2}
+, #{item.UI_BIRTH}
+, #{item.UI_ZENDER}
+, #{item.UI_DELYN}
+, #{item.UI_REGDT}
+, #{item.UI_MODDT}
+, #{item.UI_AUTH_YN}
+, #{item.UI_AUTH_DATA}
+, #{item.UI_DEL_REASON}
+, #{item.UI_REP_NAME}
+, #{item.UI_COMPANY}
+, #{item.UI_RANK}
+, #{item.UI_REGION}
+, #{item.UI_LOCALGOV}
+, #{item.UI_SESSIONID}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_T_TRANSFER_MANAGER">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO T_TRANSFER_MANAGER
+		(
+		 TM_KEYNO
+, TM_NAME
+, TM_TEL
+, TM_EMAIL
+, TM_SMK
+, TM_KIPRIS
+, TM_COMPANY
+, TM_ZONECODE
+, TM_ADDR1
+, TM_ADDR2
+, TM_CONTENTS
+, TM_REGDT
+, TM_DEL_YN
+, TM_STATUS
+		)
+		VALUES (
+		 #{item.TM_KEYNO}
+, #{item.TM_NAME}
+, #{item.TM_TEL}
+, #{item.TM_EMAIL}
+, #{item.TM_SMK}
+, #{item.TM_KIPRIS}
+, #{item.TM_COMPANY}
+, #{item.TM_ZONECODE}
+, #{item.TM_ADDR1}
+, #{item.TM_ADDR2}
+, #{item.TM_CONTENTS}
+, #{item.TM_REGDT}
+, #{item.TM_DEL_YN}
+, #{item.TM_STATUS}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_T_TECHNOLOGY_MANAGER">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO T_TECHNOLOGY_MANAGER
+		(
+		  TCM_HITS
+, TCM_TRL_STEP
+, TCM_KEYNO
+, TCM_TITLE
+, TCM_SUMMARY
+, TCM_BACKGROUND
+, TCM_CONTENTS
+, TCM_CRTR
+, TCM_DETAIL
+, TCM_FM_KEYNO
+, TCM_MAIN_TYPE
+, TCM_SUB_TYPE
+, TCM_NAME
+, TCM_CODE_NUMBER
+, TCM_REGNM
+, TCM_REGDT
+, TCM_DEL_YN
+		)
+		VALUES (
+		 #{item.TCM_HITS}
+, #{item.TCM_TRL_STEP}
+, #{item.TCM_KEYNO}
+, #{item.TCM_TITLE}
+, #{item.TCM_SUMMARY}
+, #{item.TCM_BACKGROUND}
+, #{item.TCM_CONTENTS}
+, #{item.TCM_CRTR}
+, #{item.TCM_DETAIL}
+, #{item.TCM_FM_KEYNO}
+, #{item.TCM_MAIN_TYPE}
+, #{item.TCM_SUB_TYPE}
+, #{item.TCM_NAME}
+, #{item.TCM_CODE_NUMBER}
+, #{item.TCM_REGNM}
+, #{item.TCM_REGDT}
+, #{item.TCM_DEL_YN}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_T_PROBLEMS_MANAGER">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO T_PROBLEMS_MANAGER
+		(
+		 PM_KEYNO
+, PM_TYPE
+, PM_SECRET_YN
+, PM_TITLE
+, PM_COMPANY
+, PM_PRODUCT
+, PM_NAME
+, PM_TEL
+, PM_EMAIL
+, PM_CONTENTS
+, PM_REGDT
+, PM_DEL_YN
+, PM_STATUS
+		)
+		VALUES (
+		 #{item.PM_KEYNO}
+, #{item.PM_TYPE}
+, #{item.PM_SECRET_YN}
+, #{item.PM_TITLE}
+, #{item.PM_COMPANY}
+, #{item.PM_PRODUCT}
+, #{item.PM_NAME}
+, #{item.PM_TEL}
+, #{item.PM_EMAIL}
+, #{item.PM_CONTENTS}
+, #{item.PM_REGDT}
+, #{item.PM_DEL_YN}
+, #{item.PM_STATUS}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_T_POPUPINFO">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO T_POPUPINFO
+		(
+		 PI_KEYNO
+, PI_FS_KEYNO
+, PI_TITLE
+, PI_TOP_LOC
+, PI_LEFT_LOC
+, PI_DEL
+, PI_CHECK
+, PI_STARTDAY
+, PI_ENDDAY
+, PI_CONTENTS
+, PI_WIDTH
+, PI_HEIGHT
+, PI_LINK
+, PI_MN_KEYNO
+, PI_LEVEL
+		)
+		VALUES (
+		 #{item.PI_KEYNO}
+, #{item.PI_FS_KEYNO}
+, #{item.PI_TITLE}
+, #{item.PI_TOP_LOC}
+, #{item.PI_LEFT_LOC}
+, #{item.PI_DEL}
+, #{item.PI_CHECK}
+, #{item.PI_STARTDAY}
+, #{item.PI_ENDDAY}
+, #{item.PI_CONTENTS}
+, #{item.PI_WIDTH}
+, #{item.PI_HEIGHT}
+, #{item.PI_LINK}
+, #{item.PI_MN_KEYNO}
+, #{item.PI_LEVEL}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_T_PATENT_MANAGER">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO T_PATENT_MANAGER
+		(
+		 PA_KEYNO
+, PA_NUMBER
+, PA_CATEGORY
+, PA_NAME
+, PA_DEL_YN
+, PA_CATEGORY2
+		)
+		VALUES (
+		 #{item.PA_KEYNO}
+, #{item.PA_NUMBER}
+, #{item.PA_CATEGORY}
+, #{item.PA_NAME}
+, #{item.PA_DEL_YN}
+, #{item.PA_CATEGORY2}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_T_NOTICE_MANAGER">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO T_NOTICE_MANAGER
+		(
+		  NM_REGNM
+, NM_REGDT
+, NM_DEL_YN
+, NM_HITS
+, NM_NOTICE_TYPE_MAIN
+, NM_NOTICE_TYPE_SUB
+, NM_KEYNO
+, NM_TITLE
+, NM_CONTENTS
+, NM_FM_KEYNO
+, NM_IMPORTANT_YN
+, NM_IMPORTANT_DATE
+, NM_MODNM
+, NM_MODDT
+		)
+		VALUES (
+		  #{item.NM_REGNM}
+, #{item.NM_REGDT}
+, #{item.NM_DEL_YN}
+, #{item.NM_HITS}
+, #{item.NM_NOTICE_TYPE_MAIN}
+, #{item.NM_NOTICE_TYPE_SUB}
+, #{item.NM_KEYNO}
+, #{item.NM_TITLE}
+, #{item.NM_CONTENTS}
+, #{item.NM_FM_KEYNO}
+, #{item.NM_IMPORTANT_YN}
+, #{item.NM_IMPORTANT_DATE}
+, #{item.NM_MODNM}
+, #{item.NM_MODDT}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_S_MENU_VIEW_DATA_HISTORY">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO s_menu_view_data_HISTORY
+		(
+		 MVH_KEYNO
+, MVH_MVD_KEYNO
+, MVH_DATA
+, MVH_STDT
+, MVH_ENDT
+, MVH_MODNM
+, MVH_DEL_YN
+		)
+		VALUES (
+		 #{item.MVH_KEYNO}
+, #{item.MVH_MVD_KEYNO}
+, #{item.MVH_DATA}
+, #{item.MVH_STDT}
+, #{item.MVH_ENDT}
+, #{item.MVH_MODNM}
+, #{item.MVH_DEL_YN}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	
+	<insert id="insertData_S_MENU_MANAGER">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO S_MENU_MANAGER
+		(
+		 MN_KEYNO
+, MN_NAME
+, MN_HOMEDIV_C
+, MN_MENUDIV_C
+, MN_PAGEDIV_C
+, MN_URL
+, MN_FORWARD_URL
+, MN_MAINKEY
+, MN_ORDER
+, MN_LEV
+, MN_USE_YN
+, MN_REGDT
+, MN_MODDT
+, MN_REGNM
+, MN_MODNM
+, MN_DELDT
+, MN_DEL_YN
+, MN_SHOW_YN
+, MN_BT_KEYNO
+, MN_ICON_CSS
+, MN_ICON_URL1
+, MN_ICON_URL2
+, MN_LAYTYPE
+, MN_ENG_NAME
+, MN_DEP
+, MN_COLOR
+, MN_DATA1
+, MN_DATA2
+, MN_DATA3
+		)
+		VALUES (
+		 #{item.MN_KEYNO}
+, #{item.MN_NAME}
+, #{item.MN_HOMEDIV_C}
+, #{item.MN_MENUDIV_C}
+, #{item.MN_PAGEDIV_C}
+, #{item.MN_URL}
+, #{item.MN_FORWARD_URL}
+, #{item.MN_MAINKEY}
+, #{item.MN_ORDER}
+, #{item.MN_LEV}
+, #{item.MN_USE_YN}
+, #{item.MN_REGDT}
+, #{item.MN_MODDT}
+, #{item.MN_REGNM}
+, #{item.MN_MODNM}
+, #{item.MN_DELDT}
+, #{item.MN_DEL_YN}
+, #{item.MN_SHOW_YN}
+, #{item.MN_BT_KEYNO}
+, #{item.MN_ICON_CSS}
+, #{item.MN_ICON_URL1}
+, #{item.MN_ICON_URL2}
+, #{item.MN_LAYTYPE}
+, #{item.MN_ENG_NAME}
+, #{item.MN_DEP}
+, #{item.MN_COLOR}
+, #{item.MN_DATA1}
+, #{item.MN_DATA2}
+, #{item.MN_DATA3}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_T_MAIN_SLIDE_MANAGER">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO T_MAIN_SLIDE_MANAGER
+		(
+		 MM_REGNM
+, MM_REGDT
+, MM_MODNM
+, MM_MODDT
+, MM_LEVEL
+, MM_USE_YN
+, MM_URL
+, MM_DEL_YN
+, MM_TYPE
+, MM_HOMEDIV_C
+, MM_KEYNO
+, MM_TITLE
+, MM_FS_KEYNO
+, MM_COMMENT
+		)
+		VALUES (
+		 #{item.MM_REGNM}
+, #{item.MM_REGDT}
+, #{item.MM_MODNM}
+, #{item.MM_MODDT}
+, #{item.MM_LEVEL}
+, #{item.MM_USE_YN}
+, #{item.MM_URL}
+, #{item.MM_DEL_YN}
+, #{item.MM_TYPE}
+, #{item.MM_HOMEDIV_C}
+, #{item.MM_KEYNO}
+, #{item.MM_TITLE}
+, #{item.MM_FS_KEYNO}
+, #{item.MM_COMMENT}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_T_MAIN_BANNER_MANAGER">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO T_MAIN_BANNER_MANAGER
+		(
+		 BM_KEYNO
+, BM_TITLE
+, BM_FS_KEYNO
+, BM_REGNM
+, BM_REGDT
+, BM_MODNM
+, BM_MODDT
+, BM_LEVEL
+, BM_URL
+, BM_USE_YN
+, BM_DEL_YN
+, BM_TYPE
+		)
+		VALUES (
+		 #{item.BM_KEYNO}
+, #{item.BM_TITLE}
+, #{item.BM_FS_KEYNO}
+, #{item.BM_REGNM}
+, #{item.BM_REGDT}
+, #{item.BM_MODNM}
+, #{item.BM_MODDT}
+, #{item.BM_LEVEL}
+, #{item.BM_URL}
+, #{item.BM_USE_YN}
+, #{item.BM_DEL_YN}
+, #{item.BM_TYPE}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	
+	<insert id="insertData_T_IPFILTER_SUB">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO T_IPFILTER_SUB
+		(
+		 IPS_KEYNO
+, IPS_IPM_KEYNO
+, IPS_IPADDRESS
+, IPS_TYPE
+		)
+		VALUES (
+		 #{item.IPS_KEYNO}
+, #{item.IPS_IPM_KEYNO}
+, #{item.IPS_IPADDRESS}
+, #{item.IPS_TYPE}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_T_IPFILTER_MAIN">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO T_IPFILTER_MAIN
+		(
+		 IPM_KEYNO
+, IPM_URL
+, IPM_TYPE
+, IPM_USEYN
+		)
+		VALUES (
+		 #{item.IPM_KEYNO}
+, #{item.IPM_URL}
+, #{item.IPM_TYPE}
+, #{item.IPM_USEYN}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_S_HOME_MANAGER">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO S_HOME_MANAGER
+		(
+		 HM_KEYNO
+, HM_MN_HOMEDIV_C
+, HM_TILES
+, HM_MENU_DEPTH
+, HM_DEL_YN
+, HM_FS_KEYNO
+		)
+		VALUES (
+		 #{item.HM_KEYNO}
+, #{item.HM_MN_HOMEDIV_C}
+, #{item.HM_TILES}
+, #{item.HM_MENU_DEPTH}
+, #{item.HM_DEL_YN}
+, #{item.HM_FS_KEYNO}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_T_HOLIDAY_MANAGER">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO T_HOLIDAY_MANAGER
+		(
+  THM_NAME
+, THM_LUNAR
+, THM_DATE
+, THM_TYPE
+, THM_DEL_YN
+, THM_NATIONAL
+		)
+		VALUES (
+  #{item.THM_NAME}
+, #{item.THM_LUNAR}
+, #{item.THM_DATE}
+, #{item.THM_TYPE}
+, #{item.THM_DEL_YN}
+, #{item.THM_NATIONAL}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_T_FIELD_SUB_MANAGER">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO T_FIELD_SUB_MANAGER
+		(
+		 FDS_KEYNO
+, FDS_FDM_KEYNO
+, FDS_LEV
+, FDS_DEL_YN
+, FDS_FDD_KEYNO
+		)
+		VALUES (
+		#{item.FDS_KEYNO}
+, #{item.FDS_FDM_KEYNO}
+, #{item.FDS_LEV}
+, #{item.FDS_DEL_YN}
+, #{item.FDS_FDD_KEYNO}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_T_FIELD_MAIN_MANAGER">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO T_FIELD_MAIN_MANAGER
+		(
+		FDM_KEYNO
+, FDM_NAME
+, FDM_MAINKEY
+, FDM_DEL_YN
+, FDM_CATEGORY
+, FDM_NAME_EN
+, FDM_DEPTH
+, FDM_ORDER
+		)
+		VALUES (
+		 #{item.FDM_KEYNO}
+, #{item.FDM_NAME}
+, #{item.FDM_MAINKEY}
+, #{item.FDM_DEL_YN}
+, #{item.FDM_CATEGORY}
+, #{item.FDM_NAME_EN}
+, #{item.FDM_DEPTH}
+, #{item.FDM_ORDER}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_T_FIELD_DIRECTOR_MANAGER">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO T_FIELD_DIRECTOR_MANAGER
+		(
+		  FDD_DEPT_EN
+, FDD_AGEN_EN
+, FDD_DEL_YN
+, FDD_CATEGORY
+, FDD_KEYNO
+, FDD_NAME
+, FDD_TEL
+, FDD_DEPT
+, FDD_AGEN
+, FDD_EMAIL
+, FDD_NAME_EN
+		)
+		VALUES (
+		 #{item.FDD_DEPT_EN}
+, #{item.FDD_AGEN_EN}
+, #{item.FDD_DEL_YN}
+, #{item.FDD_CATEGORY}
+, #{item.FDD_KEYNO}
+, #{item.FDD_NAME}
+, #{item.FDD_TEL}
+, #{item.FDD_DEPT}
+, #{item.FDD_AGEN}
+, #{item.FDD_EMAIL}
+, #{item.FDD_NAME_EN}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_T_DEPARTMENT_USER_MANAGER">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO T_DEPARTMENT_USER_MANAGER
+		(
+		 DU_KEYNO
+, DU_NAME
+, DU_DN_KEYNO
+, DU_DEL_YN
+, DU_ROLE
+, DU_LEV
+, DU_CONTENTS
+, DU_TEL
+		)
+		VALUES (
+		 #{item.DU_KEYNO}
+, #{item.DU_NAME}
+, #{item.DU_DN_KEYNO}
+, #{item.DU_DEL_YN}
+, #{item.DU_ROLE}
+, #{item.DU_LEV}
+, #{item.DU_CONTENTS}
+, #{item.DU_TEL}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_T_DEPARTMENT_MANAGER">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO T_DEPARTMENT_MANAGER
+		(
+		 DN_KEYNO
+, DN_NAME
+, DN_MAINKEY
+, DN_DEL_YN
+, DN_CONTENTS
+, DN_TEMP
+		)
+		VALUES (
+		 #{item.DN_KEYNO}
+, #{item.DN_NAME}
+, #{item.DN_MAINKEY}
+, #{item.DN_DEL_YN}
+, #{item.DN_CONTENTS}
+, #{item.DN_TEMP}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_S_COMMON_SEQ_CNT">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO S_COMMON_SEQ_CNT
+		(
+		 SQ_TABLE_NM
+, SQ_CNT
+, SQ_TYPE
+		)
+		VALUES (
+		 #{item.SQ_TABLE_NM}
+, #{item.SQ_CNT}
+, #{item.SQ_TYPE}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_T_COMMON_QRCODE">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO T_COMMON_QRCODE
+		(
+		 CQ_KEYNO
+, CQ_URL
+, CQ_FS_KEYNO
+, CQ_NAME
+, CQ_WIDTH
+, CQ_HEIGHT
+, CQ_DEL
+		)
+		VALUES (
+		 #{item.CQ_KEYNO}
+, #{item.CQ_URL}
+, #{item.CQ_FS_KEYNO}
+, #{item.CQ_NAME}
+, #{item.CQ_WIDTH}
+, #{item.CQ_HEIGHT}
+, #{item.CQ_DEL}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_S_COMMON_FILE_SUB">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO S_COMMON_FILE_SUB
+		(
+		 FS_KEYNO
+, FS_FM_KEYNO
+, FS_FILE_SIZE
+, FS_ORINM
+, FS_CHANGENM
+, FS_EXT
+, FS_FOLDER
+, FS_DOWNCNT
+, FS_M_KEYNO
+, FS_REGDT
+, FS_REGNM
+, FS_THUMBNAIL
+		)
+		VALUES (
+		 #{item.FS_KEYNO}
+, #{item.FS_FM_KEYNO}
+, #{item.FS_FILE_SIZE}
+, #{item.FS_ORINM}
+, #{item.FS_CHANGENM}
+, #{item.FS_EXT}
+, #{item.FS_FOLDER}
+, #{item.FS_DOWNCNT}
+, #{item.FS_M_KEYNO}
+, #{item.FS_REGDT}
+, #{item.FS_REGNM}
+, #{item.FS_THUMBNAIL}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_S_COMMON_FILE_MAIN">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO S_COMMON_FILE_MAIN
+		(
+		 FM_KEYNO
+, FM_REGDT
+, FM_REGNM
+		)
+		VALUES (
+		 #{item.FM_KEYNO}
+, #{item.FM_REGDT}
+, #{item.FM_REGNM}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	<insert id="insertData_S_COMMON_CODE_SUB">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO S_COMMON_CODE_SUB
+		(
+			 SC_KEYNO
+, SC_MC_IN_C
+, SC_CODENM
+, SC_CODEVAL01
+, SC_CODEVAL02
+, SC_CODELV
+, SC_USE_YN
+, SC_TEMP
+		)
+		VALUES (
+			   #{item.SC_KEYNO}
+, #{item.SC_MC_IN_C}
+, #{item.SC_CODENM}
+, #{item.SC_CODEVAL01}
+, #{item.SC_CODEVAL02}
+, #{item.SC_CODELV}
+, #{item.SC_USE_YN}
+, #{item.SC_TEMP}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	
+	<insert id="insertData_S_COMMON_CODE_MAIN">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO S_COMMON_CODE_MAIN
+		(
+			  MC_KEYNO
+, MC_CODENM
+, MC_REGDT
+, MC_MODDT
+, MC_IN_C
+, MC_SYS_YN
+, MC_USE_YN
+		)
+		VALUES (
+			   #{item.MC_KEYNO}
+, #{item.MC_CODENM}
+, #{item.MC_REGDT}
+, #{item.MC_MODDT}
+, #{item.MC_IN_C}
+, #{item.MC_SYS_YN}
+, #{item.MC_USE_YN}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+	
+	
+	<insert id="insertData_T_CAREER_MANAGER">
+		INSERT ALL
+		<foreach collection="dataList" item="item">
+		INTO T_CAREER_MANAGER
+		(
+			 CR_KEYNO
+, CR_NAME
+, CR_BIRTH
+, CR_LANG
+, CR_OUTPUT
+, CR_USAGE
+, CR_RECEIPT_TYPE
+, CR_TEL
+, CR_PHONE
+, CR_ADDR
+, CR_EMAIL
+, CR_REGDT
+, CR_DEL_YN
+, CR_STATUS
+		)
+		VALUES (
+			   #{item.CR_KEYNO}
+, #{item.CR_NAME}
+, #{item.CR_BIRTH}
+, #{item.CR_LANG}
+, #{item.CR_OUTPUT}
+, #{item.CR_USAGE}
+, #{item.CR_RECEIPT_TYPE}
+, #{item.CR_TEL}
+, #{item.CR_PHONE}
+, #{item.CR_ADDR}
+, #{item.CR_EMAIL}
+, #{item.CR_REGDT}
+, #{item.CR_DEL_YN}
+, #{item.CR_STATUS}
+		)
+        </foreach>
+        SELECT * FROM dual
+		
+	</insert>
+	
+</mapper>
+ 

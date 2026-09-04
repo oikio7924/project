@@ -1,0 +1,537 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Group"> 
+
+	<sql id="GM_AllListBody">
+	FROM (
+		SELECT 	@rownum:=@rownum+1 as COUNT
+				, AA.*
+	    FROM(         	
+	        SELECT 	 	 GM_KEYNO
+	        			, CASE GM_DIVISION 
+	        				WHEN 'C' THEN '일반' 
+	        				WHEN 'S' THEN '특별' 
+	        			END AS GM_DIVISION
+	        			, GM_NAME 
+	        			, GM_DATE
+						, U.UI_NAME
+		                , P.PM_NAME
+		                , CASE GM_USE 
+		                	WHEN 'N' THEN '사용안함' 
+		                	WHEN 'Y' THEN '사용함' 
+		                END AS GM_USE
+		                , LEFT(GM_REGDT,19) GM_REGDT
+			FROM t_group_manager GM
+			LEFT JOIN u_userinfo U
+			ON	 		GM.GM_REGNM = U.UI_KEYNO 
+	        LEFT JOIN t_place_manager P
+	        ON 			P.PM_KEYNO = GM.GM_PLACE
+			WHERE 		PM_USE	=	'Y'
+			AND   		GM_DELYN  =   'N'
+			AND   		GM.GM_USE  	!=   'D'
+			<if test="GM_MN_HOMEDIV_C != null and GM_MN_HOMEDIV_C != ''">
+			AND GM_MN_HOMEDIV_C = #{GM_MN_HOMEDIV_C}
+			</if>			
+			ORDER BY 	GM.GM_REGDT
+	      ) AA
+		  ,(SELECT @rownum:=0)TMP       
+		  ORDER BY COUNT DESC
+	) BB
+	WHERE 1=1
+		
+	<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT   		LIKE CONCAT( '%',#{item.searchKeyword},'%')				
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		GM_DIVISION  = 	#{item.searchKeyword}					
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		GM_NAME  		LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		GM_DATE 		LIKE CONCAT( '%',#{item.searchKeyword},'%')						
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		PM_NAME  		LIKE CONCAT( '%',#{item.searchKeyword},'%')							
+	 			</when>
+				<when test='item.searchIndex.equals("6")'>
+	 	AND		GM_USE	  	= 	#{item.searchKeyword}					
+	 			</when>
+	 			<when test='item.searchIndex.equals("7")'>
+ 		AND		UI_NAME			LIKE CONCAT( '%',#{item.searchKeyword},'%')	   
+	 			</when>
+	 			<when test='item.searchIndex.equals("8")'>
+ 		AND		GM_REGDT	  	LIKE CONCAT( '%',#{item.searchKeyword},'%')	   			
+	 			</when>
+	 			
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT   			LIKE CONCAT( '%',#{item.searchKeyword},'%')		OR
+ 				GM_DIVISION 	 = 	#{item.searchKeyword}							OR
+ 				GM_NAME  			LIKE CONCAT( '%',#{item.searchKeyword},'%')		OR
+ 				GM_DATE			 	LIKE CONCAT( '%',#{item.searchKeyword},'%')		OR
+ 				PM_NAME  			LIKE CONCAT( '%',#{item.searchKeyword},'%')		OR
+ 				GM_USE  		 = 	#{item.searchKeyword}							OR
+ 				UI_NAME				LIKE CONCAT( '%',#{item.searchKeyword},'%')	 	OR 	
+ 				GM_REGDT			LIKE CONCAT( '%',#{item.searchKeyword},'%')	  	
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+ 	</if>
+	</sql>
+	
+	<!-- 프로그램신청관리 - 단체예약관리 - 프로그램 리스트 카운트 -->
+	<select	id="GM_AllListCnt" resultType="int">
+		SELECT COUNT(*) 
+		<include refid="GM_AllListBody"/>
+	</select>
+	
+	<!-- 프로그램신청관리 - 단체예약관리 - 프로그램 리스트  -->
+	<select	id="GM_AllList" resultMap="ResultMap.rownumHashMap">
+		SELECT * 
+		<include refid="GM_AllListBody"/>
+		<choose>
+	 		<when test="orderBy == 1">
+	 		ORDER BY	COUNT ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 2">
+	 		ORDER BY	GM_DIVISION ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 3"> 
+	 		ORDER BY	GM_NAME ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 4"> 
+	 		ORDER BY	GM_DATE ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 5"> 
+	 		ORDER BY	PM_NAME ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 6"> 
+	 		ORDER BY	GM_USE ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 7"> 
+	 		ORDER BY	UI_NAME ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 8">
+	 		ORDER BY	GM_REGDT ${sortDirect}
+	 		</when>
+	 		<otherwise>
+	 		ORDER BY 	COUNT DESC
+	 		</otherwise>
+	 	</choose>
+		<if test="recordCountPerPage != 0">
+		 	LIMIT  	#{recordCountPerPage} OFFSET #{firstIndex}
+		</if> 	
+	</select>
+	
+	<!-- 프로그램신청관리 - 단체예약관리 - 프로그램 상세보기 -->
+	<select id="GM_programData" resultType="Hashmap">
+	   	SELECT @rownum:=@rownum+1 as COUNT
+			,AA.*
+	    FROM(         	
+	        SELECT  LEFT(A.GM_REGDT, 10) GM_REGDT_TEMP
+					, CASE WHEN A.GM_DIVISION = 'C' THEN '일반' WHEN A.GM_DIVISION = 'S' THEN '특별' END AS GM_DIVISION_TEMP
+					,CASE WHEN A.GM_USE = 'N' THEN '사용안함' WHEN A.GM_USE = 'Y' THEN '사용함' END AS GM_USE_TEMP
+					, A.*
+			FROM (		
+			        SELECT 	 GM.*
+							, U.UI_NAME
+							, MIN(GSM.GSM_STDT) GSM_STDT
+			                , MAX(GSM.GSM_ENDT) GSM_ENDT
+			                , P.PM_NAME
+					FROM t_group_manager GM
+					
+					LEFT JOIN u_userinfo U
+					ON U.UI_KEYNO = GM.GM_REGNM
+					
+					LEFT JOIN t_group_schedule_main GSM
+			        ON GM.GM_KEYNO = GSM.GSM_GM_KEYNO
+			       
+			        LEFT JOIN t_place_manager P
+			        ON P.PM_KEYNO = GM.GM_PLACE
+			        
+			  		LEFT JOIN s_common_file_sub FS
+					ON	 P.PM_FS_KEYNO = FS.FS_KEYNO
+					
+					
+					WHERE PM_USE	=	'Y'
+					AND   GM_DELYN  =   'N'
+					AND   GM_USE  	!=   'D'
+					AND GM_KEYNO = #{GM_KEYNO}
+					GROUP BY GM.GM_KEYNO
+					ORDER BY GM.GM_REGDT 
+			) A
+	      ) AA
+		  ,(SELECT @rownum:=0)TMP       
+			ORDER BY COUNT DESC
+	</select>
+	
+	<delete id="GSS_Delete">
+		DELETE FROM t_group_schedule_sub
+		WHERE GSS_GSM_KEYNO IN
+		(
+		    SELECT GSM_KEYNO
+		    FROM t_group_schedule_main
+		    WHERE GSM_GM_KEYNO = #{GM_KEYNO} 
+		)
+	</delete>
+	
+	<delete id="GSM_Delete">
+		DELETE FROM t_group_schedule_main
+		WHERE  GSM_GM_KEYNO = #{GM_KEYNO}
+	</delete>
+
+	<insert id="GSS_Insert">
+		INSERT INTO t_group_schedule_sub
+		(
+			  GSS_GSM_KEYNO
+			, GSS_ST_TIME
+			, GSS_EN_TIME
+			, GSS_MAXIMUM
+			, GSS_SUBTITLE
+		)
+		VALUES
+		(
+			  #{GSS_GSM_KEYNO}
+			, #{GSS_ST_TIME}
+			, #{GSS_EN_TIME}
+			, #{GSS_MAXIMUM}
+			, #{GSS_SUBTITLE}
+		)
+	</insert>
+	
+	<insert id="GSM_Insert">
+		INSERT INTO t_group_schedule_main
+		(
+			 GSM_GM_KEYNO
+			, GSM_STDT
+			, GSM_DELYN
+			, GSM_ENDT
+			, GSM_DAY
+		)
+		VALUES
+		(
+			 #{GSM_GM_KEYNO}
+			, #{GSM_STDT}
+			, #{GSM_DELYN}
+			, #{GSM_ENDT}
+			, #{GSM_DAY}
+		)
+	</insert>
+		
+	<insert id="GM_Insert" parameterType = "ApplicationDTO" useGeneratedKeys="true" keyProperty="GM_KEYNO">
+		INSERT INTO t_group_manager
+		(
+			 GM_NAME
+			, GM_SUMMARY
+			, GM_PLACE
+			, GM_DATE
+			, GM_REGDT
+			, GM_REGNM
+			, GM_DIVISION
+			, GM_MAXIMUM
+			, GM_INTRODUCE
+			, GM_HOLIDAY
+			, GM_USE
+			, GM_MN_HOMEDIV_C
+		)
+		VALUES
+		(
+			 #{GM_NAME}
+			, #{GM_SUMMARY}
+			, #{GM_PLACE}
+			, #{GM_DATE}
+			, SYSDATE()
+			, #{GM_REGNM}
+			, #{GM_DIVISION}
+			, #{GM_MAXIMUM}
+			, #{GM_INTRODUCE}
+			, #{GM_HOLIDAY}
+			, #{GM_USE}
+			, #{GM_MN_HOMEDIV_C}
+		)
+	</insert>	
+	
+	<select id="GM_Select" resultType="Hashmap">
+		SELECT @rownum:=@rownum+1 as COUNT
+		  		, A.*
+	  	FROM(
+	        SELECT  CASE WHEN GM.GM_USE = 'N' THEN '사용안함' WHEN GM.GM_USE = 'Y' THEN '사용함' END AS GM_USE_TEMP
+		   			, CASE WHEN GM_DIVISION = 'C' THEN '일반' WHEN GM_DIVISION = 'S' THEN '특별' END AS GM_DIVISION_TEMP
+					, LEFT(GM.GM_REGDT, 10) GM_REGDT_TEMP
+					, GM.*
+					, U.UI_NAME
+					, MIN(GSM.GSM_STDT) GSM_STDT
+	                , MAX(GSM.GSM_ENDT) GSM_ENDT
+	                , P.PM_NAME
+			FROM t_group_manager GM
+			LEFT JOIN u_userinfo U
+			ON U.UI_KEYNO = GM.GM_REGNM
+			LEFT JOIN t_group_schedule_main GSM
+	        ON GM.GM_KEYNO = GSM.GSM_GM_KEYNO
+	        LEFT JOIN t_place_manager P
+	        ON P.PM_KEYNO = GM.GM_PLACE
+	  		LEFT JOIN s_common_file_sub FS
+			ON	 P.PM_FS_KEYNO = FS.FS_KEYNO
+			
+			WHERE PM_USE	=	'Y'
+			AND   GM_DELYN  =   'N'
+			AND   GM_USE  	=   'Y'
+			<if test="GM_KEYNO != null">
+			AND GM_KEYNO = #{GM_KEYNO}
+			</if>
+			GROUP BY GM_KEYNO
+			HAVING GM_MN_HOMEDIV_C = (SELECT HM_MN_HOMEDIV_C FROM s_home_manager WHERE HM_TILES = #{apTiles} AND HM_USE_YN='Y')				
+	        ORDER BY GM_REGDT
+	    )  A  
+	    ,(SELECT @rownum:=0)TMP
+		ORDER BY COUNT DESC
+	</select>
+	
+	<select id="GP_ProgramList" resultType="Hashmap">
+	    SELECT *
+		FROM t_group_participate
+		<if test="GM_KEYNO != null">
+		WHERE GP_GM_KEYNO = #{GM_KEYNO}
+		AND	  GP_DELYN = 'N'
+		</if>
+	</select>
+	
+	<select id="GroupCnt" resultType="int">
+		SELECT COUNT(*)
+        FROM t_group_participate
+        WHERE GP_GM_KEYNO =  #{GM_KEYNO}
+        AND   GP_DELYN = 'N'
+	</select>
+	
+	<select id="ScheduleMain" resultType="Hashmap">
+		SELECT *
+		FROM t_group_schedule_main
+		WHERE GSM_GM_KEYNO = #{GM_KEYNO}
+	</select>
+	<select id="ScheduleSub" resultType="Hashmap">
+		SELECT    GSS.*
+		        , LEFT(GSS.GSS_ST_TIME, 2) ST_H
+		        , RIGHT(GSS.GSS_ST_TIME, 2) ST_M
+		        , LEFT(GSS.GSS_EN_TIME, 2) EN_H
+		        , RIGHT(GSS.GSS_EN_TIME, 2) EN_M
+		FROM t_group_schedule_main GSM
+		        
+		LEFT JOIN t_group_schedule_sub GSS
+		ON GSM.GSM_KEYNO = GSS.GSS_GSM_KEYNO
+		
+		WHERE GSM_GM_KEYNO = #{GM_KEYNO}
+	</select>
+	
+	<update id="GM_Update">
+		UPDATE t_group_manager
+		SET 
+				 GM_NAME	 	= #{GM_NAME}
+				,GM_SUMMARY  	= #{GM_SUMMARY}
+				,GM_PLACE	 	= #{GM_PLACE}
+				,GM_DATE	 	= #{GM_DATE}
+				,GM_MODDT	 	= SYSDATE()
+				,GM_MODNM	 	= #{GM_MODNM}
+				,GM_DIVISION 	= #{GM_DIVISION}
+				,GM_MINIMUM		= #{GM_MINIMUM}
+				,GM_MAXIMUM	 	= #{GM_MAXIMUM}
+				,GM_INTRODUCE	= #{GM_INTRODUCE}
+				,GM_HOLIDAY		= #{GM_HOLIDAY}
+				,GM_USE			= #{GM_USE}
+		WHERE 	GM_KEYNO 	 	= #{GM_KEYNO}	
+	</update>
+	
+	<!-- 프로그램 삭제 -->
+	<update id="GM_Delete">
+		UPDATE t_group_manager
+		SET 	GM_DELYN	 = 'Y'
+		WHERE 	GM_KEYNO 	 = #{GM_KEYNO}	
+	</update>
+	
+	<!-- 개인 투어 신청 인원수 체크 처리 -->
+	<select id="GP_DuplicateData" resultType="int"> 
+		<![CDATA[
+			SELECT 	SUM(GP_HEADCOUNT) 
+			FROM t_group_participate 
+			WHERE	GP_DATE = #{GP_DATE}
+			AND		GP_TIME = #{GP_TIME}
+			AND		GP_GSM_KEYNO = #{GP_GSM_KEYNO}
+			AND		GP_GSS_KEYNO = #{GP_GSS_KEYNO}
+			AND	 	GP_DELYN = 'N'
+		]]> 
+	</select>
+	<!-- 총 인원 체크  -->
+	<select id="GSS_MAX" resultType="int"> 
+		<![CDATA[
+			SELECT 	GSS_MAXIMUM 
+			FROM t_group_schedule_sub 
+			WHERE	GSS_KEYNO = #{GP_GSS_KEYNO}
+		]]> 
+	</select>
+	<!-- 투어예약 등록 -->
+	<insert id="GP_Insert">
+		INSERT INTO t_group_participate
+		(
+			 GP_GM_KEYNO
+			, GP_GSM_KEYNO
+			, GP_GSS_KEYNO
+			, GP_UI_KEYNO
+			, GP_NAME
+			, GP_PHONE
+			, GP_HEADCOUNT
+			, GP_TRAFFIC
+			, GP_YUMOCAR
+			, GP_WHEELCHAIR
+			, GP_GROUPNAME
+			, GP_TRAFFIC_EXP
+			, GP_DATE
+			, GP_TIME
+			, GP_REGDT
+		)
+		VALUES
+		(
+			 #{GP_GM_KEYNO}
+			, #{GP_GSM_KEYNO}
+			, #{GP_GSS_KEYNO}
+			, #{GP_UI_KEYNO}
+			, #{GP_NAME}
+			, #{GP_PHONE}
+			, #{GP_HEADCOUNT}
+			, #{GP_TRAFFIC}
+			, #{GP_YUMOCAR}
+			, #{GP_WHEELCHAIR}
+			, #{GP_GROUPNAME}
+			, #{GP_TRAFFIC_EXP}
+			, #{GP_DATE}
+			, #{GP_TIME}
+			, SYSDATE()
+		)
+	</insert>	
+	
+	<!-- 신청내역 수정 -->
+	<update id="GP_Update">
+		UPDATE t_group_participate
+		SET 
+				 GP_GROUPNAME	= #{GP_GROUPNAME}
+				,GP_NAME  		= #{GP_NAME}
+				,GP_PHONE	 	= #{GP_PHONE}
+				,GP_YUMOCAR	 	= #{GP_YUMOCAR}
+				,GP_WHEELCHAIR	= #{GP_WHEELCHAIR}
+				,GP_HEADCOUNT	= #{GP_HEADCOUNT}
+				,GP_TRAFFIC		 = #{GP_TRAFFIC}
+				,GP_TRAFFIC_EXP	 = #{GP_TRAFFIC_EXP}
+		WHERE 	GP_KEYNO 	 = #{GP_KEYNO}	
+	</update>
+	
+	<sql id="GP_SelectBody">
+	FROM (
+		SELECT * FROM(	
+		    SELECT  @rownum:=@rownum+1 as COUNT, A.*
+		    FROM (
+		            SELECT	CONCAT(GP.GP_DATE,' / ', GP.GP_TIME) SEQ
+                    		, GP_KEYNO
+		            		, GP.GP_GROUPNAME
+		                    , GM.GM_NAME
+		                    , GM_KEYNO
+		                    , LEFT(GP.GP_REGDT,19) GP_REGDT
+		                    , U.UI_NAME
+		            FROM t_group_participate GP
+						
+		            LEFT JOIN t_group_manager GM
+		            ON GM.GM_KEYNO = GP.GP_GM_KEYNO
+						
+		            LEFT JOIN u_userinfo U
+		            ON GP.GP_UI_KEYNO = U.UI_KEYNO
+						
+		            WHERE GP_DELYN = 'N'
+					<if test="GM_MN_HOMEDIV_C != null and GM_MN_HOMEDIV_C != ''">
+					AND GM_MN_HOMEDIV_C = #{GM_MN_HOMEDIV_C}
+					</if>
+		            ORDER BY GP_DATE , GP_TIME
+	        ) A	
+			WHERE (@ROWNUM:=0)=0
+		 ) AA   
+		 ORDER BY AA.COUNT DESC
+	) BB
+	WHERE 1=1
+		
+	<if test="searchList != null">
+	 	<foreach collection="searchList" item="item">
+	 		<choose>
+	 			<when test='item.searchIndex.equals("1")'>
+ 		AND		COUNT   LIKE CONCAT( '%',#{item.searchKeyword},'%')				
+	 			</when>
+	 			<when test='item.searchIndex.equals("2")'>
+ 		AND		UI_NAME  LIKE CONCAT( '%',#{item.searchKeyword},'%')							
+	 			</when>
+	 			<when test='item.searchIndex.equals("3")'>
+ 		AND		GM_NAME  LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("4")'>
+ 		AND		SEQ 	LIKE CONCAT( '%',#{item.searchKeyword},'%')							
+	 			</when>
+	 			<when test='item.searchIndex.equals("5")'>
+ 		AND		GP_GROUPNAME  LIKE CONCAT( '%',#{item.searchKeyword},'%')								
+	 			</when>
+					<when test='item.searchIndex.equals("6")'>
+	 	AND		GP_REGDT  LIKE CONCAT( '%',#{item.searchKeyword},'%')					
+	 			</when>
+	 			<when test='item.searchIndex.equals("all")'>
+ 		AND (
+ 				COUNT   LIKE CONCAT( '%',#{item.searchKeyword},'%')			OR
+ 				UI_NAME  LIKE CONCAT( '%',#{item.searchKeyword},'%')		OR
+ 				GM_NAME  LIKE CONCAT( '%',#{item.searchKeyword},'%')		OR
+ 				SEQ 	LIKE CONCAT( '%',#{item.searchKeyword},'%')			OR
+ 				GP_GROUPNAME  LIKE CONCAT( '%',#{item.searchKeyword},'%')	OR
+ 				GP_REGDT  LIKE CONCAT( '%',#{item.searchKeyword},'%')		
+ 		)							
+	 			</when>
+	 		</choose>
+	 	</foreach>
+ 	</if>
+	</sql>
+	
+	<!-- 프로그램신청관리 - 단체예약관리 - 투어 신청자 카운트 -->
+	<select	id="GP_SelectCnt" resultType="int">
+		SELECT COUNT(*) 
+		<include refid="GP_SelectBody"/>
+	</select>
+	
+	<!-- 프로그램신청관리 - 단체예약관리 - 투어 신청자 리스트  -->
+	<select	id="GP_Select" resultType="Hashmap">
+		SELECT * 
+		<include refid="GP_SelectBody"/>
+		<choose>
+	 		<when test="orderBy == 1">
+	 		ORDER BY	COUNT ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 2">
+	 		ORDER BY	UI_NAME ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 3"> 
+	 		ORDER BY	GM_NAME ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 4"> 
+	 		ORDER BY	SEQ		${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 5"> 
+	 		ORDER BY	GP_GROUPNAME ${sortDirect}
+	 		</when>
+	 		<when test="orderBy == 6"> 
+	 		ORDER BY	GP_REGDT ${sortDirect}
+	 		</when>
+	 		<otherwise>
+	 		ORDER BY COUNT DESC
+	 		</otherwise>
+	 	</choose>
+		<if test="recordCountPerPage != 0">
+		 	LIMIT  	#{recordCountPerPage} OFFSET #{firstIndex}
+		</if> 	
+	</select>    
+    
+</mapper>
+ 

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<taglib xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-jsptaglibrary_2_0.xsd"
+    version="2.0">
+ 
+    <description>사이트 프로퍼티 가져오기</description>
+    <display-name>Site Properties</display-name>
+    <tlib-version>1.1</tlib-version>
+    <short-name>sp</short-name>
+    <uri>tlds/SiteProperties.tld</uri>
+    
+    <function>
+        <description>String 가져오기</description>
+        <name>getString</name>
+        <function-class>com.tx.common.config.tld.SiteProperties</function-class>
+        <function-signature>java.lang.String getString(java.lang.String)</function-signature>
+        <example>
+        ${sp:getString(str)}
+        </example>
+    </function>
+    
+    <function>
+        <description>int 가져오기</description>
+        <name>getInt</name>
+        <function-class>com.tx.common.config.tld.SiteProperties</function-class>
+        <function-signature>java.lang.Integer getInt(java.lang.String)</function-signature>
+        <example>
+        ${sp:getInt(str)}
+        </example>
+    </function>
+    
+    <function>
+        <description>double 가져오기</description>
+        <name>getDouble</name>
+        <function-class>com.tx.common.config.tld.SiteProperties</function-class>
+        <function-signature>java.lang.Double getDouble(java.lang.String)</function-signature>
+        <example>
+        ${sp:getDouble(str)}
+        </example>
+    </function>
+    
+    <function>
+        <description>float 가져오기</description>
+        <name>getFloat</name>
+        <function-class>com.tx.common.config.tld.SiteProperties</function-class>
+        <function-signature>java.lang.Float getFloat(java.lang.String)</function-signature>
+        <example>
+        ${sp:getFloat(str)}
+        </example>
+    </function>
+    
+    <function>
+        <description>boolean 가져오기</description>
+        <name>getBoolean</name>
+        <function-class>com.tx.common.config.tld.SiteProperties</function-class>
+        <function-signature>java.lang.Boolean getBoolean(java.lang.String)</function-signature>
+        <example>
+        ${sp:getBoolean(str)}
+        </example>
+    </function>
+    
+    <function>
+        <description>list 가져오기</description>
+        <name>getList</name>
+        <function-class>com.tx.common.config.tld.SiteProperties</function-class>
+        <function-signature>java.util.List getList(java.lang.String)</function-signature>
+        <example>
+        ${sp:getList(str)}
+        </example>
+    </function>
+    
+    <function>
+        <description>SettingData에서 가져오기</description>
+        <name>getData</name>
+        <function-class>com.tx.common.config.tld.SiteProperties</function-class>
+        <function-signature>java.lang.String getData(java.lang.String)</function-signature>
+        <example>
+        ${sp:getData(str)}
+        </example>
+    </function>
+    
+    <function>
+        <description>code 데이터  가져오기</description>
+        <name>getCodeList</name>
+        <function-class>com.tx.common.config.tld.SiteProperties</function-class>
+        <function-signature>java.util.List getCodeList(java.lang.String)</function-signature>
+        <example>
+        ${sp:getCodeList(str)}
+        </example>
+    </function>
+</taglib>
+
