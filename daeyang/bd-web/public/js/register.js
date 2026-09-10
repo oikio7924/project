@@ -8,6 +8,15 @@ const FIELD_IDS = [
   'dev_completion_date', 'commercial_operation_date',
 ];
 
+const DATE_FIELD_IDS = [
+  'power_biz_permit_scheduled', 'power_biz_permit_date', 'power_biz_permit_expire',
+  'dev_permit_date', 'dev_permit_expire',
+  'ppa_receive_date',
+  'dev_completion_date', 'commercial_operation_date',
+];
+const DATE_YEAR_MIN = 1900;
+const DATE_YEAR_MAX = 2100;
+
 let currentId        = null;
 let plantListAll     = [];
 let pendingPlantFiles = [];    // 신규 등록 시 미리 선택한 첨부파일들
@@ -19,6 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   initDropdown();
   initDevStatus();
+  initDateValidation();
   loadPlantList();
   initFileImport();
   initPlantFiles();
@@ -58,6 +68,59 @@ function setDevStatus(val) {
   const r = document.querySelector(`input[name="dev_permit_status"][value="${val}"]`);
   if (r) { r.checked = true; applyDevStatus(val); }
   else    { document.querySelector('input[name="dev_permit_status"][value=""]').checked = true; applyDevStatus(''); }
+}
+
+/* ── 날짜 유효성 검사 ────────────────────────────────────────────────────── */
+function initDateValidation() {
+  for (const f of DATE_FIELD_IDS) {
+    const el = document.getElementById(f);
+    if (!el) continue;
+    el.addEventListener('input', () => clearDateError(el));
+  }
+}
+
+function isValidDateValue(v) {
+  if (!v) return true;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+  if (!m) return false;
+  const year = Number(m[1]);
+  return year >= DATE_YEAR_MIN && year <= DATE_YEAR_MAX;
+}
+
+function clearDateError(el) {
+  el.classList.remove('input-error');
+  const next = el.nextElementSibling;
+  if (next && next.classList.contains('field-error-msg')) next.remove();
+}
+
+function clearAllDateErrors() {
+  for (const f of DATE_FIELD_IDS) {
+    const el = document.getElementById(f);
+    if (el) clearDateError(el);
+  }
+}
+
+function showDateError(el) {
+  el.classList.add('input-error');
+  const msg = document.createElement('div');
+  msg.className = 'field-error-msg';
+  msg.textContent = '날짜를 다시 확인해주세요';
+  el.insertAdjacentElement('afterend', msg);
+}
+
+/* 유효하지 않은 날짜가 있으면 표시하고 첫 번째 오류 필드를 반환 (모두 유효하면 null) */
+function validateDateFields() {
+  clearAllDateErrors();
+  let firstInvalid = null;
+  for (const f of DATE_FIELD_IDS) {
+    const el = document.getElementById(f);
+    if (!el) continue;
+    if (!isValidDateValue(el.value)) {
+      showDateError(el);
+      if (!firstInvalid) firstInvalid = el;
+    }
+  }
+  return firstInvalid;
 }
 
 /* ── 커스텀 드롭다운 ─────────────────────────────────────────────────────── */
@@ -176,6 +239,7 @@ function fillForm(data) {
     el.value = v;
   }
   setDevStatus(data.dev_permit_status || '');
+  clearAllDateErrors();
   loadPlantFiles(currentId);
 }
 
@@ -189,6 +253,7 @@ function resetForm() {
   pendingPlantFiles = [];
   document.getElementById('plant-files-input').value = '';
   setDevStatus('');
+  clearAllDateErrors();
   plantFilesSelected = new Set();
   updateFilesCountBadge();
   if (filesModalEl) filesModalEl.remove();
@@ -208,6 +273,13 @@ async function onSave(e) {
   if (!plantName) {
     toast('발전소 명은 필수입니다.', 'error');
     document.getElementById('plant_name').focus();
+    return;
+  }
+
+  const invalidDateEl = validateDateFields();
+  if (invalidDateEl) {
+    toast('날짜를 다시 확인해주세요.', 'error');
+    invalidDateEl.focus();
     return;
   }
 

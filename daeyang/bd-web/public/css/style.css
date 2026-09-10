@@ -866,9 +866,23 @@ a:hover { text-decoration: underline; }
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 .date-row .form-label { margin: 0; min-width: 110px; flex-shrink: 0; }
 .date-row .form-input { flex: 1; }
+
+.form-input.input-error,
+.form-input.input-error:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220,38,38,.08);
+}
+
+.field-error-msg {
+  flex-basis: 100%;
+  margin-left: 118px;
+  color: #dc2626;
+  font-size: 11px;
+}
 
 /* 개발행위 구분 라디오 */
 .dev-status-group {

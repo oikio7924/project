@@ -48,9 +48,9 @@ const PLANT_FIELDS = [
 const EVENT_FIELDS = [
   { field: 'power_biz_permit_scheduled', label: '발전사업허가예정일', type: 'power-scheduled' },
   { field: 'power_biz_permit_date',      label: '발전사업허가일',    type: 'power-permit'    },
-  { field: 'power_biz_permit_expire',    label: '발전사업만료일',    type: 'power-expire'    },
+  { field: 'power_biz_permit_expire',    label: '발전사업만료일',    type: 'power-expire',    excludeWhen: 'commercial_operation_date' },
   { field: 'dev_permit_date',            label: '개발행위허가일',    type: 'dev-permit'      },
-  { field: 'dev_permit_expire',          label: '개발행위만료일',    type: 'dev-expire'      },
+  { field: 'dev_permit_expire',          label: '개발행위만료일',    type: 'dev-expire',      excludeWhen: 'dev_completion_date' },
   { field: 'ppa_receive_date',           label: 'PPA 접수일',        type: 'ppa'             },
   { field: 'dev_completion_date',        label: '개발행위준공일',    type: 'completion'      },
   { field: 'commercial_operation_date',  label: '상업운전개시일',    type: 'operation'       },
@@ -601,7 +601,10 @@ router.get('/api/events', errHandler(async (req, res) => {
   const calFields = EVENT_FIELDS.filter(e => e.type.endsWith('-expire'));
 
   const db = getDb();
-  const selectCols = ['id', 'plant_name', ...calFields.map(e => e.field)].join(', ');
+  const selectCols = [
+    'id', 'plant_name', 'dev_completion_date', 'commercial_operation_date',
+    ...calFields.map(e => e.field),
+  ].join(', ');
   const [plants] = await db.execute(`SELECT ${selectCols} FROM bdm_plants`);
 
   const today = new Date();
@@ -612,6 +615,7 @@ router.get('/api/events', errHandler(async (req, res) => {
     for (const ef of calFields) {
       const val = plant[ef.field];
       if (!val) continue;
+      if (ef.excludeWhen && plant[ef.excludeWhen]) continue;
       const dateStr = String(val).slice(0, 10);
       const d = new Date(dateStr + 'T00:00:00');
       if (month !== null) {
@@ -636,7 +640,7 @@ router.get('/api/events', errHandler(async (req, res) => {
 }));
 
 // ─── 알림 (만료 초과 + 곧 만료) ─────────────────────────────────────────────
-// 준공일 또는 상업운전개시일이 하나라도 등록된 발전소는 제외
+// 발전사업만료일 ↔ 상업운전개시일, 개발행위만료일 ↔ 개발행위준공일: 대응되는 날짜가 입력되면 해당 만료일만 제외
 router.get('/api/alerts', errHandler(async (req, res) => {
   const db = getDb();
   const expireFields = EVENT_FIELDS.filter(e => e.type.endsWith('-expire'));
@@ -654,12 +658,10 @@ router.get('/api/alerts', errHandler(async (req, res) => {
   const upcoming = [];
 
   for (const plant of plants) {
-    // 준공일 또는 운전개시일이 있으면 알림 제외
-    if (plant.dev_completion_date || plant.commercial_operation_date) continue;
-
     for (const ef of expireFields) {
       const val = plant[ef.field];
       if (!val) continue;
+      if (ef.excludeWhen && plant[ef.excludeWhen]) continue;
       const dateStr = String(val).slice(0, 10);
       if (parseInt(dateStr) < 1900) continue;   // 0000-xx-xx 등 무효 날짜 제외
       const d    = new Date(dateStr + 'T00:00:00');
