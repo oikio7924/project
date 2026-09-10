@@ -17,7 +17,7 @@ fs.mkdirSync(BIZ_CERT_DIR, { recursive: true });
 
 const PLANT_DOCS_DIR = path.join(__dirname, 'uploads', 'plant-docs');
 fs.mkdirSync(PLANT_DOCS_DIR, { recursive: true });
-const PLANT_DOCS_MAX_PER_PLANT = 30;
+const PLANT_DOCS_MAX_PER_PLANT = 50;
 
 const DB_CONFIG = {
   host: process.env.MARIADB_HOST || 'localhost',

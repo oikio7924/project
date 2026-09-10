@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS bdm_plants (
   COMMENT='태양광 발전소 인허가 정보';
 
 -- ─────────────────────────────────────────────
--- 발전소 첨부파일 (다중, 발전소당 최대 30개)
+-- 발전소 첨부파일 (다중, 발전소당 최대 50개)
 -- ─────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS bdm_plant_files (
   id                INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
