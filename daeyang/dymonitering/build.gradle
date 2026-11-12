@@ -186,7 +186,7 @@ test {
 flyway{
 	url = 'jdbc:mysql://221.144.83.86:3306/txcms'
     user = 'txcms'
-    password = 'txcms2018!'
+    password = '********'
 	encoding = 'UTF-8'
 	locations = ["filesystem:${file('src/main/mysqldb').absolutePath}"]
 }
