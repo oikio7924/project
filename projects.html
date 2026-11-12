@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="오인경의 프로젝트별 개발 내용과 화면 자료">
+  <title>프로젝트 상세 | 오인경</title>
+  <style>
+    :root { --bg:#f6f5f1; --paper:#fff; --ink:#17211e; --muted:#61706a; --line:#dce2dc; --accent:#137a5a; }
+    * { box-sizing:border-box; } [hidden] { display:none !important; } html { scroll-behavior:smooth; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.75 system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif; }
+    a { color:inherit; } a:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+    .wrap { width:min(1280px,calc(100% - 5vw)); margin:auto; }
+    header { border-bottom:1px solid var(--line); background:var(--paper); }
+    header .wrap { display:flex; align-items:center; justify-content:space-between; gap:18px; min-height:70px; }
+    .brand { font-weight:800; text-decoration:none; } .brand span { color:var(--accent); }
+    .back { color:var(--accent); font-weight:700; text-decoration:none; }
+    .intro { padding:72px 0 44px; } .eyebrow { margin:0 0 12px; color:var(--accent); font-size:.82rem; font-weight:800; letter-spacing:.15em; text-transform:uppercase; }
+    h1,h2,h3,p { margin-top:0; } h1 { margin-bottom:15px; font-size:clamp(2.6rem,6vw,4.6rem); letter-spacing:-.06em; line-height:1.15; } h2 { font-size:clamp(2rem,4vw,2.8rem); letter-spacing:-.05em; line-height:1.2; }
+    .intro > p:last-child { max-width:650px; color:var(--muted); font-size:1.08rem; }
+    .contents { display:flex; flex-wrap:wrap; gap:9px; padding-bottom:56px; }
+    .contents a,.pill { padding:7px 13px; border:1px solid var(--line); border-radius:100px; background:var(--paper); color:var(--ink); font-size:.85rem; font-weight:700; text-decoration:none; }
+    .contents a:hover { border-color:var(--accent); color:var(--accent); }
+    article { scroll-margin-top:20px; padding:62px 0; border-top:1px solid var(--line); }
+    .project-head { display:flex; justify-content:space-between; align-items:start; gap:22px; }
+    .project-head p { max-width:680px; color:#43534c; font-size:1.07rem; word-break:keep-all; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:26px 0; }
+    .panel { padding:22px 24px; border:1px solid var(--line); border-radius:14px; background:var(--paper); }
+    .panel h3 { margin-bottom:8px; font-size:1rem; } .panel p { margin:0; color:var(--muted); font-size:.94rem; }
+    .screen { display:block; width:100%; max-height:600px; object-fit:contain; object-position:top; border:1px solid var(--line); border-radius:14px; background:#e9eee8; }
+    .screen-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; } .screen-grid img { width:100%; max-height:560px; object-fit:contain; border:1px solid var(--line); border-radius:12px; background:#fff; }
+    .mobile-gallery { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); align-items:start; gap:14px; margin-top:24px; }
+    .mobile-gallery img { width:100%; max-height:620px; object-fit:contain; border:1px solid var(--line); border-radius:14px; background:#fff; }
+    .links { display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; }
+    .button { display:inline-block; padding:11px 18px; border-radius:100px; background:var(--ink); color:#fff; font-weight:700; text-decoration:none; }
+    .button.secondary { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+    footer { padding:30px 0; border-top:1px solid var(--line); color:var(--muted); }
+    @media(max-width:800px) { .mobile-gallery { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+    @media(max-width:650px) { .wrap { width:calc(100% - 32px); } .grid,.screen-grid { grid-template-columns:1fr; } .project-head { display:block; } article { padding:50px 0; } }
+    @media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+  </style>
+</head>
+<body>
+  <header><div class="wrap"><a class="brand" href="index.html">오인경<span>.</span></a><a class="back" href="index.html#projects">← 포트폴리오로 돌아가기</a></div></header>
+  <main class="wrap">
+    <div class="intro"><p class="eyebrow">Project Readme</p><h1>프로젝트 상세</h1><p>각 프로젝트의 목적, 주요 기능, 사용 기술을 한눈에 볼 수 있도록 정리했습니다. 화면 이미지를 보고 저장소에서 구현 내용을 확인할 수 있습니다.</p></div>
+    <nav class="contents" aria-label="프로젝트 목록"><a href="#distribution">01 유통 통합 관리</a><a href="#monitoring">02 통합 모니터링</a><a href="#tax">03 전자세금계산서</a><a href="#calendar">04 인허가 일정관리</a><a href="#emulator">05 RS485 에뮬레이터</a><a href="#digitalguard">06 Digital Guard</a><a href="#harudam">07 하루담</a></nav>
+    <article id="distribution"><div class="project-head"><div><p class="eyebrow">01 / Business</p><h2>유통 통합 관리</h2><p>파워뱅크 제조사부터 총판, 대리점까지 이어지는 유통 구조를 하나의 B2B 웹 시스템에서 관리합니다.</p></div></div><div class="grid"><div class="panel"><h3>주요 기능</h3><p>발주·수주 현황, 재고, 거래명세서 관리와 관리자·총판·대리점별 권한 분리</p></div><div class="panel"><h3>기술</h3><p>Vue 3 · Node.js / Express · PostgreSQL</p></div></div><div class="screen-grid"><img src="atglobal/ao-web/docs/screenshots/dashboard.png" alt="유통 관리 대시보드" loading="lazy"><img src="atglobal/ao-web/docs/screenshots/page-수주현황.png" alt="수주 현황 화면" loading="lazy"></div><div class="links"><a class="button" href="https://github.com/oikio7924/project/tree/main/atglobal/ao-web" target="_blank" rel="noopener noreferrer">GitHub 저장소 ↗</a><a class="button secondary" href="https://github.com/oikio7924/project/blob/main/atglobal/ao-web/docs/SPEC.md" target="_blank" rel="noopener noreferrer">상세 기획서 ↗</a></div></article>
+    <article id="monitoring"><p class="eyebrow">02 / Platform</p><h2>통합 모니터링 시스템</h2><p>태양광 발전소의 발전량 조회와 회원, 청구, 게시판, 관리자 통계를 함께 다루는 Java 기반 웹 시스템입니다.</p><div class="grid"><div class="panel"><h3>주요 기능</h3><p>발전소별 실시간 발전량 조회, 관리자 통계, 회원 및 청구 업무 관리</p></div><div class="panel"><h3>기술</h3><p>Java · Spring · eGovFrame · MyBatis · MySQL / Oracle</p></div></div><div class="screen-grid"><img src="daeyang/dymonitering/docs/screenshots/dashboard.png" alt="통합 모니터링 대시보드" loading="lazy"><img src="daeyang/dymonitering/docs/screenshots/page-통계분석.png" alt="통계 분석 화면" loading="lazy"></div><div class="links"><a class="button" href="https://github.com/oikio7924/project/tree/main/daeyang/dymonitering" target="_blank" rel="noopener noreferrer">GitHub 저장소 ↗</a></div></article>
+    <article id="tax"><p class="eyebrow">03 / Operations</p><h2>전자세금계산서 발행</h2><p>태양광 발전소 매출에 대한 전자세금계산서를 발행하고 발행 이력을 관리하는 시스템입니다.</p><div class="grid"><div class="panel"><h3>주요 기능</h3><p>세금계산서 발행·이력 조회, 외부 발행 API 연동</p></div><div class="panel"><h3>기술</h3><p>Node.js / Express · MariaDB</p></div></div><img class="screen" src="daeyang/ht-web/docs/screenshots/dashboard.png" alt="전자세금계산서 관리 화면" loading="lazy"><div class="links"><a class="button" href="https://github.com/oikio7924/project/tree/main/daeyang/ht-web" target="_blank" rel="noopener noreferrer">GitHub 저장소 ↗</a></div></article>
+    <article id="calendar"><p class="eyebrow">04 / Operations</p><h2>인허가 일정관리</h2><p>태양광 발전소 인허가 절차의 일정을 캘린더 형태로 정리하고 관리하는 업무 도구입니다.</p><div class="grid"><div class="panel"><h3>주요 기능</h3><p>발전소 등록과 인허가 일정 확인 및 관리</p></div><div class="panel"><h3>기술</h3><p>Node.js / Express · MariaDB</p></div></div><div class="screen-grid"><img src="daeyang/bd-web/docs/screenshots/dashboard.png" alt="인허가 일정관리 캘린더" loading="lazy"><img src="daeyang/bd-web/docs/screenshots/page-발전소등록.png" alt="발전소 등록 화면" loading="lazy"></div><div class="links"><a class="button" href="https://github.com/oikio7924/project/tree/main/daeyang/bd-web" target="_blank" rel="noopener noreferrer">GitHub 저장소 ↗</a></div></article>
+    <article id="emulator"><p class="eyebrow">05 / Tooling</p><h2>RS485 통신 에뮬레이터</h2><p>실제 태양광 인버터 장비가 없어도 RS485/Modbus 통신을 재현해 프로토콜을 시험할 수 있는 데스크톱 도구입니다.</p><div class="grid"><div class="panel"><h3>용도</h3><p>인버터 연동 프로그램의 통신 동작을 장비 없이 확인</p></div><div class="panel"><h3>기술</h3><p>Python · PyQt5 · pyserial</p></div></div><img class="screen" src="assets/rs485-demo.png" alt="RS485 에뮬레이터의 Modbus RTU 통신 화면" loading="lazy"><div class="links"><a class="button" href="https://github.com/oikio7924/project/tree/main/daeyang/485_emulator" target="_blank" rel="noopener noreferrer">GitHub 저장소 ↗</a></div></article>
+    <article id="digitalguard"><p class="eyebrow">06 / SMHRD · 최우수상</p><h2>Digital Guard</h2><p>청소년이 설문과 제보로 디지털 유해환경 데이터를 제공하고, 참여 보상과 분석 결과를 통해 꾸준한 참여 및 정책 활용을 돕는 플랫폼입니다.</p><div class="grid"><div class="panel"><h3>주요 기능</h3><p>청소년 설문·제보, 챌린지와 포인트 리워드, 포인트샵, 참여 통계 및 관리자 분석</p></div><div class="panel"><h3>담당 및 기술</h3><p>데이터 분석, 서비스 기획 자료 및 이해관계자 시각화<br>Vue 3 · Pinia · Supabase · ECharts · PrimeVue</p></div></div><img class="screen" src="assets/digital-guard-dashboard.png" alt="Digital Guard 관리자 대시보드 실제 화면" loading="lazy"><div class="screen-grid" style="margin-top:16px"><img src="assets/digital-guard-mobile-ui.png" alt="Digital Guard 모바일 챌린지 화면 실제 캡처" loading="lazy"><img src="assets/digital-guard-erd.png" alt="Digital Guard 데이터베이스 ERD 설계도" loading="lazy"></div><div class="links"><a class="button" href="https://github.com/2025-SMHRD-SW-CX/Digital-Guard" target="_blank" rel="noopener noreferrer">GitHub 저장소 ↗</a></div></article>
+    <article id="harudam"><p class="eyebrow">07 / SMHRD · 장려상</p><h2>하루담</h2><p>가족 간 실시간 음성 대화를 기록하고, 생성형 AI로 대화 요약과 디지털 자서전을 만들어 가족의 이야기를 이어가는 플랫폼입니다.</p><div class="grid"><div class="panel"><h3>주요 기능</h3><p>음성 기반 AI 대화, 대화 요약, 자서전 생성, 가족 구성원 및 타임라인 관리</p></div><div class="panel"><h3>담당 및 기술</h3><p>AI 챗봇·대화 요약·자서전 생성 백엔드 및 프론트엔드 API 연동<br>Vue 3 · TypeScript · Spring Boot · PostgreSQL · JWT</p></div></div><div class="mobile-gallery"><img src="assets/harudam-parent-home.png" alt="하루담 부모 메인 화면 실제 캡처" loading="lazy"><img src="assets/harudam-parent-chat.png" alt="하루담 부모 대화 화면 실제 캡처" loading="lazy"><img src="assets/harudam-autobiography.png" alt="하루담 자서전 화면 실제 캡처" loading="lazy"><img src="assets/harudam-calendar.png" alt="하루담 가족 일정 캘린더 실제 캡처" loading="lazy"></div><div class="links"><a class="button" href="https://github.com/oikio7924/skrrrrr/tree/develop" target="_blank" rel="noopener noreferrer">GitHub 저장소 · develop 브랜치 ↗</a></div></article>
+  </main>
+  <footer><div class="wrap">© 2026 오인경 · <a href="index.html">포트폴리오로 돌아가기</a></div></footer>
+  <script>
+    const selectedProject = new URLSearchParams(window.location.search).get('project');
+    const selectedArticle = selectedProject && document.getElementById(selectedProject);
+    if (selectedArticle && selectedArticle.tagName === 'ARTICLE') {
+      document.querySelector('.intro').hidden = true;
+      document.querySelector('.contents').hidden = true;
+      document.querySelectorAll('main article').forEach(article => {
+        article.hidden = article !== selectedArticle;
+      });
+      document.title = `${selectedArticle.querySelector('h2').textContent} | 오인경`;
+    }
+  </script>
+</body>
+</html>
+

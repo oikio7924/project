@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RTU 통합관리 로그인</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="loginwrap">
+  <form class="loginbox" id="form">
+    <h1>대양 RTU 통합관리</h1>
+    <p>발전소 RTU 세팅·장비·장애·라우터 관리</p>
+    <div class="field"><label>아이디</label><input name="username" autocomplete="username" required autofocus></div>
+    <div class="field"><label>비밀번호</label><input name="password" type="password" autocomplete="current-password" required></div>
+    <label class="check remember"><input type="checkbox" name="remember"> 아이디 저장</label>
+    <button class="btn primary">로그인</button>
+    <div class="err" id="err"></div>
+  </form>
+</div>
+<script>
+// 아이디 저장: 이 브라우저에만 아이디를 기억한다 (비밀번호는 저장하지 않음)
+const KEY = 'rtuweb.savedId';
+const form = document.getElementById('form');
+try {
+  const saved = localStorage.getItem(KEY);
+  if (saved) {
+    form.username.value = saved;
+    form.remember.checked = true;
+    form.password.focus();
+  }
+} catch { /* 저장소를 못 쓰는 브라우저 */ }
+
+form.onsubmit = async e => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const res = await fetch('api/login', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: fd.get('username'), password: fd.get('password') }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.ok) {
+    try {
+      if (form.remember.checked) localStorage.setItem(KEY, String(fd.get('username')).trim());
+      else localStorage.removeItem(KEY);
+    } catch { /* 저장소를 못 쓰는 브라우저 */ }
+    location.href = './';
+  } else document.getElementById('err').textContent = data.error || '로그인 실패';
+};
+</script>
+</body>
+</html>

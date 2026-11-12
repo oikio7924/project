@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-labelledby="title desc">
+  <title id="title">RS485 통신 에뮬레이터 개념도</title>
+  <desc id="desc">컴퓨터에서 RS485 신호를 보내 태양광 인버터의 응답을 재현하는 흐름</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#e7f2eb"/><stop offset="1" stop-color="#d4e9df"/></linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="8" stdDeviation="14" flood-color="#174f36" flood-opacity=".13"/></filter>
+  </defs>
+  <rect width="800" height="450" fill="url(#bg)"/>
+  <circle cx="722" cy="68" r="93" fill="#b8dbc7" opacity=".5"/>
+  <circle cx="65" cy="401" r="120" fill="#b8dbc7" opacity=".4"/>
+  <g filter="url(#shadow)">
+    <rect x="55" y="92" width="310" height="240" rx="17" fill="#fff"/>
+    <rect x="55" y="92" width="310" height="43" rx="17" fill="#173d30"/>
+    <rect x="55" y="119" width="310" height="16" fill="#173d30"/>
+    <circle cx="80" cy="114" r="5" fill="#8dc9a6"/><circle cx="99" cy="114" r="5" fill="#8dc9a6"/><circle cx="118" cy="114" r="5" fill="#8dc9a6"/>
+    <rect x="77" y="156" width="105" height="25" rx="6" fill="#eaf3ed"/><rect x="193" y="156" width="147" height="25" rx="6" fill="#eaf3ed"/>
+    <rect x="77" y="194" width="263" height="111" rx="9" fill="#11251d"/>
+    <text x="91" y="221" fill="#80d9a6" font-family="Consolas,monospace" font-size="13">TX  01 03 00 00 00 02 C4 0B</text>
+    <text x="91" y="247" fill="#fff" font-family="Consolas,monospace" font-size="13">RX  01 03 04 00 E6 13 88</text>
+    <text x="91" y="280" fill="#80d9a6" font-family="Consolas,monospace" font-size="12">STATUS  CONNECTED</text>
+    <rect x="486" y="112" width="245" height="200" rx="17" fill="#fff"/>
+    <rect x="509" y="139" width="199" height="105" rx="9" fill="#20523a"/>
+    <rect x="530" y="160" width="157" height="63" rx="5" fill="#a8d3b8"/>
+    <path d="M540 206l31-25 22 15 24-31 17 20 26-14 16 17" fill="none" stroke="#20523a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="520" y="260" width="20" height="23" rx="3" fill="#b2cfc0"/><rect x="550" y="260" width="20" height="23" rx="3" fill="#b2cfc0"/><rect x="580" y="260" width="20" height="23" rx="3" fill="#b2cfc0"/>
+    <circle cx="680" cy="272" r="8" fill="#20a76f"/>
+  </g>
+  <path d="M377 195h93" stroke="#137a5a" stroke-width="4" stroke-linecap="round" stroke-dasharray="9 9"/>
+  <path d="M453 184l17 11-17 11" fill="none" stroke="#137a5a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M470 256h-93" stroke="#137a5a" stroke-width="4" stroke-linecap="round" stroke-dasharray="9 9"/>
+  <path d="M394 245l-17 11 17 11" fill="none" stroke="#137a5a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="210" y="371" text-anchor="middle" fill="#214e38" font-family="system-ui,sans-serif" font-size="21" font-weight="700">에뮬레이터</text>
+  <text x="609" y="371" text-anchor="middle" fill="#214e38" font-family="system-ui,sans-serif" font-size="21" font-weight="700">인버터 응답 재현</text>
+  <text x="400" y="418" text-anchor="middle" fill="#48745b" font-family="system-ui,sans-serif" font-size="15">RS485 / Modbus 통신 흐름 · 개념도</text>
+</svg>

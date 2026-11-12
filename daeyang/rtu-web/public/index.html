@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>대양모니터링 RTU 통합관리</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="side">
+    <div class="brand"><span>대양 RTU 관리</span><small>모니터링 발전소 기준 통합관리</small></div>
+    <div class="navlabel">관리 시트</div>
+    <nav class="nav" id="nav"></nav>
+    <div class="navlabel">기록</div>
+    <nav class="nav"><button data-tab="logs" id="logsNav"><span>변경 이력</span></button></nav>
+    <div class="sidefoot"><b id="who"></b><br><button id="pwBtn">비밀번호 변경</button> · <button id="logout">로그아웃</button></div>
+  </aside>
+  <main class="main">
+    <header class="top">
+      <div class="crumb">RTU 통합관리 / <b id="crumb"></b></div>
+      <div class="right">
+        <input class="search" id="search" placeholder="현재 시트 검색">
+        <a class="btn" href="api/export.xlsx">엑셀 내려받기</a>
+      </div>
+    </header>
+    <section class="content" id="view"></section>
+  </main>
+</div>
+
+<!-- 행 추가·수정 -->
+<div class="modalbg" id="rowBg" style="z-index:11"><form class="modal" id="rowForm" novalidate></form></div>
+<!-- 발전소 수정 (RTU 정보 / 모니터링 정보) -->
+<div class="modalbg" id="plantBg"><div class="modal wide" id="plantModal"></div></div>
+<!-- 발전소 묶음 등록 -->
+<div class="modalbg" id="bundleBg"><form class="modal wide" id="bundleForm" novalidate></form></div>
+<!-- 변경 이력 상세 (다른 창 위에 뜸) -->
+<div class="modalbg" id="logBg" style="z-index:12"><div class="modal" id="logModal"></div></div>
+<!-- 세팅 요청서 올리기 -->
+<div class="modalbg" id="formBg"><div class="modal wide" id="formModal"></div></div>
+<!-- 비밀번호 변경 -->
+<div class="modalbg" id="pwBg"><form class="modal" id="pwForm" style="width:min(380px,100%)">
+  <h2>비밀번호 변경</h2>
+  <div class="field"><label>현재 비밀번호</label><input type="password" name="current" required></div>
+  <div class="field" style="margin-top:8px"><label>새 비밀번호 (7자 이상)</label><input type="password" name="next" minlength="7" required></div>
+  <div class="modalfoot"><div class="r"><button type="button" class="btn" data-close>취소</button><button class="btn primary">변경</button></div></div>
+</form></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

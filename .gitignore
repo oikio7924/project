@@ -1,1 +1,10 @@
 sync-from-main.sh
+
+# 의존성 (npm install 로 다시 받음)
+node_modules/
+
+# 교육과정 프로젝트는 각자 GitHub 저장소에 있음 (비공개 private_project 에 사본)
+smhrd/
+
+# 팀원 얼굴이 나오는 사진은 공개하지 않음
+assets/harudam/팀사진_skrrrrr.jpg

@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="태양광 발전 모니터링과 업무 시스템을 개발한 풀스택 개발자의 포트폴리오입니다.">
+  <meta name="theme-color" content="#f6f5f1">
+  <title>오인경 | 이력서·개발 포트폴리오</title>
+  <style>
+    :root { color-scheme: light; --bg:#f6f5f1; --paper:#fff; --ink:#17211e; --muted:#61706a; --line:#dce2dc; --accent:#137a5a; --soft:#e5f2e9; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.7 system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif; word-break:keep-all; overflow-wrap:anywhere; }
+    a { color:inherit; text-decoration:none; }
+    a:focus-visible, button:focus-visible { outline:3px solid var(--accent); outline-offset:4px; }
+    .wrap { width:min(1480px,calc(100% - 5vw)); margin:auto; }
+    .skip { position:absolute; top:-60px; left:16px; padding:8px 14px; background:var(--ink); color:#fff; z-index:10; }
+    .skip:focus { top:12px; }
+    header { position:sticky; top:0; z-index:20; border-bottom:1px solid var(--line); background:rgba(246,245,241,.96); backdrop-filter:blur(12px); }
+    .nav { display:flex; align-items:center; justify-content:space-between; gap:24px; min-height:76px; }
+    .brand { font-weight:800; font-size:1.08rem; letter-spacing:-.04em; }
+    .brand span { color:var(--accent); }
+    nav { display:flex; flex-wrap:wrap; gap:12px 28px; font-size:.92rem; font-weight:650; }
+    nav a:hover, .text-link:hover { color:var(--accent); }
+    nav a[aria-current="location"] { color:var(--accent); }
+    nav a[aria-current="location"]::after { content:""; display:block; height:2px; margin-top:3px; background:var(--accent); }
+    main { overflow:hidden; }
+    .hero { padding:110px 0 100px; display:grid; grid-template-columns:1.4fr .6fr; align-items:end; gap:42px; }
+    .eyebrow { margin:0 0 18px; color:var(--accent); font-size:.82rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
+    h1,h2,h3,p { margin-top:0; }
+    h1 { margin-bottom:24px; font-size:clamp(3.2rem,7.4vw,6.4rem); line-height:1.1; letter-spacing:-.075em; }
+    h1 em { color:var(--accent); font-style:normal; }
+    .lead { max-width:620px; color:#43534c; font-size:clamp(1.05rem,2vw,1.28rem); word-break:keep-all; }
+    .actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:34px; }
+    .button { display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:0 20px; border:1px solid var(--ink); border-radius:100px; font-weight:700; transition:transform .2s,background .2s,color .2s; }
+    .button:hover { transform:translateY(-3px); }
+    .button.primary { background:var(--ink); color:#fff; }
+    .button.primary:hover { background:var(--accent); border-color:var(--accent); }
+    .profile { width:100%; max-width:350px; justify-self:end; padding:20px; border:1px solid var(--line); border-radius:20px; background:var(--paper); box-shadow:0 18px 45px #17211e0c; }
+    .profile-photo { display:grid; place-items:center; width:100%; aspect-ratio:3/4; border-radius:12px; background:var(--soft); color:var(--accent); font-weight:700; }
+    .profile-photo img { width:100%; height:100%; object-fit:cover; border-radius:12px; }
+    .profile dl { display:grid; grid-template-columns:76px 1fr; gap:9px 12px; margin:20px 0 0; font-size:.92rem; overflow-wrap:anywhere; }
+    .profile dt { color:var(--muted); }
+    .profile dd { margin:0; font-weight:650; }
+    .profile dd a { color:var(--accent); }
+    section { padding:88px 0; scroll-margin-top:100px; }
+    .section-head { display:flex; justify-content:space-between; align-items:end; gap:25px; margin-bottom:36px; }
+    .section-head > div { display:flex; flex-direction:column; align-items:flex-start; }
+    h2 { margin:0; font-size:clamp(2rem,4vw,3rem); letter-spacing:-.055em; line-height:1.2; }
+    .section-head p { max-width:none; margin:0; color:var(--muted); text-align:right; white-space:nowrap; }
+    .about { border-top:1px solid var(--line); }
+    .about-grid { display:grid; grid-template-columns:1.1fr .9fr; gap:56px; }
+    .about-copy { font-size:1.08rem; color:#43534c; word-break:keep-all; }
+    .about-copy strong { color:var(--ink); }
+    .facts { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+    .fact { border-top:1px solid var(--line); padding-top:12px; }
+    .fact small { display:block; color:var(--muted); }
+    .fact strong { font-size:.95rem; }
+    .resume { border-top:1px solid var(--line); }
+    .resume-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+    .resume-card { padding:25px; border:1px solid var(--line); border-radius:16px; background:var(--paper); }
+    .resume-card h3 { margin-bottom:15px; font-size:1.23rem; }
+    .resume-card p { margin:0; color:var(--muted); font-size:.94rem; }
+    .resume-card .item-title { display:block; margin-bottom:4px; color:var(--ink); font-size:1.05rem; font-weight:800; }
+    .resume-card .period { display:block; margin-bottom:14px; color:var(--accent); font-size:.84rem; font-weight:750; }
+    .resume-card .detail { margin-top:10px; }
+    .projects { background:#e9eee8; }
+    .project-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+    .project { display:flex; flex-direction:column; min-height:430px; padding:18px; border:1px solid #d5ded4; border-radius:18px; background:var(--paper); transition:transform .2s,box-shadow .2s; }
+    .project img { width:100%; aspect-ratio:16/9; object-fit:cover; object-position:top; border-radius:10px; background:#edf1ed; border:1px solid var(--line); }
+    .project img.contain { object-fit:contain; padding:18px; }
+    .project-preview { display:flex; justify-content:center; align-items:center; gap:8px; width:100%; aspect-ratio:16/9; overflow:hidden; padding:10px 18px; border:1px solid var(--line); border-radius:10px; background:#f3efff; }
+    .project-preview img { width:auto; height:100%; max-width:31%; object-fit:contain; border:1px solid #e5e0ef; border-radius:7px; background:#fff; box-shadow:0 3px 9px #17211e18; }
+    .project .body { display:flex; flex:1; flex-direction:column; padding:12px 8px 8px; }
+    .project:hover { transform:translateY(-5px); box-shadow:0 18px 40px #163f2920; }
+    .project .num { color:var(--accent); font-weight:800; font-size:.83rem; letter-spacing:.1em; }
+    .project h3 { margin:14px 0 10px; font-size:1.5rem; letter-spacing:-.04em; word-break:keep-all; }
+    .project p { color:var(--muted); font-size:.95rem; word-break:keep-all; }
+    .tags { display:flex; flex-wrap:wrap; gap:7px; margin-top:auto; padding-top:24px; }
+    .tags span { padding:4px 10px; border-radius:100px; background:var(--soft); color:#23684f; font-size:.75rem; font-weight:700; }
+    .project-link { display:inline-block; margin-top:18px; color:var(--accent); font-weight:750; }
+    .skills-list { display:flex; flex-wrap:wrap; gap:10px; margin-top:32px; }
+    .skills-list span { padding:10px 17px; border:1px solid var(--line); border-radius:100px; background:var(--paper); font-weight:650; }
+    .contact { background:var(--ink); color:#fff; }
+    .contact .eyebrow { color:#92e0be; }
+    .contact h2 { font-size:clamp(2.2rem,4vw,3.5rem); word-break:keep-all; }
+    .contact p { margin:22px 0 30px; color:#c4d1ca; }
+    .contact .button { border-color:#fff; color:#fff; }
+    .contact .button:hover { background:#fff; color:var(--ink); }
+    footer { padding:25px 0; background:var(--ink); border-top:1px solid #33413a; color:#a8bbb0; font-size:.83rem; }
+    footer .wrap { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    @media (min-width:1201px) { .project-grid > .project:nth-child(7) { grid-column:2; } }
+    @media (max-width:1200px) { .project-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .project-grid > .project:nth-child(7) { grid-column:1 / -1; width:calc((100% - 18px)/2); justify-self:center; } }
+    @media (max-width:800px) { .hero,.about-grid { grid-template-columns:1fr; } .hero { padding:78px 0; } .profile { max-width:440px; justify-self:start; } .resume-grid { grid-template-columns:1fr 1fr; } }
+    @media (max-width:800px) { .section-head p { white-space:normal; } }
+    @media (max-width:560px) { .wrap { width:calc(100% - 32px); } .nav { align-items:flex-start; flex-direction:column; justify-content:center; gap:8px; padding:16px 0; } nav { gap:8px 18px; } section { padding:66px 0; } .section-head { display:block; } .section-head p { margin-top:12px; text-align:left; } .project-grid,.facts,.resume-grid { grid-template-columns:1fr; } .project-grid > .project:nth-child(7) { grid-column:auto; width:100%; } .project { min-height:300px; } .project h3 { margin-top:32px; } }
+    @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } .button,.project { transition:none; } }
+  </style>
+</head>
+<body>
+  <!-- GitHub Pages: 저장소 루트의 index.html을 배포하면 이미지 경로도 함께 작동합니다. -->
+  <a class="skip" href="#main">본문으로 바로가기</a>
+  <header>
+    <div class="wrap nav">
+      <a class="brand" href="#top" aria-label="포트폴리오 맨 위로">오인경<span>.</span></a>
+      <nav aria-label="주요 메뉴">
+        <a href="#top">홈</a><a href="#about">소개</a><a href="#resume">이력</a><a href="#projects">프로젝트</a><a href="#skills">기술</a><a href="#contact">연락</a>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <div id="top" class="wrap hero">
+      <div>
+        <p class="eyebrow">오인경 · Full Stack Developer</p>
+        <h1>현장의 데이터를<br><em>쓰이는 서비스로.</em></h1>
+        <p class="lead">태양광 발전소 모니터링, 장비 관리, 유통 및 운영 업무를 웹 서비스로 구현해 왔습니다. 프론트엔드부터 API와 데이터베이스까지 연결합니다.</p>
+        <div class="actions"><a class="button primary" href="#projects">프로젝트 보기 ↗</a><a class="button" href="#contact">연락하기</a></div>
+      </div>
+      <aside class="profile" aria-label="인적 사항">
+        <div class="profile-photo"><img src="증명사진.jpg" alt="오인경 증명사진"></div>
+        <dl><dt>이름</dt><dd>오인경</dd><dt>생년월일</dt><dd>1998.12.18</dd><dt>연락처</dt><dd><a href="tel:+821082507924">010-8250-7924</a></dd><dt>이메일</dt><dd><a href="mailto:oikio7924@gmail.com">oikio7924@gmail.com</a></dd><dt>GitHub</dt><dd><a href="https://github.com/oikio7924" target="_blank" rel="noopener noreferrer">github.com/oikio7924</a></dd></dl>
+      </aside>
+    </div>
+    <section id="about" class="about"><div class="wrap">
+      <div class="section-head"><div><p class="eyebrow">01 / About</p><h2>저를 소개합니다</h2></div></div>
+      <div class="about-grid">
+        <div class="about-copy"><p><strong>복잡한 운영 과정을 관리하기 쉬운 화면과 안정적인 데이터 흐름으로 옮깁니다.</strong> 발전량과 설비 현황을 시각화하고, 발주·재고·세금계산서·인허가 일정을 다루는 시스템을 개발했습니다.</p><p>현장 업무의 규칙을 파악해 화면, 서버, 데이터베이스에 일관되게 반영하는 작업에 집중합니다.</p></div>
+        <div class="facts"><div class="fact"><small>도메인</small><strong>태양광 발전 · 유통 관리</strong></div><div class="fact"><small>프론트엔드</small><strong>React · Vue 3</strong></div><div class="fact"><small>백엔드</small><strong>Node.js · Express · Spring</strong></div><div class="fact"><small>데이터</small><strong>MariaDB · PostgreSQL · MySQL</strong></div></div>
+      </div>
+    </div></section>
+    <section id="resume" class="resume"><div class="wrap"><div class="section-head"><div><p class="eyebrow">02 / Resume</p><h2>이력</h2></div></div><div class="resume-grid"><div class="resume-card"><h3>경력</h3><span class="item-title">(주)대양기업</span><span class="period">2025.09 – 현재 · 재직 중</span><p>RTU 하드웨어 장비에서 인버터 데이터를 수집하는 소프트웨어 개발</p><p class="detail">태양광 발전소 모니터링 및 운영 관리 웹 시스템 개발</p></div><div class="resume-card"><h3>학력</h3><span class="item-title">광주대학교</span><span class="period">2017.03 – 2022.02 · 졸업</span><p>심리학 전공</p></div><div class="resume-card"><h3>교육·수상</h3><span class="item-title">스마트인재개발원</span><span class="period">2025.03 – 2025.09 · 수료</span><p>교육 과정에서 프로젝트 3개 진행</p><p class="detail">2차 프로젝트 최우수상<br>3차 프로젝트 장려상</p></div></div></div></section>
+    <section id="projects" class="projects"><div class="wrap">
+      <div class="section-head"><div><p class="eyebrow">03 / Selected Work</p><h2>프로젝트</h2></div></div>
+      <div class="project-grid">
+        <article class="project"><img src="atglobal/ao-web/docs/screenshots/dashboard.png" alt="AT Global 관리 시스템 대시보드" loading="lazy"><div class="body"><span class="num">01 / BUSINESS</span><h3>유통 통합 관리</h3><p>제조사에서 총판과 대리점으로 이어지는 유통 과정을 관리하는 B2B 시스템. 발주, 재고, 거래명세서와 역할별 권한을 다룹니다.</p><div class="tags"><span>Vue 3</span><span>Express</span><span>PostgreSQL</span></div><a class="project-link" href="projects.html?project=distribution">설명 자세히 보기 ↗</a></div></article>
+        <article class="project"><img src="daeyang/dymonitering/docs/screenshots/dashboard.png" alt="태양광 통합 모니터링 관리자 화면" loading="lazy"><div class="body"><span class="num">02 / PLATFORM</span><h3>통합 모니터링 시스템</h3><p>발전소와 회원, 청구, 게시판을 관리하는 Java 기반 시스템. 실시간 발전량 조회와 관리자 통계를 포함합니다.</p><div class="tags"><span>Java</span><span>Spring</span><span>MyBatis</span></div><a class="project-link" href="projects.html?project=monitoring">설명 자세히 보기 ↗</a></div></article>
+        <article class="project"><img src="daeyang/ht-web/docs/screenshots/dashboard.png" alt="전자세금계산서 관리 대시보드" loading="lazy"><div class="body"><span class="num">03 / OPERATIONS</span><h3>전자세금계산서 발행</h3><p>발전소 매출의 전자세금계산서 발행과 이력을 관리합니다. 외부 발행 API 연동을 포함합니다.</p><div class="tags"><span>Node.js</span><span>Express</span><span>MariaDB</span></div><a class="project-link" href="projects.html?project=tax">설명 자세히 보기 ↗</a></div></article>
+        <article class="project"><img src="daeyang/bd-web/docs/screenshots/dashboard.png" alt="발전소 인허가 일정관리 캘린더" loading="lazy"><div class="body"><span class="num">04 / OPERATIONS</span><h3>인허가 일정관리</h3><p>태양광 발전소 인허가 절차를 캘린더에서 관리하는 업무 도구입니다.</p><div class="tags"><span>Node.js</span><span>Express</span><span>MariaDB</span></div><a class="project-link" href="projects.html?project=calendar">설명 자세히 보기 ↗</a></div></article>
+        <article class="project"><img src="assets/rs485-demo.png" alt="RS485 에뮬레이터 Modbus RTU 통신 화면" loading="lazy"><div class="body"><span class="num">05 / TOOLING</span><h3>RS485 통신 에뮬레이터</h3><p>인버터 장비 없이 RS485/Modbus 통신을 재현하고 시험할 수 있도록 만든 데스크톱 도구입니다.</p><div class="tags"><span>Python</span><span>PyQt5</span><span>pyserial</span></div><a class="project-link" href="projects.html?project=emulator">설명 자세히 보기 ↗</a></div></article>
+        <article class="project"><img src="assets/digital-guard-dashboard.png" alt="Digital Guard 관리자 대시보드 실제 화면" loading="lazy"><div class="body"><span class="num">06 / SMHRD · 최우수상</span><h3>Digital Guard</h3><p>청소년 설문·제보와 리워드 참여를 모아 디지털 유해환경 데이터를 분석하는 플랫폼입니다.</p><div class="tags"><span>Vue 3</span><span>Pinia</span><span>Supabase</span><span>ECharts</span></div><a class="project-link" href="projects.html?project=digitalguard">설명 자세히 보기 ↗</a></div></article>
+        <article class="project"><div class="project-preview" role="img" aria-label="하루담 부모 홈, 대화, 자서전 프로그램 화면"><img src="assets/harudam-parent-home.png" alt=""><img src="assets/harudam-parent-chat.png" alt=""><img src="assets/harudam-autobiography.png" alt=""></div><div class="body"><span class="num">07 / SMHRD · 장려상</span><h3>하루담</h3><p>가족 간 음성 대화를 AI로 기록하고, 대화 요약과 디지털 자서전으로 이어주는 플랫폼입니다.</p><div class="tags"><span>Vue 3</span><span>Spring Boot</span><span>PostgreSQL</span><span>AI API</span></div><a class="project-link" href="projects.html?project=harudam">설명 자세히 보기 ↗</a></div></article>
+      </div>
+    </div></section>
+    <section id="skills"><div class="wrap"><p class="eyebrow">04 / Skills</p><h2>사용하는 도구와 기술</h2><div class="skills-list" aria-label="기술 목록"><span>React</span><span>Vue 3</span><span>JavaScript</span><span>Node.js / Express</span><span>Java / Spring</span><span>Python / PyQt5</span><span>PostgreSQL</span><span>MariaDB / MySQL</span><span>Git &amp; GitHub</span></div></div></section>
+    <section id="contact" class="contact"><div class="wrap"><p class="eyebrow">05 / Contact</p><h2>빠르게 배우고, 끝까지 해내겠습니다.</h2><p>새로운 기술과 업무를 적극적으로 익히고, 맡은 일은 책임감 있게 완성하겠습니다. 함께 성장할 기회를 기다립니다.</p><div class="actions"><a class="button" href="mailto:oikio7924@gmail.com">연락하기 ↗</a><a class="button" href="https://github.com/oikio7924" target="_blank" rel="noopener noreferrer">GitHub 방문하기 ↗</a></div></div></section>
+  </main>
+  <footer><div class="wrap"><span>© 2026 오인경. All rights reserved.</span><a href="#top">맨 위로 ↑</a></div></footer>
+  <script>
+    const navLinks = [...document.querySelectorAll('nav a[href^="#"]')];
+    const sections = navLinks.map(link => document.querySelector(link.getAttribute('href'))).filter(Boolean);
+    const sectionObserver = new IntersectionObserver(entries => {
+      const current = entries.filter(entry => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (!current) return;
+      navLinks.forEach(link => {
+        if (link.getAttribute('href') === `#${current.target.id}`) link.setAttribute('aria-current', 'location');
+        else link.removeAttribute('aria-current');
+      });
+    }, { rootMargin: '-20% 0px -65% 0px', threshold: [0, 0.1, 0.3, 0.6] });
+    sections.forEach(section => sectionObserver.observe(section));
+    let wheelLocked = false;
+    window.addEventListener('wheel', event => {
+      if (Math.abs(event.deltaY) < 18 || wheelLocked || document.documentElement.scrollHeight <= window.innerHeight) return;
+      event.preventDefault();
+      const headerHeight = document.querySelector('header').offsetHeight;
+      const y = window.scrollY;
+      const currentIndex = Math.max(0, sections.findIndex((section, index) => {
+        const top = section.getBoundingClientRect().top + y - headerHeight - 2;
+        const next = sections[index + 1];
+        const end = next ? next.getBoundingClientRect().top + y - headerHeight - 2 : document.documentElement.scrollHeight;
+        return y >= top && y < end;
+      }));
+      const current = sections[currentIndex];
+      const top = current.getBoundingClientRect().top + y - headerHeight;
+      const bottom = current.getBoundingClientRect().bottom + y;
+      let target;
+      if (event.deltaY > 0) {
+        if (bottom > y + window.innerHeight + 32) target = Math.min(y + window.innerHeight - headerHeight - 24, bottom - window.innerHeight + 24);
+        else target = sections[Math.min(currentIndex + 1, sections.length - 1)].getBoundingClientRect().top + y - headerHeight;
+      } else {
+        if (y > top + 28) target = Math.max(top, y - window.innerHeight + headerHeight + 24);
+        else if (currentIndex > 0) target = sections[currentIndex - 1].getBoundingClientRect().top + y - headerHeight;
+        else target = 0;
+      }
+      wheelLocked = true;
+      window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+      window.setTimeout(() => { wheelLocked = false; }, 700);
+    }, { passive: false });
+  </script>
+</body>
+</html>
+

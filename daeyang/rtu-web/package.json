@@ -1,0 +1,23 @@
+{
+  "name": "rtu-web",
+  "version": "1.0.0",
+  "description": "대양모니터링 RTU 통합관리 (발전소·RTU 장비·세팅출고·인버터·작업장애·라우터)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "create-user": "node scripts/create-user.js",
+    "import-source": "node scripts/import-source.js"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "express": "^4.21.0",
+    "express-rate-limit": "^8.5.1",
+    "express-session": "^1.18.0",
+    "mysql2": "^3.22.0",
+    "xlsx": "^0.18.5"
+  }
+}
