@@ -6,7 +6,7 @@ const state = {
   month: new Date().getMonth(), // 0-based
   events: [],
   byDate: {},
-  yearlyEventDates: new Set(),
+  yearlyEventDates: new Map(),
 };
 
 let alertsData = { overdue: [], upcoming: [] };
@@ -94,11 +94,12 @@ async function loadEvents() {
   const events = await apiGet(url);
   state.events = events;
   state.byDate = {};
-  state.yearlyEventDates = new Set();
+  state.yearlyEventDates = new Map();   // 날짜 → 그날 있는 일정 종류 Set (power-expire / dev-expire)
   for (const ev of events) {
     if (!state.byDate[ev.date]) state.byDate[ev.date] = [];
     state.byDate[ev.date].push(ev);
-    state.yearlyEventDates.add(ev.date);
+    if (!state.yearlyEventDates.has(ev.date)) state.yearlyEventDates.set(ev.date, new Set());
+    state.yearlyEventDates.get(ev.date).add(ev.type);
   }
 }
 
@@ -321,7 +322,10 @@ function renderYearly() {
     for (let d = 1; d <= lastDay.getDate(); d++) {
       const el = document.createElement('div');
       el.className = 'mini-cal-day';
-      el.textContent = d;
+      const num = document.createElement('span');
+      num.className = 'mini-cal-num';
+      num.textContent = d;
+      el.appendChild(num);
 
       const y   = state.year;
       const mStr = String(m + 1).padStart(2, '0');
@@ -330,8 +334,28 @@ function renderYearly() {
 
       const isToday = today.getFullYear() === y && today.getMonth() === m && today.getDate() === d;
       if (isToday) el.classList.add('mini-cal-day--today');
-      if (state.yearlyEventDates.has(dateStr)) el.classList.add('mini-cal-day--has-event');
+      // 일정 있는 날: 종류별 색 점 (발전사업 만료 = 파랑, 개발행위 만료 = 주황, 둘 다면 두 개)
+      const types = state.yearlyEventDates.get(dateStr);
+      if (types) {
+        const dots = document.createElement('span');
+        dots.className = 'mini-cal-dots';
+        for (const t of ['power-expire', 'dev-expire']) {
+          if (!types.has(t)) continue;
+          const dot = document.createElement('span');
+          dot.className = `mini-cal-dot mini-cal-dot--${t}`;
+          dots.appendChild(dot);
+        }
+        el.appendChild(dots);
+        el.title = [types.has('power-expire') && '발전사업 만료일', types.has('dev-expire') && '개발행위 만료일'].filter(Boolean).join(' · ');
+      }
 
+      miniGrid.appendChild(el);
+    }
+
+    // 모든 달을 6주(42칸)로 맞춤 → 12개월 칸 높이가 똑같아짐
+    for (let i = startDow + lastDay.getDate(); i < 42; i++) {
+      const el = document.createElement('div');
+      el.className = 'mini-cal-day mini-cal-day--other';
       miniGrid.appendChild(el);
     }
 
