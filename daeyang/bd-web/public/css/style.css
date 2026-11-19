@@ -1266,9 +1266,9 @@ a:hover { text-decoration: underline; }
 .plant-link:hover { text-decoration: underline; }
 
 .date-cell { white-space: nowrap; font-size: 12px; }
-.date-cell--past { color: var(--c-expire); font-weight: 600; }
-.date-cell--soon { color: var(--c-completion); font-weight: 600; }
-.date-cell--ok   { color: var(--c-permit); }
+.date-cell--past { color: var(--c-overdue); font-weight: 600; }   /* 만료 초과: 빨강 */
+.date-cell--soon { color: #c2410c; font-weight: 600; }           /* 30일 이내: 진한 주황 */
+.date-cell--ok   { color: var(--text); }                         /* 정상: 기본 글자색 */
 .date-cell--none { color: #c0c8d4; font-style: italic; }
 
 .table-footer {
