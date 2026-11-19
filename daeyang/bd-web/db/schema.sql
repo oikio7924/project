@@ -37,6 +37,9 @@ CREATE TABLE IF NOT EXISTS bdm_plants (
   dev_completion_date         DATE          NULL                     COMMENT '개발행위준공일',
   commercial_operation_date   DATE          NULL                     COMMENT '상업운전개시일',
 
+  -- NAS 서류 연결 (읽기 전용)
+  nas_folder                  VARCHAR(1000) NULL                     COMMENT 'NAS 서류 폴더 전체 경로 (.env NAS_ROOT 아래만 허용, NULL=연결 안 함). bd-web은 이 폴더를 읽기만 함',
+
   -- 메타
   created_at                  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP            COMMENT '등록일시',
   updated_at                  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP

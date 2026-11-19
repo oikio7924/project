@@ -7,6 +7,8 @@ const path = require('path');
 const fs = require('fs');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
+const nas = require('./nas');
+const nasMatch = require('./nas-match');
 
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
@@ -17,7 +19,6 @@ fs.mkdirSync(BIZ_CERT_DIR, { recursive: true });
 
 const PLANT_DOCS_DIR = path.join(__dirname, 'uploads', 'plant-docs');
 fs.mkdirSync(PLANT_DOCS_DIR, { recursive: true });
-const PLANT_DOCS_MAX_PER_PLANT = 50;
 
 const DB_CONFIG = {
   host: process.env.MARIADB_HOST || 'localhost',
@@ -137,6 +138,8 @@ async function initDb() {
   const alterCols = [
     `ALTER TABLE bdm_plants ADD COLUMN dev_permit_status VARCHAR(50) NOT NULL DEFAULT ''`,
     `ALTER TABLE bdm_plants ADD COLUMN biz_cert_filename VARCHAR(500) NULL DEFAULT NULL`,
+    `ALTER TABLE bdm_plants ADD COLUMN nas_folder VARCHAR(1000) NULL DEFAULT NULL
+       COMMENT 'NAS 서류 폴더 전체 경로 (.env NAS_ROOT 아래만 허용, NULL=연결 안 함). bd-web은 이 폴더를 읽기만 함'`,
   ];
   for (const sql of alterCols) {
     try { await db.execute(sql); } catch (e) {
@@ -493,41 +496,7 @@ router.get('/api/plants/:id/files', errHandler(async (req, res) => {
   res.json(rows);
 }));
 
-// 업로드 (여러 개 동시 가능)
-router.post('/api/plants/:id/files', upload.array('files', PLANT_DOCS_MAX_PER_PLANT), errHandler(async (req, res) => {
-  const id = parseInt(req.params.id);
-  const db = getDb();
-  const [plantRows] = await db.execute('SELECT id FROM bdm_plants WHERE id = ?', [id]);
-  if (!plantRows.length) return res.status(404).json({ error: '발전소를 찾을 수 없습니다.' });
-  if (!req.files || !req.files.length) return res.status(400).json({ error: '파일이 없습니다.' });
-
-  const [[{ cnt }]] = await db.execute('SELECT COUNT(*) cnt FROM bdm_plant_files WHERE plant_id = ?', [id]);
-  if (cnt + req.files.length > PLANT_DOCS_MAX_PER_PLANT) {
-    return res.status(400).json({ error: `발전소당 최대 ${PLANT_DOCS_MAX_PER_PLANT}개까지 첨부 가능합니다. (현재 ${cnt}개)` });
-  }
-
-  const dir = plantDocDir(id);
-  fs.mkdirSync(dir, { recursive: true });
-
-  const uploaded = [];
-  const rejected = [];
-  for (const file of req.files) {
-    const origName = Buffer.from(file.originalname, 'latin1').toString('utf8');
-    const ext = path.extname(origName).toLowerCase();
-    if (!PLANT_DOC_MIME[ext]) { rejected.push(origName); continue; }
-
-    const [result] = await db.execute(
-      'INSERT INTO bdm_plant_files (plant_id, original_filename, file_size) VALUES (?, ?, ?)',
-      [id, origName, file.size]
-    );
-    const fileId = result.insertId;
-    fs.writeFileSync(path.join(dir, `${fileId}${ext}`), file.buffer);
-    uploaded.push({ id: fileId, original_filename: origName, file_size: file.size });
-  }
-
-  if (!uploaded.length) return res.status(400).json({ error: '허용되지 않는 파일 형식입니다.' });
-  res.json({ ok: true, uploaded, rejected });
-}));
+// (업로드 API는 제거됨 — 발전소 서류는 NAS에서 관리하고 bd-web은 NAS 연결로 보기만 함)
 
 // 다운로드 / 미리보기
 router.get('/api/plants/:id/files/:fileId', errHandler(async (req, res) => {
@@ -591,6 +560,268 @@ router.post('/api/plants/:id/files/bulk-delete', errHandler(async (req, res) => 
   );
   res.json({ ok: true, deleted: rows.length });
 }));
+
+// ─── NAS 서류 (읽기 전용) ────────────────────────────────────────────────────
+// 발전소마다 NAS 폴더 하나를 연결해 두고, 그 안의 서류를 목록·보기·다운로드만 함
+function nasGuard(res) {
+  if (!nas.enabled) { res.status(503).json({ error: 'NAS 연결이 설정되지 않았습니다.' }); return false; }
+  return true;
+}
+function nasErr(res, e) {
+  console.error('[bd-web][NAS]', e.message);
+  res.status(e.status || 502).json({ error: e.message });
+}
+
+// NAS 기능 사용 가능 여부 + 최상위 폴더
+router.get('/api/nas/status', (req, res) => {
+  res.json({ enabled: nas.enabled, root: nas.enabled ? nas.NAS_ROOT : null });
+});
+
+// 폴더 선택 화면: 하위 폴더 목록
+router.get('/api/nas/folders', async (req, res) => {
+  if (!nasGuard(res)) return;
+  const p = String(req.query.path || nas.NAS_ROOT);
+  try {
+    res.json({ path: p, folders: await nas.listFolders(p) });
+  } catch (e) { nasErr(res, e); }
+});
+
+// 파일 열기 창: 폴더 안 내용 (폴더 + 파일)
+router.get('/api/nas/list', async (req, res) => {
+  if (!nasGuard(res)) return;
+  const p = String(req.query.path || nas.NAS_ROOT);
+  try {
+    res.json({ path: p, entries: await nas.listEntries(p) });
+  } catch (e) { nasErr(res, e); }
+});
+
+// 파일 열기 창에서 파일 미리 보기 (NAS_ROOT 아래 전체 경로)
+router.get('/api/nas/file', async (req, res) => {
+  if (!nasGuard(res)) return;
+  try {
+    const p = String(req.query.path || '');
+    if (!nas.isAllowedPath(p) || p === nas.NAS_ROOT) return res.status(400).json({ error: '잘못된 파일 경로입니다.' });
+    const filename = p.split('/').pop();
+    const contentType = PLANT_DOC_MIME[path.extname(filename).toLowerCase()] || 'application/octet-stream';
+    const disposition = (req.query.download !== '1' && (contentType === 'application/pdf' || contentType.startsWith('image/')))
+      ? 'inline' : 'attachment';
+    await nas.pipeFile(p, res, { disposition, contentType, filename });
+  } catch (e) {
+    if (res.headersSent) { res.destroy(); return; }
+    nasErr(res, e);
+  }
+});
+
+// 폴더 검색용 목록 (3단계까지, 10분 캐시 / refresh=1 이면 새로 읽음)
+router.get('/api/nas/folder-index', async (req, res) => {
+  if (!nasGuard(res)) return;
+  try {
+    const idx = await nas.getFolderIndex(req.query.refresh === '1');
+    res.json({ depth: nas.INDEX_DEPTH, builtAt: idx.builtAt, folders: idx.folders });
+  } catch (e) { nasErr(res, e); }
+});
+
+// ─── 하위 폴더 전체 검색 (NAS 자체 검색: 시작 → 찾은 것 받아 가기 반복 → 끝/취소) ─────────
+// 색인이 없어 넓은 폴더는 몇 분 걸림 → 찾는 대로 화면에 보여 줌
+//   띄어쓰기는 무시하고, 검색어(띄어쓰기로 나눈 단어)가 이름에 모두 들어 있으면 결과
+const nasSearches = new Map();   // taskid → { user(접속 세션), terms, offset, hits, started }
+const SEARCH_MAX_HITS = 1000;
+const SEARCH_TTL_MS = 5 * 60 * 1000;
+const squash = s => String(s || '').normalize('NFC').replace(/\s+/g, '').toLowerCase();
+
+async function endSearch(taskid) {
+  nasSearches.delete(taskid);
+  await nas.searchStop(taskid);
+}
+setInterval(() => {
+  for (const [id, s] of nasSearches) if (Date.now() - s.started > SEARCH_TTL_MS) endSearch(id);
+}, 60 * 1000).unref();
+
+router.post('/api/nas/search', async (req, res) => {
+  if (!nasGuard(res)) return;
+  const p = String((req.body && req.body.path) || '');
+  const terms = String((req.body && req.body.q) || '').trim().split(/\s+/).map(squash).filter(Boolean);
+  if (!terms.length) return res.status(400).json({ error: '검색어를 입력해 주세요.' });
+  if (!nas.isAllowedPath(p)) return res.status(400).json({ error: '허용되지 않은 NAS 경로입니다.' });
+  try {
+    // 한 창(접속)에서 검색을 새로 하면 이전 검색은 멈춤
+    for (const [id, s] of nasSearches) if (s.user === req.sessionID) endSearch(id);
+    const taskid = await nas.searchStart(p, terms);
+    nasSearches.set(taskid, { user: req.sessionID, terms, offset: 0, hits: 0, started: Date.now() });
+    res.json({ taskid });
+  } catch (e) { nasErr(res, e); }
+});
+
+router.get('/api/nas/search/:taskid', async (req, res) => {
+  if (!nasGuard(res)) return;
+  const id = req.params.taskid;
+  const s = nasSearches.get(id);
+  if (!s || s.user !== req.sessionID) return res.status(404).json({ error: '검색이 끝났거나 없습니다.' });
+  try {
+    const d = await nas.searchList(id, s.offset);
+    s.offset += d.files.length;
+    const files = d.files.filter(f => nas.isAllowedPath(f.path) && !/^[#@]/.test(f.name)
+      && s.terms.every(t => squash(f.name).includes(t)));
+    s.hits += files.length;
+    const capped = s.hits >= SEARCH_MAX_HITS;
+    const finished = d.finished && s.offset >= d.total;
+    if (finished || capped) await endSearch(id);
+    res.json({ files, finished: finished || capped, capped });
+  } catch (e) { endSearch(id); nasErr(res, e); }
+});
+
+router.delete('/api/nas/search/:taskid', async (req, res) => {
+  const s = nasSearches.get(req.params.taskid);
+  if (s && s.user === req.sessionID) await endSearch(req.params.taskid);
+  res.json({ ok: true });
+});
+
+// ─── 서류 폴더 자동 연결 ──────────────────────────────────────────────────────
+// 발전소명·주소·사업자명으로 NAS 발전소 폴더를 추천 (nas-match.js)
+
+// 아직 폴더가 연결되지 않은 발전소 전체의 추천 목록
+router.get('/api/nas/auto-match', async (req, res) => {
+  if (!nasGuard(res)) return;
+  try {
+    const prepared = nasMatch.prepareProjects(await nas.getProjectFolders(req.query.refresh === '1'));
+    const [all] = await getDb().execute(
+      'SELECT id, plant_name, owner_name, address, nas_folder FROM bdm_plants ORDER BY plant_name');
+    // 연결은 되어 있지만 NAS에서 폴더가 없어진 곳(이름 변경·이동)도 다시 목록에 넣음
+    const missing = await nas.findMissing(all.filter(p => p.nas_folder).map(p => p.nas_folder));
+    const todo = all.filter(p => !p.nas_folder || missing.has(p.nas_folder));
+    res.json({
+      linked: all.length - todo.length,
+      plants: todo.map(({ nas_folder, ...p }) => ({
+        ...p, ...nasMatch.suggest(p, prepared),
+        broken: nas_folder || null,   // 연결 끊김: 예전에 연결했던 경로
+      })),
+    });
+  } catch (e) { nasErr(res, e); }
+});
+
+// 발전소 1곳의 추천 폴더 (폴더 선택 창 위쪽에 표시)
+router.get('/api/plants/:id/nas-suggest', async (req, res) => {
+  if (!nasGuard(res)) return;
+  try {
+    const [rows] = await getDb().execute('SELECT id, plant_name, owner_name, address FROM bdm_plants WHERE id = ?', [parseInt(req.params.id)]);
+    if (!rows.length) return res.status(404).json({ error: '발전소를 찾을 수 없습니다.' });
+    const prepared = nasMatch.prepareProjects(await nas.getProjectFolders());
+    res.json(nasMatch.suggest(rows[0], prepared, 3));
+  } catch (e) { nasErr(res, e); }
+});
+
+// 발전소 폴더 → 실제로 연결할 폴더 (0. 공통서류 → 그 안의 호기별 폴더)
+async function resolveFor(id, projectPath) {
+  const [rows] = await getDb().execute('SELECT plant_name FROM bdm_plants WHERE id = ?', [id]);
+  const plant = rows[0];
+  return nas.resolveDocsFolder(projectPath, plant ? subs => nasMatch.pickPlantSubfolder(plant, subs) : null);
+}
+
+// 연결 전에 "실제로 연결될 폴더" 미리 보기 { items: [{ id, path }] } → { results: [{ id, path, folder }] }
+router.post('/api/nas/resolve', async (req, res) => {
+  if (!nasGuard(res)) return;
+  const items = Array.isArray((req.body || {}).items) ? req.body.items.slice(0, 50) : [];
+  const results = [];
+  const queue = [...items];
+  // NAS 부담을 줄이려고 동시에 4개까지만
+  await Promise.all([0, 1, 2, 3].map(async () => {
+    while (queue.length) {
+      const it = queue.shift();
+      const id = parseInt(it.id);
+      const p = String(it.path || '');
+      try {
+        if (!nas.isAllowedPath(p) || p === nas.NAS_ROOT) throw new Error('허용되지 않은 NAS 경로입니다.');
+        results.push({ id, path: p, folder: await resolveFor(id, p) });
+      } catch (e) { results.push({ id, path: p, error: e.message }); }
+    }
+  }));
+  res.json({ results });
+});
+
+// 고른 것 한꺼번에 연결 { items: [{ id, path, exact?, replace? }] }
+//   replace: 연결이 끊긴 발전소의 예전 경로 → NAS에 정말 없을 때만 새 폴더로 바꿈
+//   path 는 발전소 폴더 → "0. 공통서류"(그 안에 이 발전소 이름의 호기별 폴더가 있으면 그 폴더)로 연결
+//   이미 다른 폴더가 연결된 발전소는 건너뜀
+router.post('/api/nas/auto-link', async (req, res) => {
+  if (!nasGuard(res)) return;
+  const items = Array.isArray((req.body || {}).items) ? req.body.items : null;
+  if (!items || !items.length) return res.status(400).json({ error: '연결할 발전소를 골라 주세요.' });
+  if (items.length > 500) return res.status(400).json({ error: '한 번에 500곳까지만 연결할 수 있습니다.' });
+  const db = getDb();
+  const results = [];
+  const olds = items.map(it => String(it.replace || '')).filter(Boolean);
+  let gone;
+  try { gone = olds.length ? await nas.findMissing(olds) : new Set(); }
+  catch (e) { return nasErr(res, e); }
+  for (const it of items) {
+    const id = parseInt(it.id);
+    const p = String(it.path || '');
+    try {
+      if (!id || !nas.isAllowedPath(p) || p === nas.NAS_ROOT) throw new Error('허용되지 않은 NAS 경로입니다.');
+      // exact: [폴더 변경]으로 직접 고른 폴더 → 그대로 연결
+      const folder = it.exact ? p : await resolveFor(id, p);
+      const old = String(it.replace || '');
+      const [r] = old && gone.has(old)
+        ? await db.execute('UPDATE bdm_plants SET nas_folder = ? WHERE id = ? AND nas_folder = ?', [folder, id, old])
+        : await db.execute('UPDATE bdm_plants SET nas_folder = ? WHERE id = ? AND nas_folder IS NULL', [folder, id]);
+      results.push(r.affectedRows ? { id, ok: true, folder } : { id, ok: false, error: '이미 연결되어 있거나 없는 발전소입니다.' });
+    } catch (e) {
+      results.push({ id, ok: false, error: e.message });
+    }
+  }
+  res.json({ results, linked: results.filter(r => r.ok).length });
+});
+
+// 발전소에 NAS 폴더 연결 / 해제 (path 가 빈 값이면 해제)
+router.put('/api/plants/:id/nas-folder', errHandler(async (req, res) => {
+  const id = parseInt(req.params.id);
+  const p = String((req.body || {}).path || '').trim();
+  if (p && !nas.isAllowedPath(p)) return res.status(400).json({ error: '허용되지 않은 NAS 경로입니다.' });
+  const db = getDb();
+  const [result] = await db.execute('UPDATE bdm_plants SET nas_folder = ? WHERE id = ?', [p || null, id]);
+  if (!result.affectedRows) return res.status(404).json({ error: '발전소를 찾을 수 없습니다.' });
+  res.json({ ok: true, nas_folder: p || null });
+}));
+
+async function getPlantNasFolder(id) {
+  const [rows] = await getDb().execute('SELECT nas_folder FROM bdm_plants WHERE id = ?', [id]);
+  return rows.length ? rows[0].nas_folder : undefined;
+}
+
+// 연결된 폴더의 서류 목록 (하위 폴더까지)
+router.get('/api/plants/:id/nas-files', async (req, res) => {
+  if (!nasGuard(res)) return;
+  try {
+    const folder = await getPlantNasFolder(parseInt(req.params.id));
+    if (folder === undefined) return res.status(404).json({ error: '발전소를 찾을 수 없습니다.' });
+    if (!folder) return res.json({ folder: null, files: [] });
+    const { files, truncated } = await nas.listFilesDeep(folder);
+    res.json({ folder, files, truncated });
+  } catch (e) { nasErr(res, e); }
+});
+
+// 서류 보기 / 다운로드 (rel = 연결 폴더 기준 상대경로)
+router.get('/api/plants/:id/nas-file', async (req, res) => {
+  if (!nasGuard(res)) return;
+  try {
+    const folder = await getPlantNasFolder(parseInt(req.params.id));
+    if (!folder) return res.status(404).json({ error: '연결된 NAS 폴더가 없습니다.' });
+    const rel = String(req.query.rel || '');
+    if (!rel || rel.startsWith('/') || rel.split('/').some(s => !s || s === '..' || s === '.')) {
+      return res.status(400).json({ error: '잘못된 파일 경로입니다.' });
+    }
+    const filename = rel.split('/').pop();
+    const ext = path.extname(filename).toLowerCase();
+    const contentType = PLANT_DOC_MIME[ext] || 'application/octet-stream';
+    const forceDownload = req.query.download === '1';
+    const disposition = (!forceDownload && (contentType === 'application/pdf' || contentType.startsWith('image/')))
+      ? 'inline' : 'attachment';
+    await nas.pipeFile(`${folder}/${rel}`, res, { disposition, contentType, filename });
+  } catch (e) {
+    if (res.headersSent) { res.destroy(); return; }
+    nasErr(res, e);
+  }
+});
 
 // ─── 캘린더 이벤트 (만료일만 표시) ──────────────────────────────────────────
 router.get('/api/events', errHandler(async (req, res) => {
