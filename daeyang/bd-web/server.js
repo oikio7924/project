@@ -689,6 +689,15 @@ router.get('/api/alerts', errHandler(async (req, res) => {
 }));
 
 // ─── 엑셀 가져오기 ───────────────────────────────────────────────────────────
+// SheetJS(cellDates)가 만드는 Date는 서버 로컬 자정 기준(+KST는 1899년 LMT 오프셋 때문에 수십 초 앞당겨짐)이라
+// toISOString()(UTC)으로 자르면 하루 전 날짜가 됨 → 12시간 더해 가장 가까운 날로 맞춘 뒤 로컬 날짜로 변환
+function excelDateToYmd(d) {
+  const t = new Date(d.getTime() + 12 * 60 * 60 * 1000);
+  const mm = String(t.getMonth() + 1).padStart(2, '0');
+  const dd = String(t.getDate()).padStart(2, '0');
+  return `${t.getFullYear()}-${mm}-${dd}`;
+}
+
 router.post('/api/plants/import', upload.single('file'), errHandler(async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '파일이 없습니다.' });
 
@@ -735,7 +744,7 @@ router.post('/api/plants/import', upload.single('file'), errHandler(async (req, 
       if (!field) return;
       let val = row[idx];
       if (field === 'dev_permit_expire') {
-        const raw = (val instanceof Date) ? val.toISOString().slice(0, 10) : String(val || '').trim();
+        const raw = (val instanceof Date) ? excelDateToYmd(val) : String(val || '').trim();
         if (raw === '미대상' || raw === '면제대상') {
           obj.dev_permit_status = raw;
           obj.dev_permit_expire = null;
@@ -747,14 +756,14 @@ router.post('/api/plants/import', upload.single('file'), errHandler(async (req, 
         if (raw === '미대상' || raw === '면제대상') obj.dev_permit_status = raw;
       } else if (DATE_FIELD_SET.has(field) || field === 'memo') {
         if (val instanceof Date) {
-          val = val.toISOString().slice(0, 10);
+          val = excelDateToYmd(val);
         } else {
           const s = String(val || '').trim();
           val = (s.length > 0 && /^\d/.test(s)) ? s.slice(0, 10) : null;
         }
         obj[field] = val;
       } else {
-        obj[field] = (val instanceof Date) ? val.toISOString().slice(0, 10) : String(val ?? '').trim();
+        obj[field] = (val instanceof Date) ? excelDateToYmd(val) : String(val ?? '').trim();
       }
     });
 
