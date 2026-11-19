@@ -19,6 +19,7 @@ const DATE_YEAR_MAX = 2100;
 
 let currentId        = null;
 let plantListAll     = [];
+let ddActiveIdx      = 0;      // 발전소 드롭다운에서 키보드(↑↓)로 강조된 항목 인덱스
 let pendingPlantFiles = [];    // 신규 등록 시 미리 선택한 첨부파일들
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -135,7 +136,16 @@ function initDropdown() {
     if (e.key === 'Escape') closeDropdown();
   });
   search.addEventListener('input', () => renderDropdownItems(search.value.trim()));
-  search.addEventListener('keydown', e => { if (e.key === 'Escape') closeDropdown(); });
+  search.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeDropdown();
+    else if (e.key === 'ArrowDown') { e.preventDefault(); moveDropdownActive(1); }
+    else if (e.key === 'ArrowUp')   { e.preventDefault(); moveDropdownActive(-1); }
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      const items = document.querySelectorAll('#plant-select-list .custom-select-item');
+      if (items[ddActiveIdx]) items[ddActiveIdx].click();
+    }
+  });
   document.addEventListener('click', e => {
     if (!wrap.contains(e.target)) closeDropdown();
   });
@@ -184,6 +194,25 @@ function renderDropdownItems(q) {
     empty.textContent = '검색 결과가 없습니다.';
     list.appendChild(empty);
   }
+
+  // 키보드 강조 시작 위치: 검색 중이면 첫 번째 결과, 아니면 현재 선택된 항목
+  const items = [...list.querySelectorAll('.custom-select-item')];
+  items.forEach((item, idx) => item.addEventListener('mouseenter', () => setDropdownActive(idx, false)));
+  const selectedIdx = items.findIndex(item => item.classList.contains('selected'));
+  const startIdx = (q && filtered.length > 0) ? 1 : Math.max(selectedIdx, 0);
+  setDropdownActive(startIdx, true);
+}
+
+function setDropdownActive(idx, scroll) {
+  const items = document.querySelectorAll('#plant-select-list .custom-select-item');
+  if (!items.length) return;
+  ddActiveIdx = Math.min(Math.max(idx, 0), items.length - 1);
+  items.forEach((item, i) => item.classList.toggle('active', i === ddActiveIdx));
+  if (scroll) items[ddActiveIdx].scrollIntoView({ block: 'nearest' });
+}
+
+function moveDropdownActive(step) {
+  setDropdownActive(ddActiveIdx + step, true);
 }
 
 function selectPlant(id, label) {

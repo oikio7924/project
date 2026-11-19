@@ -1494,6 +1494,9 @@ input[type=checkbox] {
   color: #1d4ed8;
   font-weight: 600;
 }
+/* 키보드(↑↓) 강조 */
+.custom-select-item.active { background: #f1f5f9; }
+.custom-select-item.selected.active { background: #dbeafe; }
 
 .custom-select-empty {
   padding: 14px;
