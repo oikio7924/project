@@ -71,7 +71,7 @@ const EVENT_COLORS = {
   'power-permit':    '#8fbff5',  /* 발전사업 허가일   — 파랑      */
   'power-expire':    '#5c85c9',  /* 발전사업 만료일   — 진파랑    */
   'dev-permit':      '#ffc896',  /* 개발행위 허가일   — 주황      */
-  'dev-expire':      '#e2818a',  /* 개발행위 만료일   — 빨강      */
+  'dev-expire':      '#f0923a',  /* 개발행위 만료일   — 진주황    */
   'ppa':             '#c4aef0',  /* PPA 접수일        — 보라      */
   'completion':      '#ffd59e',  /* 준공일            — 황토      */
   'operation':       '#a3e0c2',  /* 운전개시일        — 에메랄드  */
