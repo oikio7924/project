@@ -83,6 +83,19 @@ document.addEventListener('click', e => {
   if (e.target.closest('[data-close]')) e.target.closest('.modalbg').classList.remove('show');
 });
 
+// Esc = 맨 위에 열린 창 하나만 닫기 (닫기 버튼과 같음, 2026-11-23 사용자 요청).
+// 창이 겹칠 수 있어서(발전소 창 위 수정 창, 그 위 변경 이력) z-index가 큰 것, 같으면 HTML에서 뒤에 있는 것.
+// 검색 목록 등 다른 곳에서 먼저 Esc를 처리했으면(defaultPrevented) 건드리지 않음.
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape' || e.defaultPrevented || e.isComposing) return;
+  const open = [...document.querySelectorAll('.modalbg.show')];
+  if (!open.length) return;
+  const z = el => Number(getComputedStyle(el).zIndex) || 0;
+  const top = open.reduce((a, b) => (z(b) >= z(a) ? b : a));
+  top.classList.remove('show');
+  e.preventDefault();
+});
+
 // ─── 검색 칸 (페이지 제목 아래 한 줄 전체) ───────────────────────────────────
 // 글자를 치면 표가 바로 걸러지고, 아래에 그 메뉴에 맞는 목록이 뜬다 (SEEK 설정). ↑↓로 고르고 Enter면 고른 것만 보기.
 // 목록이 없을 때 Enter는 글자 검색 그대로. Esc는 목록 닫기, ×는 검색 지우기. (2026-11-13 사용자 요청: 메뉴마다 맞는 검색)
@@ -194,7 +207,7 @@ function seekBox(box, { conf, rows = [], onChange }) {
     if (e.key === 'ArrowDown') { e.preventDefault(); if (list.hidden) { active = 0; draw(); } else { active = Math.min(active + 1, items.length - 1); draw(); } }
     else if (e.key === 'ArrowUp') { e.preventDefault(); if (!list.hidden) { active = Math.max(active - 1, 0); draw(); } }
     else if (e.key === 'Enter') { e.preventDefault(); if (!list.hidden && active >= 0 && items.length) pick(active); else close(); }
-    else if (e.key === 'Escape') { close(); }
+    else if (e.key === 'Escape') { if (!list.hidden) e.preventDefault(); close(); } // 목록이 열려 있으면 목록만 닫음(창은 그대로)
   };
   input.onblur = () => setTimeout(close, 150);
   list.onmousedown = e => { const it = e.target.closest('.combo-item'); if (it) { e.preventDefault(); pick(Number(it.dataset.i)); } };
