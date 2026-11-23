@@ -574,7 +574,11 @@ function nasErr(res, e) {
 
 // NAS 기능 사용 가능 여부 + 최상위 폴더
 router.get('/api/nas/status', (req, res) => {
-  res.json({ enabled: nas.enabled, root: nas.enabled ? nas.NAS_ROOT : null });
+  res.json({
+    enabled: nas.enabled,
+    root: nas.enabled ? nas.NAS_ROOT : null,              // 탐색·연결할 수 있는 최상위
+    plantRoot: nas.enabled ? nas.NAS_PLANT_ROOT : null,   // 발전소 폴더들이 있는 곳 (창 처음 위치)
+  });
 });
 
 // 폴더 선택 화면: 하위 폴더 목록

@@ -8,7 +8,7 @@ const LEVELS = {
 };
 
 const al = {
-  root: '',
+  root: '',          // 발전소 폴더(plantRoot) — 경로 표시 기준
   plants: [],          // [{ id, plant_name, owner_name, address, level, cands }]
   linked: 0,
   pick: new Map(),     // 발전소 id → 고른 폴더 경로
@@ -40,8 +40,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const st = await apiGet('api/nas/status');
     if (!st.enabled) throw new Error('NAS 연결이 설정되지 않았습니다.');
-    al.root = st.root;
+    al.root = st.plantRoot || st.root;
     nasUi.root = st.root;
+    nasUi.plantRoot = st.plantRoot || st.root;
     await load();
   } catch (e) {
     document.getElementById('al-list').innerHTML = `<div class="al-empty nas-error">${escHtml(e.message)}</div>`;

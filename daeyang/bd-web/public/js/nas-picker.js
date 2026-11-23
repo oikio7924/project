@@ -1,6 +1,6 @@
 /* NAS 폴더 선택 창 + 공용 도우미 (register.html · nas-link.html 에서 같이 씀)
-   먼저 nasUi.root 에 NAS 최상위 폴더(api/nas/status 의 root)를 넣어 두고 사용 */
-const nasUi = { root: '' };
+   먼저 nasUi.root 에 NAS 최상위 폴더(api/nas/status 의 root), nasUi.plantRoot 에 발전소 폴더(plantRoot)를 넣어 두고 사용 */
+const nasUi = { root: '', plantRoot: '' };
 
 function formatFileSize(bytes) {
   if (!bytes && bytes !== 0) return '';
@@ -62,7 +62,7 @@ function nasModalShell(title, bodyHtml, maxWidth = 640) {
    왼쪽: 폴더 트리 / 오른쪽: 현재 폴더 안 폴더·파일 / 위: ← → ↑ 주소줄·검색
    폴더 두 번 클릭 = 들어가기, 파일 두 번 클릭 = 새 탭에서 보기, [이 폴더 연결] = 고르기
    opts
-     startPath : 처음 열 폴더 (없으면 최상위)
+     startPath : 처음 열 폴더 (없으면 발전소 폴더 = nasUi.plantRoot)
      plantId   : 추천 폴더를 보여 줄 발전소 id (없으면 추천 안 함)
      subtitle  : 제목 아래 한 줄 (예: 발전소 이름)
      canUnlink : [연결 해제] 버튼 표시
@@ -70,6 +70,8 @@ function nasModalShell(title, bodyHtml, maxWidth = 640) {
 async function openNasFolderDialog(opts = {}) {
   const root = nasUi.root;
   const rootName = (root || '').split('/').pop();
+  const plantRoot = nasUi.plantRoot && nasUi.plantRoot.startsWith(root) ? nasUi.plantRoot : root;
+  const plantRootName = plantRoot.split('/').pop();
 
   const overlay = nasModalShell('서류 폴더 연결', `
     <div class="nfd">
@@ -350,15 +352,24 @@ async function openNasFolderDialog(opts = {}) {
   });
 
   // 붙여넣은 경로를 NAS 경로로 바꿈
-  //   "/공유폴더/8. 발전소/2025년", "\\NAS\공유폴더\8. 발전소\2025년",
-  //   "Z:\8. 발전소\2025년", "8. 발전소 › 2025년", "2025년/1. 견적진행" 모두 허용
+  //   "/대양기업_공유폴더/8. 발전소/2025년", "\\NAS\대양기업_공유폴더\8. 발전소\2025년",
+  //   "Z:\8. 발전소\2025년", "8. 발전소 › 2025년" 은 공유폴더 기준,
+  //   "2025년/1. 견적진행" 처럼 앞부분이 없으면 발전소 폴더(8. 발전소) 기준
   function parseAddr(text) {
     let s = text.trim().replace(/^"+|"+$/g, '').replace(/\\/g, '/').replace(/\s*›\s*/g, '/');
     const segs = s.split('/').map(x => x.trim()).filter(Boolean);
     const i = segs.indexOf(rootName);
-    const rel = i >= 0 ? segs.slice(i + 1) : segs.filter(x => !/^[A-Za-z]:$/.test(x));
+    const j = plantRoot !== root ? segs.indexOf(plantRootName) : -1;
+    let base = root, rel;
+    if (i >= 0) rel = segs.slice(i + 1);
+    else if (j >= 0) { base = plantRoot; rel = segs.slice(j + 1); }
+    else {
+      const drive = segs.length && /^[A-Za-z]:$/.test(segs[0]);
+      rel = segs.filter(x => !/^[A-Za-z]:$/.test(x));
+      if (!drive) base = plantRoot;
+    }
     if (rel.some(x => x === '..' || x === '.')) return null;
-    return rel.length ? `${root}/${rel.join('/')}` : root;
+    return rel.length ? `${base}/${rel.join('/')}` : base;
   }
 
   function editAddr() {
@@ -460,8 +471,8 @@ async function openNasFolderDialog(opts = {}) {
   const unlink = $('[data-nas-unlink]');
   if (unlink) unlink.addEventListener('click', () => (opts.onUnlink ? opts.onUnlink() : closeNasModal()));
 
-  // 처음 열 때: 연결된 폴더가 있으면 그 폴더를 열어 둠
-  const start = (opts.startPath && opts.startPath.startsWith(root + '/')) ? opts.startPath : root;
+  // 처음 열 때: 연결된 폴더가 있으면 그 폴더, 없으면 발전소 폴더(8. 발전소)를 열어 둠
+  const start = (opts.startPath && opts.startPath.startsWith(root + '/')) ? opts.startPath : plantRoot;
   go(start, { push: false });
   listEl.focus();
   loadIndex(false);

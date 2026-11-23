@@ -372,7 +372,7 @@ function downloadUrl(url, filename) {
 
 /* ── NAS 서류 (읽기 전용) ─────────────────────────────────────────────────
    발전소마다 NAS 폴더 하나를 연결 → 그 안을 탐색기처럼 돌아다니며 서류 보기·다운로드만 함.
-   연결 폴더에서 열리고 NAS 발전소 폴더(8. 발전소)까지 올라갈 수 있음, '.'으로 시작하는 숨김 폴더(.이전서류 등)는 회색 폴더로 흐리게 표시 */
+   연결 폴더에서 열리고 NAS 최상위(대양기업_공유폴더)까지 올라갈 수 있음, '.'으로 시작하는 숨김 폴더(.이전서류 등)는 회색 폴더로 흐리게 표시 */
 let nasStatus      = { enabled: false, root: null };
 let nasFolder      = null;        // 현재 발전소에 연결된 NAS 폴더 전체 경로
 let nasCur         = null;        // 서류 창에서 지금 보고 있는 폴더
@@ -381,6 +381,7 @@ const nasListCache = new Map();   // 폴더 경로 → [{name,path,isdir,size,mt
 async function initNasDocs() {
   try { nasStatus = await apiGet('api/nas/status'); } catch (e) { nasStatus = { enabled: false }; }
   nasUi.root = nasStatus.root || '';
+  nasUi.plantRoot = nasStatus.plantRoot || nasUi.root;
   document.getElementById('btn-nas-docs').addEventListener('click', openNasModal);
   setNasFolder(nasFolder);
 }
@@ -480,7 +481,7 @@ async function nasGo(p) {
 function renderNasCrumbs() {
   const el = document.getElementById('_nas_crumbs');
   if (!el) return;
-  // 맨 위 = NAS 발전소 폴더(8. 발전소), 연결된 폴더는 🔗 표시
+  // 맨 위 = NAS 최상위(대양기업_공유폴더), 연결된 폴더는 🔗 표시
   const top = nasUi.root;
   const parts = [top];
   if (nasCur !== top) {

@@ -5,7 +5,9 @@
 //   NAS_URL   : NAS 웹 주소 (예: http://192.168.0.10:5000) — 비어 있으면 NAS 기능 꺼짐
 //   NAS_USER  : NAS 계정 (읽기 권한만 있으면 됨)
 //   NAS_PASS  : NAS 비밀번호
-//   NAS_ROOT  : 연결할 수 있는 최상위 폴더 (예: /공유폴더/8. 발전소) — 이 밖은 탐색·다운로드 불가
+//   NAS_ROOT  : 연결할 수 있는 최상위 폴더 (예: /대양기업_공유폴더) — 이 밖은 탐색·다운로드 불가
+//   NAS_PLANT_ROOT : 발전소 폴더들이 있는 폴더 (예: /대양기업_공유폴더/8. 발전소, NAS_ROOT 아래) —
+//                    자동 연결·추천용 폴더 목록의 기준, 폴더 선택 창 처음 위치. 비우면 NAS_ROOT 와 같음
 const http = require('http');
 const https = require('https');
 const querystring = require('querystring');
@@ -14,6 +16,15 @@ const NAS_URL  = (process.env.NAS_URL || '').replace(/\/$/, '');
 const NAS_USER = process.env.NAS_USER || '';
 const NAS_PASS = process.env.NAS_PASS || '';
 const NAS_ROOT = (process.env.NAS_ROOT || '').replace(/\/$/, '');
+const NAS_PLANT_ROOT = (() => {
+  const p = (process.env.NAS_PLANT_ROOT || '').replace(/\/$/, '');
+  if (!p) return NAS_ROOT;
+  if (p !== NAS_ROOT && !p.startsWith(NAS_ROOT + '/')) {
+    console.warn('[bd-web][NAS] NAS_PLANT_ROOT 가 NAS_ROOT 밖이라 무시합니다:', p);
+    return NAS_ROOT;
+  }
+  return p;
+})();
 
 const enabled = !!(NAS_URL && NAS_USER && NAS_PASS && NAS_ROOT);
 
@@ -121,7 +132,7 @@ async function listFolders(folderPath) {
     .map(f => ({ name: f.name, path: f.path }));
 }
 
-// ─── 폴더 검색용 목록 (NAS_ROOT 아래 연도 / 진행단계 / 발전소(현장) 폴더) ──────────
+// ─── 폴더 검색용 목록 (NAS_PLANT_ROOT 아래 연도 / 진행단계 / 발전소(현장) 폴더) ──────────
 // NAS 자체 검색은 색인이 없어 오래 걸림 → 연도·진행단계·현장 폴더까지 미리 읽어 두고(몇 초) 10분간 재사용
 // (그보다 깊은 곳은 하위 폴더 전체 검색 searchStart/searchList 로 찾음)
 const INDEX_DEPTH = 3;
@@ -138,7 +149,7 @@ const isContainer = (name, depth) => depth === 1
 
 async function buildFolderIndex() {
   const out = [];
-  let level = [{ path: NAS_ROOT, depth: 0 }];
+  let level = [{ path: NAS_PLANT_ROOT, depth: 0 }];
   // 담는 폴더만 따라 내려가고, 그 안의 나머지 폴더는 발전소(현장) 폴더로 기록
   while (level.length) {
     const next = [];
@@ -356,4 +367,4 @@ async function pipeFile(filePath, res, { disposition, contentType, filename }) {
   }
 }
 
-module.exports = { enabled, NAS_ROOT, INDEX_DEPTH, isAllowedPath, listFolders, listEntries, getFolderIndex, getProjectFolders, resolveDocsFolder, findMissing, searchStart, searchList, searchStop, listFilesDeep, pipeFile };
+module.exports = { enabled, NAS_ROOT, NAS_PLANT_ROOT, INDEX_DEPTH, isAllowedPath, listFolders, listEntries, getFolderIndex, getProjectFolders, resolveDocsFolder, findMissing, searchStart, searchList, searchStop, listFilesDeep, pipeFile };
