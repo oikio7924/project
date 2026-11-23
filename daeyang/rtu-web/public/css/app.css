@@ -44,6 +44,10 @@ tbody tr:hover{background:#f5faff}
 tr.off td{color:#a0aab5}
 tr.off td.name{text-decoration:line-through;color:var(--red)}
 .empty{padding:40px;text-align:center;color:var(--m)}
+.linkhead{margin:18px 0 8px;font-size:12px}
+.linkhead small{margin-left:6px;font-weight:normal;color:var(--m);font-size:10px}
+table.links td{cursor:pointer;white-space:nowrap}
+table.links td.note{white-space:pre-wrap;word-break:break-all;max-width:none;min-width:240px;color:#4f6378}
 .tag{display:inline-block;padding:2px 7px;border-radius:999px;font-size:10px;background:#eef2f6;color:#4f6378}
 .tag.Y{background:var(--okbg);color:var(--ok)}
 .tag.N{background:var(--warnbg);color:var(--warn)}
@@ -137,6 +141,19 @@ tr.off td.name{text-decoration:line-through;color:var(--red)}
 .combo-item{padding:8px 10px;font-size:12px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .combo-item.on,.combo-item:hover{background:#eaf2fa}
 .combo-empty{padding:10px;font-size:12px;color:var(--m)}
-.logsearch{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.logsearch label{font-size:12px;font-weight:bold;color:var(--m)}
-.logsearch .combo input{width:340px}
+.combo-item .tag{margin-left:6px}
+/* 페이지 검색 칸: 예전 설명 줄 자리, 한 줄 전체 (2026-11-13) */
+.seek{margin:0 0 12px}
+.seek .seek-in{display:flex;align-items:center;border:1px solid #b9d0e6;border-radius:8px;background:white;padding:0 6px 0 0}
+.seek .seek-in:focus-within{border-color:var(--b);box-shadow:0 0 0 3px #3277ad22}
+.seek .seek-icon{flex:none;margin-left:13px;color:var(--b)}
+.seek input{flex:1;width:auto;border:0;outline:0;padding:11px 13px 11px 9px;font:inherit;font-size:13px;background:none}
+.seek-tag{font-size:10px;color:var(--b);background:#eaf2fa;border-radius:999px;padding:3px 8px;white-space:nowrap}
+.seek-x{border:0;background:none;color:var(--m);font-size:18px;line-height:1;cursor:pointer;padding:4px 8px}
+.seek .combo-list{width:100%;max-height:420px}
+/* 연결 발전소 칩의 구분 입력 */
+.chip-label{width:110px;margin:0 4px 0 8px;padding:3px 6px;border:1px solid var(--l);border-radius:6px;font:inherit;font-size:11px}
+.chips span{display:inline-flex;align-items:center}
+.chips span{white-space:nowrap}
+.field .chips .chip-label{width:110px;min-width:0;margin:0 4px 0 8px;padding:3px 7px;border:1px solid #cfdbe8;border-radius:6px;font-size:11px;background:white;height:auto}
+.combo-item small{margin-left:10px;color:var(--m);font-size:11px}

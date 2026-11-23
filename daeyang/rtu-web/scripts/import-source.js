@@ -285,7 +285,7 @@ function build(src, dppKeys, check) {
         next_check: ks.length > 1 ? `요청서 한 줄에 ${ks.length}곳 (${x.name})${j ? ' — 인버터 구성은 첫 건에 있음' : ''}` : null });
       if (j > 0) return;
       for (const v of x.invs) {
-        out.inverter.push({ inv_id: id('I', ++iN), setup_id: setupId, plant_id: ensurePlant(k).plant_id, kind: '세팅 요청',
+        out.inverter.push({ inv_id: id('I', ++iN), setup_id: setupId, plant_id: ensurePlant(k).plant_id,
           maker: v.maker ? v.maker.toLowerCase() : null, model: v.model, unit_kw: v.kw && Number.isFinite(Number(v.kw)) ? v.kw : null,
           qty: v.qty && Number.isInteger(Number(v.qty)) ? Number(v.qty) : null, note: v.kw && !Number.isFinite(Number(v.kw)) ? `용량: ${v.kw}` : null });
       }

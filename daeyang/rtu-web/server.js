@@ -123,7 +123,7 @@ async function resolvePlantId(conn, req, value) {
 
 async function ensurePlant(conn, req, keyno) {
   const [d] = await conn.query('SELECT DPP_KEYNO FROM dy_power_plant WHERE DPP_KEYNO = ?', [keyno]);
-  if (!d.length) throw badRequest(`keyno ${keyno} 발전소가 모니터링에 없습니다.`);
+  if (!d.length) throw badRequest(`발전소 번호 ${keyno} 발전소가 모니터링에 없습니다.`);
   const [r] = await conn.query('SELECT plant_id FROM rtm_plant WHERE dpp_keyno = ? FOR UPDATE', [keyno]);
   if (r.length) return r[0].plant_id;
   const plantId = await nextId(conn, 'rtm_plant', 'plant_id', 'P');
@@ -351,6 +351,21 @@ router.get('/api/lookups', needLogin, errHandler(async (req, res) => {
 }));
 
 // ─── 시트 조회 ────────────────────────────────────────────────────────────
+// 연결 "구분": 같은 keyno 안에서 이 장비·라우터가 어느 발전소 몫인지 (예: keyno 145 민정·영자·재두).
+// 연결 표의 note 칸을 쓴다. 엑셀 이관 때 넣은 표시 '원본 장부 이관'은 구분이 아니므로 빈 값으로 본다 (2026-11-13).
+const IMPORT_MARK = '원본 장부 이관';
+const linkLabel = a => `NULLIF(NULLIF(TRIM(${a}.note), ''), '${IMPORT_MARK}')`;
+
+// 장비·라우터 목록에 붙일 연결 구분 { 장비ID: { plant_id: 구분 } }
+async function linkLabels(db, kind) {
+  const { table, col } = LINKS[kind];
+  const [rows] = await db.query(
+    `SELECT ${col} AS id, plant_id, ${linkLabel('t')} AS label FROM ${table} t WHERE t.unlinked_at IS NULL AND ${linkLabel('t')} IS NOT NULL`);
+  const out = {};
+  for (const r of rows) (out[r.id] = out[r.id] || {})[r.plant_id] = r.label;
+  return out;
+}
+
 const PLANT_JOIN = `
   LEFT JOIN rtm_plant rp ON rp.plant_id = t.plant_id
   LEFT JOIN dy_power_plant dp ON dp.DPP_KEYNO = rp.dpp_keyno`;
@@ -360,14 +375,18 @@ async function listSheet(db, key) {
     const [rows] = await db.query(`
       SELECT d.DPP_KEYNO AS keyno, d.DPP_NAME, d.DPP_STATUS, d.DPP_VOLUM, d.DPP_INVER, d.DPP_INVER_COUNT,
              u.UI_ID AS owner_id, r.*,
-             (SELECT GROUP_CONCAT(CONCAT_WS(' ', i.maker, i.model,
-                       CONCAT(IF(i.unit_kw IS NULL, '', CONCAT(TRIM(TRAILING '.' FROM TRIM(TRAILING '0' FROM i.unit_kw)), 'kW')), '×', IFNULL(i.qty, '?')))
-                     ORDER BY i.inv_id SEPARATOR ', ')
-                FROM rtm_inverter i WHERE i.plant_id = r.plant_id) AS inv_summary,
-             (SELECT GROUP_CONCAT(IFNULL(rt.ctn, rt.router_id) ORDER BY rt.router_id SEPARATOR ', ')
+             (SELECT GROUP_CONCAT(CONCAT_WS(' ', g.maker, g.model,
+                       CONCAT(IF(g.unit_kw IS NULL, '', CONCAT(TRIM(TRAILING '.' FROM TRIM(TRAILING '0' FROM g.unit_kw)), 'kW')), '×', g.cnt))
+                     ORDER BY g.first_id SEPARATOR ', ')
+                FROM (SELECT i.plant_id, i.maker, i.model, i.unit_kw, SUM(IFNULL(i.qty, 1)) AS cnt, MIN(i.inv_id) AS first_id
+                        FROM rtm_inverter i GROUP BY i.plant_id, i.maker, i.model, i.unit_kw) g
+               WHERE g.plant_id = r.plant_id) AS inv_summary,
+             (SELECT GROUP_CONCAT(CONCAT(IFNULL(rt.ctn, rt.router_id), IFNULL(CONCAT(' (', ${linkLabel('y')}, ')'), ''))
+                       ORDER BY ${linkLabel('y')} IS NULL, ${linkLabel('y')}, rt.router_id SEPARATOR ', ')
                 FROM rtm_router_plant y JOIN rtm_router rt ON rt.router_id = y.router_id
                WHERE y.plant_id = r.plant_id AND y.unlinked_at IS NULL) AS router_ctn,
-             (SELECT GROUP_CONCAT(IFNULL(dv.serial_no, dv.device_id) ORDER BY dv.device_id SEPARATOR ', ')
+             (SELECT GROUP_CONCAT(CONCAT(IFNULL(dv.serial_no, 'S/N 없음'), IFNULL(CONCAT(' (', ${linkLabel('x')}, ')'), ''))
+                       ORDER BY ${linkLabel('x')} IS NULL, ${linkLabel('x')}, dv.device_id SEPARATOR ', ')
                 FROM rtm_device_plant x JOIN rtm_device dv ON dv.device_id = x.device_id
                WHERE x.plant_id = r.plant_id AND x.unlinked_at IS NULL) AS device_sns
       FROM dy_power_plant d
@@ -389,7 +408,8 @@ async function listSheet(db, key) {
         (SELECT GROUP_CONCAT(y.plant_id ORDER BY y.plant_id) FROM rtm_router_plant y
           WHERE y.router_id = t.router_id AND y.unlinked_at IS NULL) AS linked_plants
       FROM rtm_router t ORDER BY t.router_id`);
-    return rows.map(r => ({ ...r, linked_plants: r.linked_plants ? r.linked_plants.split(',') : [] }));
+    const labels = await linkLabels(db, 'router');
+    return rows.map(r => ({ ...r, linked_plants: r.linked_plants ? r.linked_plants.split(',') : [], link_labels: labels[r.router_id] || {} }));
   }
   if (key === 'swver') return (await db.query('SELECT * FROM rtm_sw_version ORDER BY CAST(SUBSTRING(code, 5) AS UNSIGNED)'))[0];
   if (key === 'device') {
@@ -398,8 +418,14 @@ async function listSheet(db, key) {
         (SELECT GROUP_CONCAT(x.plant_id ORDER BY x.plant_id) FROM rtm_device_plant x
           WHERE x.device_id = t.device_id AND x.unlinked_at IS NULL) AS linked_plants
       FROM rtm_device t
-      ORDER BY COALESCE(t.install_date, t.made_date) IS NULL, COALESCE(t.install_date, t.made_date) DESC, t.device_id DESC`);
-    return rows.map(r => ({ ...r, linked_plants: r.linked_plants ? r.linked_plants.split(',') : [] }));
+      ORDER BY (t.serial_no IS NULL OR t.serial_no = ''),
+        (CONCAT_WS('', t.board_type, t.sw_version, t.made_date, t.install_date, t.status, t.ctn, t.note) = ''
+          AND NOT EXISTS (SELECT 1 FROM rtm_device_plant z WHERE z.device_id = t.device_id AND z.unlinked_at IS NULL)),
+        t.serial_no DESC, t.device_id DESC`);
+    // 정렬 (2026-11-18): S/N(DR-연도-버전-순번 = 만든 순서) 큰 번호부터. 번호만 미리 잡아 둔 빈 행(보드·SW·날짜·상태·CTN·비고·연결 모두 없음)은
+    // 그 아래, S/N 없는 장비는 맨 아래
+    const labels = await linkLabels(db, 'device');
+    return rows.map(r => ({ ...r, linked_plants: r.linked_plants ? r.linked_plants.split(',') : [], link_labels: labels[r.device_id] || {} }));
   }
   const [rows] = await db.query(`
     SELECT t.*, dp.DPP_NAME AS plant_name, rp.dpp_keyno AS keyno
@@ -519,16 +545,19 @@ async function addSetup(conn, req, plantId, setup, items, deviceId) {
     await logChange(conn, req, 'rtm_setup', setupId, 'insert', null, row);
   }
   const invIds = [];
+  // 인버터 구성은 인버터 한 대가 한 줄 (요청서의 "수량 8"은 8줄로 나눠 저장 — slave·S/N을 대마다 적을 수 있게)
   for (const it of items) {
-    const invId = await nextId(conn, 'rtm_inverter', 'inv_id', 'I');
-    const row = {
-      inv_id: invId, setup_id: setupId, plant_id: plantId, kind: setupId ? '세팅 요청' : '실설치',
-      maker: it.maker.toLowerCase(), model: it.model || null, unit_kw: it.unit_kw || null, qty: Number(it.qty),
-      device_id: deviceId || null,
-    };
-    await conn.query('INSERT INTO rtm_inverter SET ?', [row]);
-    await logChange(conn, req, 'rtm_inverter', invId, 'insert', null, row);
-    invIds.push(invId);
+    for (let n = 0; n < Number(it.qty); n++) {
+      const invId = await nextId(conn, 'rtm_inverter', 'inv_id', 'I');
+      const row = {
+        inv_id: invId, setup_id: setupId, plant_id: plantId,
+        maker: it.maker.toLowerCase(), model: it.model || null, unit_kw: it.unit_kw || null, qty: 1,
+        device_id: deviceId || null,
+      };
+      await conn.query('INSERT INTO rtm_inverter SET ?', [row]);
+      await logChange(conn, req, 'rtm_inverter', invId, 'insert', null, row);
+      invIds.push(invId);
+    }
   }
   return { setupId, invIds };
 }
@@ -657,26 +686,51 @@ const LINKS = {
   device: { table: 'rtm_device_plant', col: 'device_id' },
   router: { table: 'rtm_router_plant', col: 'router_id' },
 };
-async function syncLinks(conn, req, kind, id, plantValues, { addOnly = false } = {}) {
+// labels: { 화면에서 고른 발전소 값: 구분 } — 넘기면 연결마다 구분(note)을 그 값으로 맞춘다 (빈 값이면 지움)
+async function syncLinks(conn, req, kind, id, plantValues, { addOnly = false, labels = null } = {}) {
   const { table, col } = LINKS[kind];
   const want = [];
-  for (const val of plantValues || []) want.push(await resolvePlantId(conn, req, val));
-  const [cur] = await conn.query(`SELECT plant_id, unlinked_at FROM ${table} WHERE ${col} = ?`, [id]);
+  const wantLabel = {};
+  for (const val of plantValues || []) {
+    const p = await resolvePlantId(conn, req, val);
+    want.push(p);
+    if (labels && typeof labels === 'object') {
+      const l = String(labels[val] ?? labels[p] ?? '').trim().slice(0, 100);
+      wantLabel[p] = l || null;
+    }
+  }
+  const [cur] = await conn.query(`SELECT plant_id, unlinked_at, ${linkLabel(table)} AS label FROM ${table} WHERE ${col} = ?`, [id]);
   const active = cur.filter(c => !c.unlinked_at).map(c => c.plant_id);
+  const curLabel = Object.fromEntries(cur.filter(c => !c.unlinked_at).map(c => [c.plant_id, c.label || null]));
   for (const p of want) {
     if (active.includes(p)) continue;
     await conn.query(
       `INSERT INTO ${table} (${col}, plant_id, linked_at) VALUES (?, ?, CURDATE()) ON DUPLICATE KEY UPDATE linked_at = CURDATE(), unlinked_at = NULL`,
       [id, p]);
+    curLabel[p] = null;
   }
   const removed = addOnly ? [] : active.filter(p => !want.includes(p));
   for (const p of removed) await conn.query(`UPDATE ${table} SET unlinked_at = CURDATE() WHERE ${col} = ? AND plant_id = ?`, [id, p]);
   const after = [...new Set([...active.filter(p => !removed.includes(p)), ...want])];
-  if (after.length !== active.length || removed.length) {
-    await logChange(conn, req, table, id, 'update', { plants: active }, { plants: after });
+  // 구분 바뀐 연결만 고친다
+  const labelChanged = {};
+  for (const [p, l] of Object.entries(wantLabel)) {
+    if ((curLabel[p] || null) === l) continue;
+    await conn.query(`UPDATE ${table} SET note = ? WHERE ${col} = ? AND plant_id = ?`, [l, id, p]);
+    labelChanged[p] = { before: curLabel[p] || null, after: l };
+  }
+  const changedKeys = Object.keys(labelChanged);
+  if (after.length !== active.length || removed.length || changedKeys.length) {
+    const b = { plants: active };
+    const a = { plants: after };
+    if (changedKeys.length) {
+      b.labels = Object.fromEntries(changedKeys.map(p => [p, labelChanged[p].before]));
+      a.labels = Object.fromEntries(changedKeys.map(p => [p, labelChanged[p].after]));
+    }
+    await logChange(conn, req, table, id, 'update', b, a);
   }
 }
-const syncDeviceLinks = (conn, req, id, plants) => syncLinks(conn, req, 'device', id, plants);
+const syncDeviceLinks = (conn, req, id, plants, labels) => syncLinks(conn, req, 'device', id, plants, { labels });
 
 // 세팅출고 RTU 칸에서 "새 RTU 만들기"를 고른 경우
 async function resolveNewDevice(conn, req, data, plantId) {
@@ -708,6 +762,7 @@ router.post('/api/sheets/:key', needLogin, errHandler(async (req, res) => {
   const sheet = byKey[key];
   const body = req.body || {};
   const data = cleanRow(sheet, body);
+  if (key === 'inverter') data.qty = 1; // 인버터 구성은 한 줄에 한 대
   const out = await withTx(async conn => {
     if ('plant_id' in data && data.plant_id) data.plant_id = await resolvePlantId(conn, req, data.plant_id);
     const newDev = key === 'setup' ? await resolveNewDevice(conn, req, data, data.plant_id) : null;
@@ -729,7 +784,7 @@ router.post('/api/sheets/:key', needLogin, errHandler(async (req, res) => {
       delete extra.device_id;
       for (const k of Object.keys(extra)) if (extra[k] === null) delete extra[k];
       const dev = await createNewDevice(conn, req, data.serial_no, null, extra);
-      await syncDeviceLinks(conn, req, dev.device_id, body.linked_plants);
+      await syncDeviceLinks(conn, req, dev.device_id, body.linked_plants, body.link_labels);
       return { id: dev.device_id, serial_no: dev.serial_no };
     }
     if (key === 'device') await checkSerialFree(conn, data.serial_no, null);
@@ -737,8 +792,8 @@ router.post('/api/sheets/:key', needLogin, errHandler(async (req, res) => {
     if (key === 'device' && !row.device_type) row.device_type = 'RTU';
     await conn.query(`INSERT INTO ${sheet.table} SET ?`, [row]);
     await logChange(conn, req, sheet.table, id, 'insert', null, row);
-    if (key === 'device') await syncDeviceLinks(conn, req, id, body.linked_plants);
-    if (key === 'router') await syncLinks(conn, req, 'router', id, body.linked_plants);
+    if (key === 'device') await syncDeviceLinks(conn, req, id, body.linked_plants, body.link_labels);
+    if (key === 'router') await syncLinks(conn, req, 'router', id, body.linked_plants, { labels: body.link_labels });
     if (key === 'hwver' && String(row.is_current) === '1') await setCurrentVersion(conn, id);
     return { id, serial_no: row.serial_no || (newDev && newDev.serial_no) || undefined };
   });
@@ -765,8 +820,8 @@ router.put('/api/sheets/:key/:id', needLogin, errHandler(async (req, res) => {
       const [[after]] = await conn.query(`SELECT * FROM ${sheet.table} WHERE ${sheet.idField} = ?`, [req.params.id]);
       await logChange(conn, req, sheet.table, req.params.id, 'update', rows[0], after);
     }
-    if (key === 'device' && Array.isArray(body.linked_plants)) await syncDeviceLinks(conn, req, req.params.id, body.linked_plants);
-    if (key === 'router' && Array.isArray(body.linked_plants)) await syncLinks(conn, req, 'router', req.params.id, body.linked_plants);
+    if (key === 'device' && Array.isArray(body.linked_plants)) await syncDeviceLinks(conn, req, req.params.id, body.linked_plants, body.link_labels);
+    if (key === 'router' && Array.isArray(body.linked_plants)) await syncLinks(conn, req, 'router', req.params.id, body.linked_plants, { labels: body.link_labels });
   });
   res.json({ ok: true });
 }));
@@ -867,7 +922,7 @@ async function addPlantNames(db, rows) {
     else if (r.table_name === 'rtm_router') (rtMap.get(r.row_key) || []).forEach(p => pids.add(p));
     for (const o of [a, b]) if (o.plant_id) pids.add(o.plant_id);
     for (const pid of pids) { const p = byPlant.get(pid); if (p) keynos.add(String(p.dpp_keyno)); }
-    r.plant_names = [...keynos].map(k => byKeyno.get(k) || `keyno ${k}`).join(', ');
+    r.plant_names = [...keynos].map(k => byKeyno.get(k) || `발전소 번호 ${k}`).join(', ');
   }
 }
 

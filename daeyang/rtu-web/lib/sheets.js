@@ -9,7 +9,7 @@ const SHEETS = [
     key: 'plant', name: '발전소장비', table: 'rtm_plant', idField: 'plant_id', prefix: 'P',
     note: '발전소 목록은 모니터링 홈페이지 발전소(dy_power_plant) 기준입니다. 이름·용량·주소는 홈페이지 정보이고, 나머지는 RTU 관리 정보입니다.',
     columns: [
-      { f: 'keyno', label: 'keyno', join: true },
+      { f: 'keyno', label: '발전소 번호', join: true },
       { f: 'DPP_NAME', label: '발전소명', join: true },
       { f: 'DPP_STATUS', label: '개통', join: true, map: PLANT_STATUS },
       { f: 'DPP_VOLUM', label: '용량 (kW)', join: true },
@@ -25,7 +25,7 @@ const SHEETS = [
       { f: 'remote_method', label: '원격 접속 방식', type: 'select', opts: ['', 'tailscale', 'Dataplicity', 'Anydesk', '미사용'], hidden: true },
       { f: 'remote_address', label: '원격 접속 주소', hidden: true },
       { f: 'router_ctn', label: '라우터 CTN', join: true },
-      { f: 'jubok_keyno', label: '주복 keyno', onlyFilter: 'jubok' }, // 목록에서는 "주복건설" 필터일 때만 보임
+      { f: 'jubok_keyno', label: '주복 발전소 번호', onlyFilter: 'jubok' }, // 목록에서는 "주복건설" 필터일 때만 보임
       { f: 'remote_note', label: '원격 비고', type: 'textarea' },
       { f: 'plant_note', label: '발전소 비고', type: 'textarea' },
       { f: 'legacy_inv_count', label: '인버터 수량 (기존)', hidden: true },
@@ -61,17 +61,17 @@ const SHEETS = [
   {
     // 왼쪽 메뉴에는 없고, 발전소 창의 "인버터 구성" 탭에서 본다 (엑셀 내려받기에는 시트로 나감)
     key: 'inverter', name: '인버터구성', table: 'rtm_inverter', idField: 'inv_id', prefix: 'I', hideNav: true,
-    note: '발전소에 들어가는 인버터를 모델별로 한 줄씩 적습니다. 예: "sofar 125KTLX-G4, 125kW × 8대".',
+    note: '발전소에 들어가는 인버터를 한 대에 한 줄씩 적습니다. 모델을 몰라도 slave만 알면 그것만 적어도 됩니다. 예: "goodwe GW60KBF-MT, slave 3, 인버터 1호".',
     columns: [
       { f: 'inv_id', label: '구성 ID', readonly: true },
       { f: 'plant_id', label: '발전소', type: 'plant', required: true },
       { f: 'plant_name', label: '발전소명', join: true, formHidden: true },
-      { f: 'setup_id', label: '작업 ID' },
-      { f: 'kind', label: '구성 구분', type: 'select', opts: ['세팅 요청', '실설치'] },
+      { f: 'setup_id', label: '세팅 작업', type: 'setup', help: '고른 발전소의 세팅출고 기록 중에서 고릅니다. 상관없으면 (없음)' },
       { f: 'maker', label: '제조사' },
       { f: 'model', label: '모델' },
-      { f: 'unit_kw', label: '대당 용량 (kW)', type: 'number' },
-      { f: 'qty', label: '수량', type: 'number' },
+      { f: 'inv_sn', label: '인버터 S/N', help: '여러 대를 한 줄에 적었으면 쉼표로 (예: 7060KMTB216W0385, 7060KMTB216W0445)' },
+      { f: 'unit_kw', label: '용량 (kW)', type: 'number' },
+      { f: 'qty', label: '수량', type: 'number', hidden: true, formHidden: true }, // 한 줄 = 인버터 한 대 (항상 1, 서버가 채움)
       { f: 'device_id', label: 'RTU', type: 'device' },
       { f: 'port', label: '단자' },
       { f: 'slave_id', label: 'slave_id' },
